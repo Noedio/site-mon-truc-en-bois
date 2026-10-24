@@ -1,0 +1,50 @@
+---
+// Retrait gratuit à la boutique (coché par défaut) ou livraison, avec les frais et le seuil de gratuité du catalogue.
+import { site } from "../../lib/donnees";
+import { euros } from "../../lib/format";
+---
+<div class="reception">
+  <label class="choix">
+    <input type="radio" name="mode_reception" value="retrait" checked />
+    <span class="choix-texte">
+      <span class="choix-titre">Retrait à la boutique <span class="choix-prix">Gratuit</span></span>
+      <span class="choix-aide">{site.adresse}, aux heures d'ouverture. Nous vous prévenons quand c'est prêt.</span>
+    </span>
+  </label>
+  <label class="choix">
+    <input type="radio" name="mode_reception" value="livraison" />
+    <span class="choix-texte">
+      <span class="choix-titre">Livraison à domicile <span class="choix-prix">{euros(site.livraison)}</span></span>
+      <span class="choix-aide">Offerte dès {euros(site.livraisonOfferteDes)} d'achat.</span>
+    </span>
+  </label>
+</div>
+
+<details class="horaires" data-horaires>
+  <summary class="machine">Horaires de la boutique</summary>
+  <ul>
+    {site.horaires.map((h) => <li>{h}</li>)}
+  </ul>
+</details>
+
+<div class="champ" data-bloc-adresse hidden>
+  <label for="c-adresse">Adresse de livraison</label>
+  <textarea id="c-adresse" name="adresse" rows="3" autocomplete="street-address" aria-describedby="e-adresse"></textarea>
+  <p class="erreur" id="e-adresse" hidden></p>
+</div>
+
+<style>
+  .reception { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 12px; }
+  .choix { position: relative; display: flex; gap: 14px; align-items: flex-start; padding: 16px; border: var(--filet); background: var(--papier); cursor: pointer; min-height: var(--cible); }
+  .choix:has(input:checked) { border: var(--filet-fort); padding: 15px; background: var(--bouleau); }
+  .choix input { flex: none; width: 22px; height: 22px; min-height: 0; margin: 2px 0 0; padding: 0; accent-color: var(--brule); }
+  .choix-texte { display: flex; flex-direction: column; gap: 4px; }
+  .choix-titre { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-weight: 600; }
+  .choix-prix { font-family: var(--f-machine); font-weight: 700; }
+  .choix-aide { font-size: 0.9375rem; color: var(--texte-doux); }
+
+  .horaires { margin-top: 4px; }
+  .horaires summary { min-height: var(--cible); display: inline-flex; align-items: center; cursor: pointer; text-decoration: underline; text-underline-offset: 0.2em; }
+  .horaires ul { margin: 4px 0 0; padding: 0; list-style: none; font-size: 0.9375rem; }
+  .horaires li { padding: 4px 0; border-bottom: 1px dotted var(--texte-doux); }
+</style>

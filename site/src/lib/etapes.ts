@@ -1,0 +1,29 @@
+// Étapes d'une commande, dans l'ordre du parcours (brief §5) :
+// commande à maquetter → maquette envoyée → validée (sinon retouche) → paiement → gravure → remise.
+// `statuts` liste les statuts de la table `commandes` qui correspondent à l'étape.
+// « maquette_envoyee » n'existe pas encore dans la base (contrainte de supabase/migrations/20261017000000_commandes.sql) :
+// tant qu'il manque, l'étape « Maquette envoyée » est cochée dès que la maquette est validée.
+
+export interface Etape { cle: string; titre: string; texte: string; statuts: string[] }
+
+export const ETAPES: Etape[] = [
+  { cle: "recue", titre: "Commande reçue, à maquetter", texte: "Nous préparons la maquette de votre gravure.", statuts: ["nouvelle"] },
+  { cle: "maquette", titre: "Maquette envoyée", texte: "Vous la validez, ou vous nous demandez une retouche.", statuts: ["maquette_envoyee"] },
+  { cle: "validee", titre: "Maquette validée", texte: "Vous réglez selon le mode choisi : en ligne ou à la boutique.", statuts: ["confirmee"] },
+  { cle: "fabrication", titre: "En fabrication", texte: "Nous gravons votre pièce à l'atelier, à Auchel.", statuts: ["en_fabrication"] },
+  { cle: "remise", titre: "Prête ou expédiée", texte: "Vous venez la chercher à la boutique, ou nous l'envoyons chez vous.", statuts: ["prete", "expediee"] },
+  { cle: "terminee", titre: "Terminée", texte: "La pièce est entre vos mains.", statuts: ["terminee"] },
+];
+
+/** Position de l'étape en cours pour un statut (0 si le statut est inconnu). */
+export const indexEtape = (statut: string) => Math.max(0, ETAPES.findIndex((e) => e.statuts.includes(statut)));
+
+/** Titre de l'étape « remise » selon le mode de réception. */
+export const titreRemise = (mode: string, statut?: string) =>
+  statut === "expediee" || (statut !== "prete" && mode === "livraison") ? "Expédiée" : "Prête à retirer en boutique";
+
+export const LIBELLES_PAIEMENT: Record<string, string> = {
+  en_ligne: "Paiement en ligne par carte",
+  apres_validation: "Paiement après validation de la maquette",
+  boutique: "Paiement à la boutique, au retrait",
+};

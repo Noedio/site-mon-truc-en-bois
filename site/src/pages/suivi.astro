@@ -1,7 +1,314 @@
 ---
+// Suivi de commande (chantier C5) : lien reçu par email (?jeton=…) ou numéro + email.
+// Interroge la fonction Supabase `suivi` par src/lib/serveur.ts ; paiement par lien quand le serveur l'autorise.
+// Page jamais indexée (indexer={false} → noindex).
 import Base from "../layouts/Base.astro";
-import EnTravaux from "../components/EnTravaux.astro";
+import Bouton from "../components/Bouton.astro";
+import FriseEtapes from "../components/suivi/FriseEtapes.astro";
+import { site } from "../lib/donnees";
+import { lienTel } from "../lib/format";
+import { LIBELLES_PAIEMENT } from "../lib/etapes";
+
+const { commandes } = site;
+const serveurConfigure = !!(commandes.supabaseUrl && commandes.supabaseCle);
+const json = JSON.stringify({
+  commandes: { supabaseUrl: commandes.supabaseUrl, supabaseCle: commandes.supabaseCle },
+  telephone: site.telephone,
+  email: site.email,
+  adresse: site.adresse,
+  libellesPaiement: LIBELLES_PAIEMENT,
+}).replace(/</g, "\\u003c");
 ---
 <Base titre="Suivre ma commande" indexer={false}>
-  <EnTravaux titre="Suivre ma commande" chantier="chantier C5" contenu="L'avancement de la commande, de la maquette à la remise." />
+  <div class="page-suivi" data-page-suivi>
+    <section class="bande">
+      <div class="conteneur pile" style="--pile: 16px">
+        <h1>Suivre ma commande</h1>
+        <p class="chapeau">Le lien reçu dans l'email de confirmation ouvre directement votre commande. Sinon, indiquez votre numéro de commande et votre email.</p>
+      </div>
+    </section>
+
+    <section class="bande" data-zone="recherche" aria-label="Retrouver une commande">
+      <div class="conteneur suivi-recherche">
+        {serveurConfigure ? (
+          <form class="recherche" data-recherche novalidate>
+            <div class="champ">
+              <label for="s-numero">Numéro de commande</label>
+              <input type="text" id="s-numero" name="numero" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="MTB-2026-0001" aria-describedby="s-numero-aide" />
+              <p class="etiquette doux" id="s-numero-aide">Il figure dans l'email de confirmation.</p>
+            </div>
+            <div class="champ">
+              <label for="s-email">Email utilisé pour la commande</label>
+              <input type="email" id="s-email" name="email" autocomplete="email" inputmode="email" />
+            </div>
+            <Bouton type="submit">Voir ma commande</Bouton>
+            <div class="erreur-recherche" data-erreur-recherche aria-live="polite"></div>
+          </form>
+        ) : (
+          <div class="suivi-ferme">
+            <h2>Le suivi en ligne n'est pas encore ouvert</h2>
+            <p>Il ouvrira avec la commande en ligne. Pour savoir où en est votre commande, appelez-nous au <a href={lienTel(site.telephone)}>{site.telephone}</a> ou écrivez à <a href={`mailto:${site.email}`}>{site.email}</a> en donnant votre numéro de commande.</p>
+          </div>
+        )}
+        <div class="parcours">
+          <h2>Les étapes d'une commande</h2>
+          <FriseEtapes libelle="Les étapes d'une commande" />
+        </div>
+      </div>
+    </section>
+
+    <section class="bande" data-zone="chargement" hidden>
+      <div class="conteneur"><p class="machine" role="status">Chargement de votre commande…</p></div>
+    </section>
+
+    <section class="bande" data-zone="commande" hidden aria-labelledby="t-commande">
+      <div class="conteneur pile" style="--pile: 28px">
+        <div class="pile" style="--pile: 8px">
+          <p class="etiquette" data-numero></p>
+          <h2 id="t-commande" class="titre-commande" tabindex="-1" data-titre></h2>
+          <p class="chapeau" data-merci hidden>Vous allez recevoir un email de confirmation. Gardez cette page : elle montre l'avancement de votre commande, de la maquette à la remise.</p>
+        </div>
+        <div class="messages" data-messages></div>
+
+        <div data-bloc-frise>
+          <FriseEtapes id="frise-commande" libelle="Avancement de la commande" />
+        </div>
+        <p class="annulee" data-annulee hidden>Cette commande a été annulée. Une question ? Appelez-nous au <a href={lienTel(site.telephone)}>{site.telephone}</a>.</p>
+        <p class="colis" data-colis hidden></p>
+
+        <div class="suivi-blocs">
+          <section class="bloc" aria-labelledby="t-paiement">
+            <div class="bloc-tete">
+              <h3 id="t-paiement">Paiement</h3>
+              <span class="etiquette pastille-statut" data-statut-paiement></span>
+            </div>
+            <p data-mode-paiement></p>
+            <p class="doux" data-aide-paiement hidden></p>
+            <div data-bloc-payer hidden>
+              <Bouton genre="achat" taille="grand" data-payer></Bouton>
+              <div class="erreur-recherche" data-erreur-payer aria-live="polite"></div>
+            </div>
+          </section>
+
+          <section class="bloc" aria-labelledby="t-detail">
+            <h3 id="t-detail">Détail</h3>
+            <ul class="detail-lignes" data-detail-lignes></ul>
+            <dl class="detail-montants" data-detail-montants></dl>
+            <p class="doux" data-reception></p>
+          </section>
+        </div>
+
+        <div class="rangee">
+          <Bouton genre="contour" href={lienTel(site.telephone)}>Appeler le {site.telephone}</Bouton>
+          <Bouton genre="contour" href={`mailto:${site.email}`} data-ecrire>Nous écrire</Bouton>
+          <a class="machine lien-boutique" href="/boutique/">Continuer mes achats</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script type="application/json" id="donnees-suivi" set:html={json} />
 </Base>
+
+<script>
+  import { configurerServeur, serveurDisponible, suivreCommande, lienPaiement, type CommandePublique } from "../lib/serveur";
+  import { ETAPES, indexEtape, titreRemise } from "../lib/etapes";
+  import { euros } from "../lib/format";
+
+  const D = JSON.parse(document.getElementById("donnees-suivi")!.textContent!) as {
+    commandes: { supabaseUrl: string; supabaseCle: string };
+    telephone: string;
+    email: string;
+    adresse: string;
+    libellesPaiement: Record<string, string>;
+  };
+  configurerServeur(D.commandes);
+
+  const $ = <T extends Element = HTMLElement>(sel: string, racine: ParentNode = document) => racine.querySelector(sel) as T;
+  const page = $("[data-page-suivi]");
+  const params = new URLSearchParams(location.search);
+  const ETATS_LUS: Record<string, string> = { faite: "étape passée", "en-cours": "étape en cours", "a-venir": "étape à venir" };
+
+  function el<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, string> = {}, ...enfants: (Node | string)[]) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    e.append(...enfants);
+    return e;
+  }
+  const montrer = (zone: string) => page.querySelectorAll<HTMLElement>("[data-zone]").forEach((z) => (z.hidden = z.dataset.zone !== zone));
+  const dateCourte = (iso: string) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+
+  function afficher(c: CommandePublique) {
+    const merci = params.has("merci") || params.get("paiement") === "ok";
+    const actuelle = indexEtape(c.statut);
+    const terminee = c.statut === "terminee";
+    const remise = titreRemise(c.mode_reception, c.statut);
+
+    $("[data-numero]").textContent = `Commande ${c.numero} · passée le ${dateCourte(c.cree_le)}`;
+    const titre = c.statut === "annulee" ? "Commande annulée" : actuelle === 4 ? remise : ETAPES[actuelle].titre;
+    $("[data-titre]").textContent = merci ? "Merci pour votre commande" : titre;
+    $("[data-merci]").hidden = !merci;
+
+    // Messages liés au retour de paiement et aux photos
+    const messages: HTMLElement[] = [];
+    if (params.get("paiement") === "ok" && c.paiement_statut !== "paye") messages.push(el("p", { class: "message" }, "Paiement en cours de confirmation : rechargez la page dans quelques instants."));
+    if (params.get("paiement") === "annule" && c.paiement_statut !== "paye") messages.push(el("p", { class: "message message-alerte" }, "Le paiement n'a pas été finalisé. Votre commande est bien enregistrée : vous pouvez payer plus bas quand vous le souhaitez."));
+    if (params.get("photos") === "a-envoyer") messages.push(el("p", { class: "message message-alerte" }, "Une photo n'a pas pu être envoyée. Envoyez-la-nous par email à ", el("a", { href: `mailto:${D.email}?subject=${encodeURIComponent("Photo commande " + c.numero)}` }, D.email), ` en indiquant le numéro ${c.numero}.`));
+    $("[data-messages]").replaceChildren(...messages);
+
+    // Frise : dates relevées dans l'historique des statuts
+    const dates: string[] = [];
+    for (const h of c.historique ?? []) {
+      const i = ETAPES.findIndex((e) => e.statuts.includes(h.statut));
+      if (i >= 0) dates[i] = h.date;
+    }
+    $("[data-bloc-frise]").hidden = c.statut === "annulee";
+    $("[data-annulee]").hidden = c.statut !== "annulee";
+    const frise = $("#frise-commande");
+    frise.setAttribute("data-suivi", "");
+    frise.querySelectorAll<HTMLElement>("[data-etape]").forEach((li, i) => {
+      const etat = terminee || i < actuelle ? "faite" : i === actuelle ? "en-cours" : "a-venir";
+      li.dataset.etat = etat;
+      if (etat === "en-cours") li.setAttribute("aria-current", "step");
+      else li.removeAttribute("aria-current");
+      $("[data-etat-lu]", li).textContent = ` (${ETATS_LUS[etat]})`;
+      if (li.dataset.etape === "remise") $("[data-titre-etape]", li).textContent = remise;
+      $("[data-date-etape]", li).textContent = dates[i] ? dateCourte(dates[i]) : "";
+    });
+    const colis = $("[data-colis]");
+    colis.hidden = !c.suivi_colis;
+    colis.replaceChildren("Numéro de suivi du colis : ", el("strong", {}, c.suivi_colis ?? ""));
+
+    // Paiement
+    const statut = c.paiement_statut === "paye" ? "Payée" : c.paiement_statut === "rembourse" ? "Remboursée" : "En attente";
+    $("[data-statut-paiement]").textContent = statut;
+    $("[data-mode-paiement]").textContent = D.libellesPaiement[c.paiement_mode] ?? "";
+    const aide = $("[data-aide-paiement]");
+    aide.textContent =
+      c.paiement_statut !== "en_attente" || c.paiement_possible ? ""
+      : c.paiement_mode === "apres_validation" ? "Nous vous envoyons un lien de paiement par email une fois la maquette validée."
+      : c.paiement_mode === "boutique" ? "Vous réglez à la boutique, quand vous venez chercher votre commande."
+      : "";
+    aide.hidden = !aide.textContent;
+    $("[data-bloc-payer]").hidden = !c.paiement_possible;
+    const payer = $<HTMLButtonElement>("[data-payer]");
+    payer.textContent = `Payer ${euros(c.total)} par carte`;
+    payer.onclick = async () => {
+      payer.disabled = true;
+      $("[data-erreur-payer]").replaceChildren(el("p", { class: "message" }, "Ouverture de la page de paiement…"));
+      try {
+        const r = await lienPaiement(c.jeton, new URL("/suivi/", location.href).href);
+        location.href = r.paiement_url;
+      } catch (e) {
+        $("[data-erreur-payer]").replaceChildren(el("p", { class: "message message-alerte" }, e instanceof Error ? e.message : "Paiement indisponible."));
+        payer.disabled = false;
+      }
+    };
+
+    // Détail
+    $("[data-detail-lignes]").replaceChildren(
+      ...c.lignes.map((l) =>
+        el("li", {},
+          el("span", { class: "detail-nom" }, el("span", {}, el("strong", {}, l.nom), ` × ${l.quantite}`),
+            ...(l.variante ? [el("span", { class: "detail-sous" }, l.variante)] : []),
+            ...(l.texte ? [el("span", { class: "detail-sous" }, `« ${l.texte} »`)] : [])),
+          el("span", { class: "detail-prix" }, euros(l.total)))),
+    );
+    const montant = (libelle: string, valeur: string, classe = "") => el("div", classe ? { class: classe } : {}, el("dt", {}, libelle), el("dd", {}, valeur));
+    $("[data-detail-montants]").replaceChildren(
+      ...(Number(c.port) ? [montant("Livraison", euros(c.port))] : []),
+      ...(Number(c.emballage) ? [montant("Emballage cadeau", euros(c.emballage))] : []),
+      ...(Number(c.remise) ? [montant(`Code ${c.code_promo}`, `−${euros(c.remise)}`)] : []),
+      montant("Total", euros(c.total), "detail-total"),
+    );
+    $("[data-reception]").textContent = c.mode_reception === "retrait" ? `Retrait gratuit à la boutique : ${D.adresse}.` : "Livraison à domicile.";
+    $<HTMLAnchorElement>("[data-ecrire]").href = `mailto:${D.email}?subject=${encodeURIComponent("Commande " + c.numero)}`;
+
+    montrer("commande");
+    $("[data-titre]").focus();
+
+    // Bouton « Payer » d'un email : la page de paiement s'ouvre directement, une seule fois.
+    if (params.get("payer") && c.paiement_possible) {
+      params.delete("payer");
+      history.replaceState(null, "", `/suivi/?jeton=${c.jeton}`);
+      payer.click();
+    }
+  }
+
+  async function charger(critere: { jeton: string } | { numero: string; email: string }) {
+    montrer("chargement");
+    try {
+      const c = await suivreCommande(critere);
+      // L'adresse de la page devient le lien de suivi (sans l'email)
+      if (!params.get("jeton")) history.replaceState(null, "", `/suivi/?jeton=${c.jeton}`);
+      afficher(c);
+    } catch (e) {
+      montrer("recherche");
+      const zone = document.querySelector("[data-erreur-recherche]");
+      zone?.replaceChildren(el("p", { class: "message message-alerte" }, e instanceof Error ? e.message : "Commande introuvable."));
+    }
+  }
+
+  const form = document.querySelector<HTMLFormElement>("[data-recherche]");
+  if (form) {
+    const numero = form.elements.namedItem("numero") as HTMLInputElement;
+    const email = form.elements.namedItem("email") as HTMLInputElement;
+    numero.value = params.get("numero") ?? "";
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const zone = $("[data-erreur-recherche]");
+      if (!numero.value.trim() || !email.value.trim()) {
+        zone.replaceChildren(el("p", { class: "message message-alerte" }, "Indiquez votre numéro de commande et l'email utilisé pour la commande."));
+        (numero.value.trim() ? email : numero).focus();
+        return;
+      }
+      charger({ numero: numero.value.trim(), email: email.value.trim() });
+    });
+  }
+
+  const jeton = params.get("jeton");
+  if (jeton && serveurDisponible()) charger({ jeton });
+</script>
+
+<style is:global>
+  .page-suivi [hidden] { display: none !important; }
+  .suivi-recherche { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 40px 64px; align-items: start; }
+  .suivi-recherche h2, .page-suivi h3 { font-size: var(--t-sous-titre); }
+  .parcours { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+  .recherche { display: flex; flex-direction: column; gap: 18px; padding: 24px; border: var(--filet-fort); background: var(--papier); }
+  .page-suivi .champ { display: flex; flex-direction: column; gap: 6px; }
+  .page-suivi .champ label { font-weight: 600; }
+  .suivi-ferme { display: flex; flex-direction: column; gap: 12px; padding: 24px; border: var(--filet-fort); background: var(--papier); }
+  .message { font-size: 0.9375rem; }
+  .message-alerte { color: var(--gravure); font-weight: 600; }
+  .messages { display: flex; flex-direction: column; gap: 8px; }
+  .messages:empty { display: none; }
+  .messages .message { padding: 12px 16px; border: var(--filet); max-width: 46rem; }
+
+  .titre-commande { font-size: var(--t-titre); }
+  .titre-commande:focus { outline: none; }
+  .annulee, .colis { padding: 12px 16px; border: var(--filet); max-width: 46rem; }
+
+  .suivi-blocs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 24px; align-items: start; }
+  .bloc { display: flex; flex-direction: column; gap: 12px; padding: 24px; border: var(--filet); background: var(--papier); min-width: 0; }
+  .bloc-tete { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 16px; }
+  .pastille-statut { padding: 4px 10px; border: var(--filet); }
+  .detail-lignes { list-style: none; margin: 0; padding: 0; border-top: var(--filet); }
+  .detail-lignes li { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: var(--filet); }
+  .detail-nom { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+  .detail-sous { font-size: 0.9375rem; color: var(--texte-doux); }
+  .detail-prix { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .detail-montants { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+  .detail-montants div { display: flex; justify-content: space-between; gap: 16px; }
+  .detail-montants dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .detail-total dt { font-family: var(--f-titre); font-weight: 800; font-size: 1.5rem; text-transform: uppercase; }
+  .detail-total dd { font-family: var(--f-titre); font-weight: 800; font-size: var(--t-prix); color: var(--gravure); }
+  .lien-boutique { min-height: var(--cible); display: inline-flex; align-items: center; font-weight: 700; }
+
+  @media (max-width: 960px) {
+    .suivi-recherche, .suivi-blocs { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .recherche, .suivi-ferme, .bloc { padding: 18px 16px; }
+  }
+</style>

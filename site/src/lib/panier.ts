@@ -60,3 +60,29 @@ export function basculerFavori(id: string) {
   ecrire(CLE_FAVORIS, f.includes(id) ? f.filter((x) => x !== id) : [...f, id]);
   document.dispatchEvent(new CustomEvent("favoris:change"));
 }
+
+// ---------- Modifications depuis la page panier (chantier C5) ----------
+
+type ChampsModifiables = Partial<Pick<LignePanier, "quantite" | "texte" | "police" | "remarque">>;
+
+export function modifierLigne(uid: string, champs: ChampsModifiables) {
+  ecrirePanier(lirePanier().map((l) => (l.uid === uid ? { ...l, ...champs } : l)));
+}
+
+/** Retire une ligne et la renvoie avec sa place, pour pouvoir annuler. */
+export function retirerLigne(uid: string) {
+  const lignes = lirePanier();
+  const position = lignes.findIndex((l) => l.uid === uid);
+  if (position < 0) return null;
+  const [ligne] = lignes.splice(position, 1);
+  ecrirePanier(lignes);
+  return { ligne, position };
+}
+
+export function remettreLigne(ligne: LignePanier, position: number) {
+  const lignes = lirePanier().filter((l) => l.uid !== ligne.uid);
+  lignes.splice(Math.min(position, lignes.length), 0, ligne);
+  ecrirePanier(lignes);
+}
+
+export const viderPanier = () => ecrirePanier([]);
