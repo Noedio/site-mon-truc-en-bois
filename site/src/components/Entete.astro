@@ -91,12 +91,15 @@ const ici = Astro.url.pathname;
     .panier { padding: 6px 8px; font-size: 0.875rem; }
     .favoris { padding: 0 6px; gap: 4px; }
     .actions-haut { gap: 2px; grid-row: 1; grid-column: 2; }
+    /* Toujours trois colonnes sur deux lignes : la hauteur ne dépend pas de la police
+       (sinon « Contact » change de ligne quand Literata arrive et toute la page descend). */
     .navigation {
       grid-row: 2;
       grid-column: 1 / -1;
       margin-top: 6px;
-      flex-wrap: wrap;
-      gap: 0 18px;
+      display: grid;
+      grid-template-columns: repeat(3, max-content);
+      gap: 0 20px;
       border-top: var(--filet);
       margin-inline: calc(-1 * var(--gouttiere));
       padding-inline: var(--gouttiere);
