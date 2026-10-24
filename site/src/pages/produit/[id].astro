@@ -11,6 +11,7 @@ import ApercuGravure from "../../components/ApercuGravure.astro";
 import GrillePieces from "../../components/GrillePieces.astro";
 import TeteSection from "../../components/TeteSection.astro";
 import ACompleter from "../../components/ACompleter.astro";
+import BoutonFavori from "../../components/BoutonFavori.astro";
 import { produits, categorieDe, prixDe, produitsDe, occasions, site } from "../../lib/donnees";
 import { euros, numeroPiece, adresseEnLignes } from "../../lib/format";
 import { aVerifier } from "../../lib/images";
@@ -69,7 +70,7 @@ const schemaProduit = {
 const ariane = [
   { nom: "Accueil", href: "/" },
   { nom: "Boutique", href: "/boutique/" },
-  ...(categorie ? [{ nom: categorie.nom, href: `/boutique/?categorie=${categorie.id}` }] : []),
+  ...(categorie ? [{ nom: categorie.nom, href: `/boutique/${categorie.id}/` }] : []),
   { nom: produit.nom, href: `/produit/${produit.id}/` },
 ];
 const schemaAriane = {
@@ -178,7 +179,7 @@ const pourScript = {
                 <Bouton type="submit" genre="achat" taille="grand" class="achat-bouton">
                   <span>Ajouter au panier · <span data-fiche-total>{euros(prixUnitaire)}</span></span>
                 </Bouton>
-                {/* Favori : le composant BoutonFavori.astro du chantier C2 viendra ici (<BoutonFavori id={produit.id} />). */}
+                <BoutonFavori id={produit.id} nom={produit.nom} />
               </div>
               <div class="confirmation" role="status" data-confirmation></div>
               <p class="machine">

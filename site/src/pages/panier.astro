@@ -22,6 +22,11 @@ const { commandes } = site;
 const serveurConfigure = !!(commandes.supabaseUrl && commandes.supabaseCle);
 const commandeEnLigne = serveurConfigure && !site.apercu;
 const p = commandes.paiement;
+// Maquette systématique ou seulement si besoin : réponse du questionnaire (question 3), vide tant qu'elle manque.
+const maquette = commandes.maquette ?? "";
+const phraseMaquette = maquette === "si-besoin"
+  ? "Si votre pièce le demande, nous vous envoyons une maquette à valider avant de graver."
+  : "Nous vous envoyons une maquette à valider avant de graver.";
 
 const modes = [
   commandeEnLigne && p.enLigne && {
@@ -67,6 +72,7 @@ const catalogue: Record<string, ProduitPanier> = Object.fromEntries(
 
 const donneesPage = {
   catalogue,
+  phraseMaquette,
   reglages: { livraison: site.livraison, livraisonOfferteDes: site.livraisonOfferteDes, emballage: site.emballage },
   commandes: { supabaseUrl: commandes.supabaseUrl, supabaseCle: commandes.supabaseCle },
   commandeEnLigne,
@@ -84,7 +90,7 @@ const vedettes = produits.filter((x) => x.vedette && !aVerifier(x.image)).slice(
     <section class="bande panier-tete">
       <div class="conteneur pile" style="--pile: 16px">
         <h1>Votre panier</h1>
-        <p class="chapeau" data-chapeau>Nous vous envoyons une maquette à valider avant de graver.</p>
+        <p class="chapeau"><span data-chapeau>{phraseMaquette}</span>{maquette === "" && <> <ACompleter quoi="maquette pour chaque commande ou seulement si besoin" /></>}</p>
         {!commandeEnLigne && (
           <p class="avis-fermeture">
             <strong>La commande en ligne n'est pas encore ouverte.</strong>
@@ -112,7 +118,7 @@ const vedettes = produits.filter((x) => x.vedette && !aVerifier(x.image)).slice(
           </div>
           <div id="date-info" class="date-info" data-date-info aria-live="polite" hidden></div>
           <p class="doux">
-            Nous vous envoyons d'abord une maquette à valider, puis nous gravons.
+            {phraseMaquette}
             Délai de fabrication : <span data-delai-connu hidden></span><span data-delai-inconnu><ACompleter quoi="délai de fabrication" /></span>.
           </p>
         </section>
@@ -289,6 +295,7 @@ const vedettes = produits.filter((x) => x.vedette && !aVerifier(x.image)).slice(
 
   const D = JSON.parse(document.getElementById("donnees-panier")!.textContent!) as {
     catalogue: Record<string, ProduitPanier>;
+    phraseMaquette: string;
     reglages: ReglagesPanier;
     commandes: { supabaseUrl: string; supabaseCle: string };
     commandeEnLigne: boolean;
@@ -463,7 +470,7 @@ const vedettes = produits.filter((x) => x.vedette && !aVerifier(x.image)).slice(
     for (const uid of noeuds.keys()) if (!lignes.some((l) => l.uid === uid)) noeuds.delete(uid);
 
     const n = lignes.reduce((s, l) => s + quantite(l), 0);
-    $("[data-chapeau]").textContent = `${n} pièce${n > 1 ? "s" : ""} à personnaliser. Nous vous envoyons une maquette à valider avant de graver.`;
+    $("[data-chapeau]").textContent = `${n} pièce${n > 1 ? "s" : ""} à personnaliser. ${D.phraseMaquette}`;
     majDelai(lignes);
     majDate();
     majTotaux();

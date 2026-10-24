@@ -70,7 +70,7 @@ const texteDepart = "Marie & Paul\n14.06.2026";
       />
       <nav class="categories" aria-label="Catégories du catalogue">
         {parCategorie.map((c) => (
-          <a class="machine" href={`/boutique/?categorie=${c.id}`}>{c.nom} · {c.nombre}</a>
+          <a class="machine" href={`/boutique/${c.id}/`}>{c.nom} · {c.nombre}</a>
         ))}
       </nav>
       <GrillePieces produits={vedettes} colonnes="minmax(min(280px, 100%), 1fr)" />
