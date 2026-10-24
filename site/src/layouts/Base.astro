@@ -85,7 +85,7 @@ const commerce = {
   <body>
     <a class="evitement" href="#contenu">Aller au contenu</a>
     {donnees.site.apercu && (
-      <p class="apercu-bandeau etiquette">Site en préparation : pour commander, appelez le {site.telephone}.</p>
+      <aside aria-label="Information"><p class="apercu-bandeau etiquette">Site en préparation : pour commander, appelez le {site.telephone}.</p></aside>
     )}
     <Entete />
     <main id="contenu">

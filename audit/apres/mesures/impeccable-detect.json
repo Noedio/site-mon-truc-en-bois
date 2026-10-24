@@ -1,0 +1,372 @@
+[
+  {
+    "antipattern": "low-contrast",
+    "name": "Low contrast text",
+    "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\index.html",
+    "line": 0,
+    "snippet": ":hover state 2.8:1 (need 4.5:1) — text #a4471c on #231a14"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\index.html",
+    "line": 0,
+    "snippet": "<div> \"adresse\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\index.html",
+    "line": 0,
+    "snippet": "<section> \"bande\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\index.html",
+    "line": 0,
+    "snippet": "<section> \"bande\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cream-palette",
+    "name": "Cream / beige palette",
+    "description": "A warm cream or beige page background has become the default \"tasteful\" AI surface, reached for by reflex. Choose a background that comes from a deliberate palette, not the safe warm off-white.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\index.html",
+    "line": 0,
+    "snippet": "cream/beige page background rgb(239, 230, 216)"
+  },
+  {
+    "antipattern": "low-contrast",
+    "name": "Low contrast text",
+    "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\boutique\\index.html",
+    "line": 0,
+    "snippet": ":hover state 2.8:1 (need 4.5:1) — text #a4471c on #231a14"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\boutique\\index.html",
+    "line": 0,
+    "snippet": "<div> \"adresse\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cream-palette",
+    "name": "Cream / beige palette",
+    "description": "A warm cream or beige page background has become the default \"tasteful\" AI surface, reached for by reflex. Choose a background that comes from a deliberate palette, not the safe warm off-white.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\boutique\\index.html",
+    "line": 0,
+    "snippet": "cream/beige page background rgb(239, 230, 216)"
+  },
+  {
+    "antipattern": "low-contrast",
+    "name": "Low contrast text",
+    "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\produit\\planche-aperitif\\index.html",
+    "line": 0,
+    "snippet": ":hover state 2.8:1 (need 4.5:1) — text #a4471c on #231a14"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\produit\\planche-aperitif\\index.html",
+    "line": 0,
+    "snippet": "<div> \"adresse\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cream-palette",
+    "name": "Cream / beige palette",
+    "description": "A warm cream or beige page background has become the default \"tasteful\" AI surface, reached for by reflex. Choose a background that comes from a deliberate palette, not the safe warm off-white.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\produit\\planche-aperitif\\index.html",
+    "line": 0,
+    "snippet": "cream/beige page background rgb(239, 230, 216)"
+  },
+  {
+    "antipattern": "low-contrast",
+    "name": "Low contrast text",
+    "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\occasions\\index.html",
+    "line": 0,
+    "snippet": ":hover state 2.8:1 (need 4.5:1) — text #a4471c on #231a14"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\occasions\\index.html",
+    "line": 0,
+    "snippet": "<div> \"adresse\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cream-palette",
+    "name": "Cream / beige palette",
+    "description": "A warm cream or beige page background has become the default \"tasteful\" AI surface, reached for by reflex. Choose a background that comes from a deliberate palette, not the safe warm off-white.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\occasions\\index.html",
+    "line": 0,
+    "snippet": "cream/beige page background rgb(239, 230, 216)"
+  },
+  {
+    "antipattern": "low-contrast",
+    "name": "Low contrast text",
+    "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\atelier\\index.html",
+    "line": 0,
+    "snippet": ":hover state 2.8:1 (need 4.5:1) — text #a4471c on #231a14"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\atelier\\index.html",
+    "line": 0,
+    "snippet": "<div> \"adresse\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\atelier\\index.html",
+    "line": 0,
+    "snippet": "<section> \"bande\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cream-palette",
+    "name": "Cream / beige palette",
+    "description": "A warm cream or beige page background has become the default \"tasteful\" AI surface, reached for by reflex. Choose a background that comes from a deliberate palette, not the safe warm off-white.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\atelier\\index.html",
+    "line": 0,
+    "snippet": "cream/beige page background rgb(239, 230, 216)"
+  },
+  {
+    "antipattern": "low-contrast",
+    "name": "Low contrast text",
+    "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\panier\\index.html",
+    "line": 0,
+    "snippet": ":hover state 2.8:1 (need 4.5:1) — text #a4471c on #231a14"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\panier\\index.html",
+    "line": 0,
+    "snippet": "<div> \"adresse\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cream-palette",
+    "name": "Cream / beige palette",
+    "description": "A warm cream or beige page background has become the default \"tasteful\" AI surface, reached for by reflex. Choose a background that comes from a deliberate palette, not the safe warm off-white.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\panier\\index.html",
+    "line": 0,
+    "snippet": "cream/beige page background rgb(239, 230, 216)"
+  },
+  {
+    "antipattern": "low-contrast",
+    "name": "Low contrast text",
+    "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\contact\\index.html",
+    "line": 0,
+    "snippet": ":hover state 2.8:1 (need 4.5:1) — text #a4471c on #231a14"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\contact\\index.html",
+    "line": 0,
+    "snippet": "<div> \"adresse\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cream-palette",
+    "name": "Cream / beige palette",
+    "description": "A warm cream or beige page background has become the default \"tasteful\" AI surface, reached for by reflex. Choose a background that comes from a deliberate palette, not the safe warm off-white.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\contact\\index.html",
+    "line": 0,
+    "snippet": "cream/beige page background rgb(239, 230, 216)"
+  },
+  {
+    "antipattern": "low-contrast",
+    "name": "Low contrast text",
+    "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\avis\\index.html",
+    "line": 0,
+    "snippet": ":hover state 2.8:1 (need 4.5:1) — text #a4471c on #231a14"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\avis\\index.html",
+    "line": 0,
+    "snippet": "<div> \"adresse\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\avis\\index.html",
+    "line": 0,
+    "snippet": "<section> \"bande\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cream-palette",
+    "name": "Cream / beige palette",
+    "description": "A warm cream or beige page background has become the default \"tasteful\" AI surface, reached for by reflex. Choose a background that comes from a deliberate palette, not the safe warm off-white.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\avis\\index.html",
+    "line": 0,
+    "snippet": "cream/beige page background rgb(239, 230, 216)"
+  },
+  {
+    "antipattern": "low-contrast",
+    "name": "Low contrast text",
+    "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\faq\\index.html",
+    "line": 0,
+    "snippet": ":hover state 2.8:1 (need 4.5:1) — text #a4471c on #231a14"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\faq\\index.html",
+    "line": 0,
+    "snippet": "<div> \"adresse\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cream-palette",
+    "name": "Cream / beige palette",
+    "description": "A warm cream or beige page background has become the default \"tasteful\" AI surface, reached for by reflex. Choose a background that comes from a deliberate palette, not the safe warm off-white.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\faq\\index.html",
+    "line": 0,
+    "snippet": "cream/beige page background rgb(239, 230, 216)"
+  },
+  {
+    "antipattern": "low-contrast",
+    "name": "Low contrast text",
+    "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\cgv\\index.html",
+    "line": 0,
+    "snippet": ":hover state 2.8:1 (need 4.5:1) — text #a4471c on #231a14"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\cgv\\index.html",
+    "line": 0,
+    "snippet": "<div> \"adresse\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cream-palette",
+    "name": "Cream / beige palette",
+    "description": "A warm cream or beige page background has become the default \"tasteful\" AI surface, reached for by reflex. Choose a background that comes from a deliberate palette, not the safe warm off-white.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\cgv\\index.html",
+    "line": 0,
+    "snippet": "cream/beige page background rgb(239, 230, 216)"
+  },
+  {
+    "antipattern": "low-contrast",
+    "name": "Low contrast text",
+    "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\demo\\index.html",
+    "line": 0,
+    "snippet": ":hover state 2.8:1 (need 4.5:1) — text #a4471c on #231a14"
+  },
+  {
+    "antipattern": "cramped-padding",
+    "name": "Cramped padding",
+    "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\demo\\index.html",
+    "line": 0,
+    "snippet": "<div> \"adresse\": children flush against bg on all sides (no inset)"
+  },
+  {
+    "antipattern": "cream-palette",
+    "name": "Cream / beige palette",
+    "description": "A warm cream or beige page background has become the default \"tasteful\" AI surface, reached for by reflex. Choose a background that comes from a deliberate palette, not the safe warm off-white.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\site\\dist\\demo\\index.html",
+    "line": 0,
+    "snippet": "cream/beige page background rgb(239, 230, 216)"
+  }
+]

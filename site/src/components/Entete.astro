@@ -13,13 +13,14 @@ const LIENS = [
 ];
 const ici = Astro.url.pathname;
 ---
+<header class="haut">
 <div class="adresse etiquette">
   <div class="conteneur adresse-ligne">
     <span class="adresse-texte">Atelier-boutique · {site.adresse}</span>
     <a href={lienTel(site.telephone)}>{site.telephone}</a>
   </div>
 </div>
-<header class="entete">
+<div class="entete">
   <div class="conteneur entete-ligne">
     <a class="marque" href="/">
       <img src="/img/logo-200.webp" alt="" width="44" height="40" />
@@ -32,6 +33,7 @@ const ici = Astro.url.pathname;
     </nav>
     <a class="panier machine" href="/panier/">Panier (<span data-compteur-panier>0</span>)</a>
   </div>
+</div>
 </header>
 
 <script>
@@ -45,6 +47,7 @@ const ici = Astro.url.pathname;
 <style>
   .adresse { background: var(--brule); color: var(--bouleau); }
   .adresse a { color: var(--bouleau); }
+  .adresse a:hover { color: var(--kraft); }
   .adresse-ligne { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 24px; padding-block: 8px; }
 
   .entete { border-bottom: var(--filet); background: var(--bouleau); }
