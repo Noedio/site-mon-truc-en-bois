@@ -21,6 +21,8 @@ const PAGES = {
   "/cgv.html": "/cgv/",
   "/mentions-legales.html": "/mentions-legales/",
   "/newsletter.html": "/contact/",
+  "/demo.html": "/demo/",
+  "/demo-paiement.html": "/demo-paiement/",
 };
 
 const lignes = [

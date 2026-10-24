@@ -20,6 +20,8 @@
   const SCRIPT = document.currentScript?.src || new URL("js/demo.js", location.href).href;
   const BASE = SCRIPT.replace(/js\/demo\.js.*$/, ""); // adresse du site, avec « / » final
   const SITE = BASE.replace(/\/$/, "");
+  // Adresses des pages de démo : celles de l'ancien site par défaut, réglables par le nouveau site (window.MTB_DEMO_PAGES).
+  const PAGES = Object.assign({ guide: `${BASE}demo.html`, paiement: `${SITE}/demo-paiement.html`, quitter: `${BASE}index.html?demo=0` }, window.MTB_DEMO_PAGES || {});
   const SUPA = "https://demo.supabase.local";
   const ANON = "demo-anon";
   const ADMIN_ID = "00000000-0000-4000-8000-000000000001";
@@ -327,7 +329,7 @@
         commande_id: f.get("metadata[commande_id]"), success_url: f.get("success_url"), cancel_url: f.get("cancel_url"), cree_le: maintenant(),
       };
       sauver();
-      return reponse({ id, url: `${SITE}/demo-paiement.html?session=${id}` });
+      return reponse({ id, url: `${PAGES.paiement}?session=${id}` });
     }
     return erreur(404, "Stripe (démo) : appel non simulé");
   }
@@ -477,10 +479,10 @@
     const lien = "color:#fff;font-weight:600;text-decoration:underline";
     if (document.body.firstElementChild !== b) document.body.prepend(b);
     b.innerHTML = `<span><strong>Démo</strong> : rien n'est envoyé ni payé</span>
-      <a style="${lien}" href="${BASE}demo.html#boite">Boîte mail${n ? ` (${n})` : ""}</a>
-      <a style="${lien}" href="${BASE}demo.html">Guide</a>
+      <a style="${lien}" href="${PAGES.guide}#boite">Boîte mail${n ? ` (${n})` : ""}</a>
+      <a style="${lien}" href="${PAGES.guide}">Guide</a>
       <a style="${lien}" href="${BASE}admin.html">Admin</a>
-      <a style="${lien}" href="${BASE}index.html?demo=0">Quitter</a>`;
+      <a style="${lien}" href="${PAGES.quitter}">Quitter</a>`;
   }
   function pageAdmin() {
     // Identifiants de démo déjà remplis, et pas d'accès agence (il passerait par le vrai GitHub).

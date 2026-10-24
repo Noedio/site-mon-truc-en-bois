@@ -3,7 +3,7 @@
 import "../styles/socle.css";
 import Entete from "../components/Entete.astro";
 import Pied from "../components/Pied.astro";
-import { site, donnees } from "../lib/donnees";
+import { site, donnees, DEMO } from "../lib/donnees";
 import { adresseEnLignes } from "../lib/format";
 
 interface Props {
@@ -69,6 +69,17 @@ const commerce = {
     <link rel="icon" href="/img/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
     <script type="application/ld+json" set:html={JSON.stringify(commerce)} />
+    {DEMO && (
+      <>
+        {/* Démo : js/demo.js simule le serveur dans le navigateur ; il doit tourner avant les scripts de la page. */}
+        <script is:inline define:vars={{ quitter: new URL("/", Astro.site).href }}>
+          try { localStorage.setItem("mtb-demo", "1"); } catch (e) {}
+          window.MTB_DEMO_PAGES = { guide: "/demo/", paiement: location.origin + "/demo-paiement/", quitter: quitter };
+        </script>
+        <script is:inline src="/data/donnees.js"></script>
+        <script is:inline src="/js/demo.js"></script>
+      </>
+    )}
     <slot name="tete" />
   </head>
   <body>
@@ -83,6 +94,16 @@ const commerce = {
     <Pied />
   </body>
 </html>
+
+<style is:global>
+  /* Bandeau ajouté par js/demo.js, aux couleurs du nouveau site */
+  #bandeau-demo {
+    background: var(--gravure) !important;
+    font: 400 var(--t-etiquette) / 1.4 var(--f-machine) !important;
+    letter-spacing: 0.02em;
+  }
+  #bandeau-demo a { min-height: 32px; display: inline-flex; align-items: center; }
+</style>
 
 <style>
   .apercu-bandeau {

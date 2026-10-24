@@ -70,3 +70,19 @@ Projet Cloudflare Pages relié au dépôt `Noedio/site-mon-truc-en-bois` :
 
 Tant que `PUBLIC_INDEXER` ne vaut pas `oui`, toutes les pages portent `noindex` : l'aperçu n'apparaît pas dans Google.
 Le jour de la bascule : `PUBLIC_SITE_URL=https://montrucenbois.fr` et `PUBLIC_INDEXER=oui`.
+
+## Démo (chantier C8)
+
+La branche `demo` est une copie de `refonte` : Cloudflare Pages la construit en variante démo
+(`CF_PAGES_BRANCH=demo`, voir `DEMO` dans `src/lib/donnees.ts`) à l'adresse https://demo.mon-truc-en-bois.pages.dev.
+Le site s'y comporte comme une boutique ouverte ; `js/demo.js` simule dans le navigateur Supabase, Stripe,
+les emails et la publication de l'admin. Guide et boîte mail : `/demo/`. Admin : `/admin.html`.
+
+Mettre la démo à jour après un envoi sur `refonte` :
+
+```bash
+git push origin refonte:demo
+```
+
+En local : `MTB_DEMO=1 npm run build && npm run preview`.
+Le déroulé de la présentation au commerçant est dans `docs/refonte/presentation.md`.

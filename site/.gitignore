@@ -3,3 +3,8 @@ dist/
 .astro/
 # Copié depuis ../img au lancement (voir scripts/copier-medias.mjs)
 public/img/
+public/css/
+public/js/
+public/data/
+public/admin.html
+public/admin.webmanifest

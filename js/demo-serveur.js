@@ -568,33 +568,33 @@ async function envoyerLot(messages, repondreA) {
 }
 var site = () => env("SITE_URL").replace(/\/$/, "");
 var SIGNATURE = `
-      <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:26px;border-top:1px solid #e5e0d8;padding-top:18px;width:100%">
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:26px;border-top:1px solid #d7bf9c;padding-top:18px;width:100%">
         <tr><td style="width:64px;vertical-align:middle"><img src="__SITE__/img/logo-email.png" alt="" width="52" style="width:52px;height:auto;border-radius:50%"></td>
-        <td style="vertical-align:middle;font-size:15px;line-height:1.45;color:#1b1a17">\xC0 tr\xE8s vite,<br><strong>Christophe et Laetitia</strong><br><span style="color:#5f5a52;font-size:13px">Mon Truc en Bois \xB7 une question ? r\xE9pondez simplement \xE0 cet email</span></td></tr>
+        <td style="vertical-align:middle;font-size:15px;line-height:1.45;color:#231a14">\xC0 tr\xE8s vite,<br><strong>Christophe et Laetitia</strong><br><span style="color:#6b5a4a;font-size:13px">Mon Truc en Bois \xB7 une question ? r\xE9pondez simplement \xE0 cet email</span></td></tr>
       </table>`;
 function gabarit(titre, corps, { pourClient = true, apercu = "" } = {}) {
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-  <body style="margin:0;background:#eef3ef;font-family:Arial,Helvetica,sans-serif;color:#1b1a17">
+  <body style="margin:0;background:#efe6d8;font-family:Georgia,'Times New Roman',serif;color:#231a14">
   ${apercu ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0">${echapper(apercu)}</div>` : ""}
   <div style="max-width:600px;margin:0 auto;padding:28px 16px">
     <div style="text-align:center;padding:4px 0 18px"><a href="${site()}"><img src="${site()}/img/logo-email.png" alt="Mon Truc en Bois" width="104" style="width:104px;height:auto"></a></div>
-    <div style="background:#fff;border-radius:16px;padding:30px 26px;font-size:16px;line-height:1.55">
-      <h1 style="font-size:23px;line-height:1.25;margin:0 0 16px;color:#1b1a17">${echapper(titre)}</h1>
+    <div style="background:#fbf7f0;border:1px solid #231a14;border-radius:0;padding:30px 26px;font-size:16px;line-height:1.55">
+      <h1 style="font-size:23px;line-height:1.25;margin:0 0 16px;color:#231a14">${echapper(titre)}</h1>
       ${corps}
       ${pourClient ? SIGNATURE.replace("__SITE__", site()) : ""}
     </div>
-    <p style="text-align:center;color:#5f5a52;font-size:13px;line-height:1.5;margin-top:18px">Mon Truc en Bois \xB7 3 rue Salengro, 62260 Auchel<br><a href="${site()}" style="color:#24453a">${site().replace(/^https?:\/\//, "")}</a></p>
+    <p style="text-align:center;color:#6b5a4a;font-size:13px;line-height:1.5;margin-top:18px">Mon Truc en Bois \xB7 3 rue Salengro, 62260 Auchel<br><a href="${site()}" style="color:#231a14">${site().replace(/^https?:\/\//, "")}</a></p>
   </div></body></html>`;
 }
-var bouton = (url, texte4) => `<p style="margin:24px 0"><a href="${echapper(url)}" style="background:#24453a;color:#fff;text-decoration:none;padding:14px 24px;border-radius:10px;font-weight:bold;font-size:16px;display:inline-block">${echapper(texte4)}</a></p>`;
+var bouton = (url, texte4) => `<p style="margin:24px 0"><a href="${echapper(url)}" style="background:#231a14;color:#fff;text-decoration:none;padding:14px 24px;border-radius:0;font-weight:bold;font-size:16px;display:inline-block">${echapper(texte4)}</a></p>`;
 function recapitulatif(c) {
   const lignes = (c.lignes ?? []).map((l) => `<tr>
         <td style="padding:8px 0;border-bottom:1px solid #eee">
           <strong>${echapper(l.nom)}</strong> \xD7 ${l.quantite}
-          ${l.variante ? `<br><span style="color:#5f5a52">${echapper(l.variante)}</span>` : ""}
-          ${l.texte ? `<br><span style="color:#5f5a52">Texte : \xAB ${echapper(l.texte)} \xBB${l.police ? ` (${echapper(l.police)})` : ""}</span>` : ""}
-          ${l.photo_nom ? `<br><span style="color:#5f5a52">Photo : ${echapper(l.photo_nom)}</span>` : ""}
-          ${l.remarque ? `<br><span style="color:#5f5a52">Pr\xE9cisions : ${echapper(l.remarque)}</span>` : ""}
+          ${l.variante ? `<br><span style="color:#6b5a4a">${echapper(l.variante)}</span>` : ""}
+          ${l.texte ? `<br><span style="color:#6b5a4a">Texte : \xAB ${echapper(l.texte)} \xBB${l.police ? ` (${echapper(l.police)})` : ""}</span>` : ""}
+          ${l.photo_nom ? `<br><span style="color:#6b5a4a">Photo : ${echapper(l.photo_nom)}</span>` : ""}
+          ${l.remarque ? `<br><span style="color:#6b5a4a">Pr\xE9cisions : ${echapper(l.remarque)}</span>` : ""}
         </td>
         <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;white-space:nowrap">${euros(l.total)}</td>
       </tr>`).join("");
@@ -690,7 +690,7 @@ function frise(c) {
   };
   const rang = etapes.indexOf(c.statut);
   if (rang < 0) return "";
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:18px 0 6px;border-collapse:separate;border-spacing:4px 0"><tr>${etapes.map((e, i) => `<td style="width:25%;padding-top:8px;border-top:4px solid ${i <= rang ? "#24453a" : "#e5e0d8"};font-size:12px;color:${i === rang ? "#1b1a17" : "#5f5a52"};${i === rang ? "font-weight:bold;" : ""}vertical-align:top">${libelles[e]}</td>`).join("")}</tr></table>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:18px 0 6px;border-collapse:separate;border-spacing:4px 0"><tr>${etapes.map((e, i) => `<td style="width:25%;padding-top:8px;border-top:4px solid ${i <= rang ? "#231a14" : "#d7bf9c"};font-size:12px;color:${i === rang ? "#231a14" : "#6b5a4a"};${i === rang ? "font-weight:bold;" : ""}vertical-align:top">${libelles[e]}</td>`).join("")}</tr></table>`;
 }
 function emailStatut(c, message = "") {
   const textes = {
@@ -707,7 +707,7 @@ function emailStatut(c, message = "") {
       <p>Bonjour ${echapper(c.client_nom.split(" ")[0])},</p>
       <p>${textes[c.statut] ?? "Le statut de votre commande a chang\xE9."}</p>
       ${frise(c)}
-      ${message ? `<p style="background:#f4f2ee;border-radius:10px;padding:12px 14px">${echapper(message).replace(/\n/g, "<br>")}</p>` : ""}
+      ${message ? `<p style="background:#efe6d8;border:1px solid #d7bf9c;padding:12px 14px">${echapper(message).replace(/\n/g, "<br>")}</p>` : ""}
       ${bouton(lienSuivi(c), "Voir ma commande")}`)
   };
 }
@@ -717,7 +717,7 @@ function emailLienPaiement(c, message = "") {
     html: gabarit("Votre commande est pr\xEAte \xE0 \xEAtre r\xE9gl\xE9e", `
       <p>Bonjour ${echapper(c.client_nom.split(" ")[0])},</p>
       <p>Voici le lien pour r\xE9gler votre commande <strong>${c.numero}</strong> (${euros(c.total)}) en toute s\xE9curit\xE9 par carte bancaire.</p>
-      ${message ? `<p style="background:#f4f2ee;border-radius:10px;padding:12px 14px">${echapper(message).replace(/\n/g, "<br>")}</p>` : ""}
+      ${message ? `<p style="background:#efe6d8;border:1px solid #d7bf9c;padding:12px 14px">${echapper(message).replace(/\n/g, "<br>")}</p>` : ""}
       ${bouton(lienPayer(c), `Payer ${euros(c.total)}`)}
       ${recapitulatif(c)}`)
   };
@@ -733,7 +733,7 @@ function emailDemandeBoutique(d) {
     html: gabarit(TYPES[d.type] ?? "Nouvelle demande", `
       <p><strong>${echapper(d.nom)}</strong><br>${echapper(d.email)}${d.tel ? ` \xB7 ${echapper(d.tel)}` : ""}</p>
       ${d.sujet ? `<p>Sujet : <strong>${echapper(d.sujet)}</strong>${d.quantite ? ` \xB7 quantit\xE9 : ${d.quantite}` : ""}</p>` : ""}
-      ${d.message ? `<p style="background:#f4f2ee;border-radius:10px;padding:12px 14px">${echapper(d.message).replace(/\n/g, "<br>")}</p>` : ""}
+      ${d.message ? `<p style="background:#efe6d8;border:1px solid #d7bf9c;padding:12px 14px">${echapper(d.message).replace(/\n/g, "<br>")}</p>` : ""}
       ${bouton(`${site()}/admin.html#demandes`, "Ouvrir dans l'admin")}`, {
       pourClient: false
     })
@@ -745,7 +745,7 @@ async function emailAccuseDemande(d) {
     sujet: d.type === "newsletter" ? "Inscription confirm\xE9e \u2014 Mon Truc en Bois" : "Votre demande a bien \xE9t\xE9 re\xE7ue \u2014 Mon Truc en Bois",
     html: gabarit(d.type === "newsletter" ? "Bienvenue !" : "Merci pour votre message", `
       <p>Bonjour ${echapper(String(d.nom || "").split(" ")[0])},</p><p>${texte4}</p>
-      ${d.type === "newsletter" ? `<p style="font-size:13px;color:#5f5a52"><a href="${await lienDesinscription(d.email)}" style="color:#5f5a52">Se d\xE9sinscrire</a></p>` : ""}`)
+      ${d.type === "newsletter" ? `<p style="font-size:13px;color:#6b5a4a"><a href="${await lienDesinscription(d.email)}" style="color:#6b5a4a">Se d\xE9sinscrire</a></p>` : ""}`)
   };
 }
 function emailLibre(nom, sujet, message) {
@@ -766,8 +766,8 @@ async function emailCampagne(c) {
     html: gabarit(c.sujet, `${c.nom ? `<p>Bonjour ${echapper(String(c.nom).split(" ")[0])},</p>` : ""}
       <p style="white-space:pre-line">${echapper(c.message)}</p>
       ${c.lien ? bouton(c.lien, c.texte_lien || "D\xE9couvrir") : ""}
-      <p style="font-size:12px;color:#5f5a52;margin-top:24px">Vous recevez cet email car vous \xEAtes inscrit(e) aux nouveaut\xE9s de Mon Truc en Bois.
-      <a href="${desinscription}" style="color:#5f5a52">Se d\xE9sinscrire</a></p>`)
+      <p style="font-size:12px;color:#6b5a4a;margin-top:24px">Vous recevez cet email car vous \xEAtes inscrit(e) aux nouveaut\xE9s de Mon Truc en Bois.
+      <a href="${desinscription}" style="color:#6b5a4a">Se d\xE9sinscrire</a></p>`)
   };
 }
 async function emailConfirmerDesinscription(email) {
@@ -777,7 +777,7 @@ async function emailConfirmerDesinscription(email) {
       <p>Bonjour,</p>
       <p>Vous avez demand\xE9 \xE0 ne plus recevoir nos nouveaut\xE9s et promotions. Cliquez sur le bouton pour confirmer.</p>
       ${bouton(await lienDesinscription(email), "Confirmer ma d\xE9sinscription")}
-      <p style="color:#5f5a52;font-size:14px">Ce n'est pas vous ? Ignorez simplement cet email : rien ne change.</p>`)
+      <p style="color:#6b5a4a;font-size:14px">Ce n'est pas vous ? Ignorez simplement cet email : rien ne change.</p>`)
   };
 }
 

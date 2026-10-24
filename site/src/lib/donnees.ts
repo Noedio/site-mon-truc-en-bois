@@ -124,7 +124,26 @@ function lire(): Donnees {
   return JSON.parse(texte.slice(debut, fin + 1));
 }
 
-export const donnees: Donnees = lire();
+/**
+ * Variante démo du build (branche `demo` sur Cloudflare Pages, ou MTB_DEMO=1) : le site se comporte
+ * comme une boutique ouverte, et js/demo.js simule dans le navigateur Supabase, Stripe, les emails
+ * et la publication. Mêmes réglages que contenu() dans js/demo.js.
+ */
+export const DEMO = process.env.MTB_DEMO === "1" || process.env.CF_PAGES_BRANCH === "demo";
+export const DEMO_SUPABASE = { url: "https://demo.supabase.local", cle: "demo-anon" };
+
+function versionDemo(d: Donnees): Donnees {
+  d.site.apercu = false;
+  d.site.commandes = {
+    ...d.site.commandes,
+    supabaseUrl: DEMO_SUPABASE.url,
+    supabaseCle: DEMO_SUPABASE.cle,
+    paiement: { enLigne: true, apresValidation: true, boutique: true },
+  };
+  return d;
+}
+
+export const donnees: Donnees = DEMO ? versionDemo(lire()) : lire();
 export const site = donnees.site;
 
 /** Produits visibles, dans l'ordre du catalogue, avec leur numéro de pièce. */

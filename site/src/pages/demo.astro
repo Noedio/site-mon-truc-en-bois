@@ -1,0 +1,249 @@
+---
+// Guide de la démo (chantier C8) : essayer le site comme un client, puis comme la boutique.
+// Sur la variante démo du build, js/demo.js simule le serveur dans ce navigateur et garde les emails ;
+// sur l'aperçu normal, la page renvoie vers l'adresse de la démo.
+import Base from "../layouts/Base.astro";
+import Bouton from "../components/Bouton.astro";
+import TetePage from "../components/TetePage.astro";
+import { DEMO } from "../lib/donnees";
+
+const adresseDemo = (() => {
+  const u = new URL(Astro.site!);
+  u.hostname = `demo.${u.hostname}`;
+  return new URL("/demo/", u).href;
+})();
+
+const CLIENT = [
+  ["Personnaliser une pièce", "Ouvrez la planche apéro : écrivez deux prénoms et une date, changez de police, regardez l'aperçu se graver, puis ajoutez-la au panier.", "/produit/planche-aperitif/", "Ouvrir la planche apéro"],
+  ["Commander et payer", "Dans le panier, tapez le code promo BIENVENUE10, choisissez le retrait ou la livraison, puis « Payer maintenant par carte » : une page de paiement de démonstration s'ouvre, sans aucun débit.", "/panier/", "Ouvrir le panier"],
+  ["Lire ses emails et suivre la commande", "La confirmation et le paiement reçu arrivent dans la boîte mail de démo, plus bas, avec le lien de suivi.", "#boite", "Voir la boîte mail"],
+  ["Demander un devis", "Une série de 50 pièces pour une association : la boutique la reçoit par email et dans l'admin.", "/contact/", "Ouvrir le devis"],
+  ["Mettre une pièce de côté", "Le cœur sur une fiche produit, puis la page des favoris.", "/favoris/", "Ouvrir les favoris"],
+];
+const BOUTIQUE = [
+  ["Répondre au questionnaire de démarrage", "Délais, dates limites, fiches techniques, mentions légales : chaque réponse remplit le bon champ du site.", "/admin.html#questionnaire"],
+  ["Traiter la commande", "Texte à graver, photo, statut « En fabrication » puis « Prête » : le client est prévenu par email.", "/admin.html#commandes"],
+  ["Envoyer un lien de paiement", "Sur une commande à payer après la maquette : le client paie depuis l'email reçu.", "/admin.html#commandes"],
+  ["Vendre en boutique", "La caisse : quelques pièces, un client, un code promo, le moyen de paiement, puis la facture.", "/admin.html#caisse"],
+  ["Répondre à un devis", "Répondre par email, puis transformer la demande en commande.", "/admin.html#demandes"],
+  ["Retrouver un client", "Ses achats, ses notes, ses étiquettes.", "/admin.html#clients"],
+  ["Faire une promotion", "Un code promo, son texte à partager, un email aux abonnés.", "/admin.html#marketing"],
+  ["Modifier une fiche produit", "Prix, matière, dimensions, délai, photo, puis « Publier les modifications ».", "/admin.html#produits"],
+];
+---
+<Base titre="Démo" indexer={false}>
+  <TetePage
+    titre="Essayer la boutique"
+    chapeau="Comme un client, puis comme la boutique. Commandes, paiement par carte, suivi, devis, caisse, fichier clients et emails fonctionnent comme sur le vrai site, mais rien n'est envoyé ni payé : tout reste dans ce navigateur."
+  >
+    {DEMO ? (
+      <div class="rangee" data-actions>
+        <Bouton href="/">Ouvrir la boutique</Bouton>
+        <Bouton href="/admin.html" genre="contour">Ouvrir l'admin</Bouton>
+        <Bouton genre="contour" data-reinitialiser>Repartir des exemples</Bouton>
+      </div>
+    ) : (
+      <div class="pile" style="--pile: 12px">
+        <p>La démo tourne à sa propre adresse, avec une boutique déjà remplie d'exemples.</p>
+        <div class="rangee"><Bouton href={adresseDemo}>Ouvrir la démo</Bouton></div>
+      </div>
+    )}
+    <p class="confirmation-reinit" data-confirmation hidden>
+      Effacer les commandes, clients et emails de la démo ?
+      <button type="button" class="lien-action" data-reinit-oui>Oui, effacer</button>
+      <button type="button" class="lien-action" data-reinit-non>Non</button>
+    </p>
+  </TetePage>
+
+  {DEMO && (
+    <section class="bande" aria-labelledby="t-connexion">
+      <div class="conteneur pile" style="--pile: 12px">
+        <h2 id="t-connexion">Connexion à l'admin</h2>
+        <dl class="identifiants">
+          <div><dt class="etiquette">Email</dt><dd class="machine" data-email>demo@montrucenbois.fr</dd></div>
+          <div><dt class="etiquette">Mot de passe</dt><dd class="machine" data-mdp>demo1234</dd></div>
+        </dl>
+        <p class="doux">Déjà remplis sur l'écran de connexion.</p>
+      </div>
+    </section>
+  )}
+
+  <section class="bande" aria-labelledby="t-parcours">
+    <div class="conteneur">
+      <h2 id="t-parcours" class="visuellement-cache">Les parcours à essayer</h2>
+      <div class="parcours">
+        <div class="pile" style="--pile: 0">
+          <h3>Côté client</h3>
+          <ol class="etapes">
+            {CLIENT.map(([titre, texte, href, lien]) => (
+              <li>
+                <strong>{titre}</strong>
+                <p>{texte}</p>
+                {DEMO && <a class="machine" href={href}>{lien}</a>}
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div class="pile" style="--pile: 0">
+          <h3>Côté boutique</h3>
+          <ol class="etapes">
+            {BOUTIQUE.map(([titre, texte, href]) => (
+              <li>
+                <strong>{titre}</strong>
+                <p>{texte}</p>
+                {DEMO && <a class="machine" href={href}>Ouvrir dans l'admin</a>}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {DEMO && (
+    <section class="bande" id="boite" aria-labelledby="t-boite">
+      <div class="conteneur pile" style="--pile: 20px">
+        <div class="rangee boite-tete">
+          <h2 id="t-boite">Boîte mail de démo</h2>
+          <div class="rangee filtres" role="group" aria-label="Filtrer les emails">
+            <button type="button" data-boite="tous" aria-pressed="true">Tous</button>
+            <button type="button" data-boite="clients" aria-pressed="false">Reçus par les clients</button>
+            <button type="button" data-boite="boutique" aria-pressed="false">Reçus par la boutique</button>
+          </div>
+        </div>
+        <p class="doux">Chaque email que le site enverrait, tel que le client ou la boutique le recevrait. Ses boutons fonctionnent.</p>
+        <div class="boite" data-boite-contenu>
+          <p class="doux">Aucun email pour l'instant. Passez une commande ou envoyez un devis : les emails apparaîtront ici.</p>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="bande" aria-labelledby="t-reel">
+    <div class="conteneur pile" style="--pile: 16px">
+      <h2 id="t-reel">Sur le vrai site</h2>
+      <ul class="reel">
+        <li>Les emails partent vraiment, depuis l'adresse de la boutique.</li>
+        <li>Le paiement par carte passe par Stripe et l'argent arrive sur le compte de la boutique.</li>
+        <li>Commandes, clients et devis sont gardés sur le serveur de la boutique, visibles depuis tous ses appareils.</li>
+        <li>Une modification publiée depuis l'admin apparaît sur le site en une à deux minutes. En démo, les pages de la boutique gardent le catalogue d'origine.</li>
+        <li>Christophe et Laetitia se connectent avec leur propre email et leur mot de passe.</li>
+      </ul>
+    </div>
+  </section>
+</Base>
+
+<script>
+    interface EmailDemo { id: string; a: string; de: string; sujet: string; html: string; date: string; lu?: boolean; repondreA?: string }
+    interface Demo {
+      compte: { email: string; mdp: string };
+      boutique: string;
+      emails: () => EmailDemo[];
+      marquerLu: (id: string) => void;
+      reinitialiser: () => void;
+    }
+    const demo = (window as unknown as { MTB_DEMO?: Demo }).MTB_DEMO;
+
+    if (demo) {
+      document.querySelector("[data-email]")!.textContent = demo.compte.email;
+      document.querySelector("[data-mdp]")!.textContent = demo.compte.mdp;
+
+      const confirmation = document.querySelector<HTMLElement>("[data-confirmation]")!;
+      document.querySelector("[data-reinitialiser]")?.addEventListener("click", () => (confirmation.hidden = false));
+      document.querySelector("[data-reinit-non]")?.addEventListener("click", () => (confirmation.hidden = true));
+      document.querySelector("[data-reinit-oui]")?.addEventListener("click", () => {
+        demo.reinitialiser();
+        location.reload();
+      });
+
+      let filtre = "tous";
+      let ouvert: string | null = null;
+      const zone = document.querySelector<HTMLElement>("[data-boite-contenu]")!;
+      const quand = (d: string) => new Date(d).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+
+      const dessiner = () => {
+        const liste = demo.emails().filter((m) => filtre === "tous" || (filtre === "boutique" ? m.a === demo.boutique : m.a !== demo.boutique));
+        if (!ouvert || !liste.some((m) => m.id === ouvert)) ouvert = liste[0]?.id ?? null;
+        const m = liste.find((x) => x.id === ouvert);
+        if (!m) {
+          zone.innerHTML = `<p class="doux">Aucun email pour l'instant. Passez une commande ou envoyez un devis : les emails apparaîtront ici.</p>`;
+          return;
+        }
+        demo.marquerLu(m.id);
+        const colonne = document.createElement("div");
+        colonne.className = "boite-liste";
+        for (const x of liste) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = `boite-mail${x.lu ? "" : " non-lu"}`;
+          b.setAttribute("aria-current", String(x.id === ouvert));
+          const sujet = document.createElement("strong");
+          sujet.textContent = x.sujet;
+          const info = document.createElement("small");
+          info.textContent = `À : ${x.a === demo.boutique ? "la boutique" : x.a} · ${quand(x.date)}`;
+          b.append(sujet, info);
+          b.addEventListener("click", () => {
+            ouvert = x.id;
+            dessiner();
+          });
+          colonne.append(b);
+        }
+        const vue = document.createElement("div");
+        vue.className = "boite-vue";
+        const tete = document.createElement("div");
+        tete.className = "boite-vue-tete";
+        const titre = document.createElement("strong");
+        titre.textContent = m.sujet;
+        const de = document.createElement("span");
+        de.className = "etiquette";
+        de.textContent = `De : ${m.de} · À : ${m.a}${m.repondreA ? ` · Réponse à : ${m.repondreA}` : ""}`;
+        tete.append(titre, de);
+        const cadre = document.createElement("iframe");
+        cadre.title = "Contenu de l'email";
+        cadre.srcdoc = `<base target="_top">${m.html}`; // les boutons de l'email ouvrent la page dans cet onglet
+        vue.append(tete, cadre);
+        zone.replaceChildren(colonne, vue);
+      };
+
+      document.querySelectorAll<HTMLButtonElement>("[data-boite]").forEach((f) =>
+        f.addEventListener("click", () => {
+          filtre = f.dataset.boite!;
+          document.querySelectorAll("[data-boite]").forEach((x) => x.setAttribute("aria-pressed", String(x === f)));
+          ouvert = null;
+          dessiner();
+        })
+      );
+      document.addEventListener("mtb-demo-email", dessiner);
+      dessiner();
+    }
+  </script>
+
+<style>
+  .parcours { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 40px 64px; }
+  .parcours h3 { margin-bottom: 16px; }
+  .etapes { list-style: none; margin: 0; padding: 0; counter-reset: etape; border-top: var(--filet); }
+  .etapes li { counter-increment: etape; display: grid; grid-template-columns: 3rem minmax(0, 1fr); column-gap: 12px; padding: 14px 0; border-bottom: var(--filet); }
+  .etapes li::before { content: counter(etape, decimal-leading-zero); grid-row: span 3; font-family: var(--f-titre); font-weight: 800; font-size: 1.75rem; line-height: 1; color: var(--gravure); }
+  .etapes strong { font-weight: 600; }
+  .etapes a { font-weight: 700; justify-self: start; min-height: var(--cible); display: inline-flex; align-items: center; }
+  .identifiants { margin: 0; display: flex; flex-wrap: wrap; gap: 12px 40px; }
+  .identifiants dd { margin: 2px 0 0; font-size: 1.15rem; }
+  .confirmation-reinit { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  .lien-action { background: none; border: 0; padding: 0; min-height: var(--cible); font-family: var(--f-machine); font-weight: 700; text-decoration: underline; cursor: pointer; }
+  .boite-tete { justify-content: space-between; }
+  .filtres button { background: transparent; border: var(--filet); padding: 8px 12px; min-height: var(--cible); font-family: var(--f-machine); font-size: var(--t-etiquette); cursor: pointer; }
+  .filtres button[aria-pressed="true"] { background: var(--brule); color: var(--bouleau); }
+  .boite { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 0; border: var(--filet); min-height: 200px; }
+  .boite > p { padding: 20px; }
+  @media (max-width: 820px) { .boite { grid-template-columns: minmax(0, 1fr); } }
+  .boite :global(.boite-liste) { display: grid; align-content: start; max-height: 640px; overflow: auto; border-right: var(--filet); }
+  .boite :global(.boite-mail) { text-align: left; background: transparent; border: 0; border-bottom: var(--filet); padding: 12px 14px; display: grid; gap: 2px; cursor: pointer; min-width: 0; }
+  .boite :global(.boite-mail[aria-current="true"]) { background: var(--papier); }
+  .boite :global(.boite-mail[aria-current="true"] strong) { text-decoration: underline; text-underline-offset: 0.18em; }
+  .boite :global(.boite-mail.non-lu strong) { color: var(--gravure); }
+  .boite :global(.boite-mail small) { color: var(--texte-doux); overflow-wrap: anywhere; font-family: var(--f-machine); font-size: var(--t-etiquette); }
+  .boite :global(.boite-vue) { display: grid; min-width: 0; }
+  .boite :global(.boite-vue-tete) { padding: 12px 16px; border-bottom: var(--filet); display: grid; gap: 4px; overflow-wrap: anywhere; }
+  .boite :global(iframe) { width: 100%; height: 640px; border: 0; background: #fff; }
+  .reel { margin: 0; padding-left: 1.2rem; max-width: 70ch; display: grid; gap: 6px; }
+</style>

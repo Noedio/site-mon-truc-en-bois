@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin.html
+Disallow: /panier/
+Disallow: /suivi/
+Disallow: /favoris/
+Disallow: /demo/
+Disallow: /demo-paiement/

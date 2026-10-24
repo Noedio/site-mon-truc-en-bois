@@ -1,0 +1,90 @@
+---
+// Page de paiement de démonstration (chantier C8) : remplace la page Stripe en démo.
+// js/demo.js crée la session (MTB_DEMO.session) et renvoie vers le suivi après « Payer ».
+import Base from "../layouts/Base.astro";
+import TetePage from "../components/TetePage.astro";
+---
+<Base titre="Paiement de démonstration" indexer={false}>
+  <TetePage titre="Paiement" etiquette="Paiement sécurisé · démonstration" />
+  <section class="bande">
+    <div class="conteneur">
+      <div class="paiement" data-paiement>
+        <p class="doux">Chargement du paiement…</p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  interface Session { id: string; numero: string; total: number; email: string; remise?: number; articles: { nom: string; quantite: number; montant: number }[] }
+  interface Demo { session: (id: string | null) => Session | undefined; payer: (id: string) => Promise<string> }
+  const demo = (window as unknown as { MTB_DEMO?: Demo }).MTB_DEMO;
+  const zone = document.querySelector<HTMLElement>("[data-paiement]")!;
+  const euros = (centimes: number) => (centimes / 100).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+  const el = (tag: string, classe: string, texte = "") => {
+    const e = document.createElement(tag);
+    if (classe) e.className = classe;
+    if (texte) e.textContent = texte;
+    return e;
+  };
+
+  const s = demo?.session(new URLSearchParams(location.search).get("session"));
+  if (!s) {
+    zone.replaceChildren(el("p", "", "Ce paiement de démonstration est introuvable."));
+    const lien = el("a", "machine", "Revenir au guide de la démo") as HTMLAnchorElement;
+    lien.href = "/demo/";
+    zone.append(lien);
+  } else {
+    const recap = el("div", "paiement-bloc");
+    recap.append(el("span", "etiquette", `Mon Truc en Bois · commande ${s.numero}`), el("span", "prix paiement-montant", euros(s.total)));
+    for (const a of s.articles) {
+      const ligne = el("div", "paiement-ligne");
+      ligne.append(el("span", "", `${a.nom} × ${a.quantite}`), el("span", "", euros(a.montant)));
+      recap.append(ligne);
+    }
+    if (s.remise) {
+      const ligne = el("div", "paiement-ligne");
+      ligne.append(el("span", "", "Remise"), el("span", "", `− ${euros(s.remise)}`));
+      recap.append(ligne);
+    }
+    const carte = el("div", "paiement-bloc");
+    carte.append(el("span", "etiquette", "Email"), el("span", "faux-champ machine", s.email), el("span", "etiquette", "Carte de démonstration (aucun débit)"), el("span", "faux-champ machine", "4242 4242 4242 4242 · 12/34 · 123"));
+    const note = el("p", "doux", "Sur le vrai site, cette page est celle de Stripe : carte bancaire, Apple Pay ou Google Pay. Ici, aucun argent ne circule.");
+    const etat = el("div", "");
+    etat.setAttribute("aria-live", "polite");
+    const actions = el("div", "rangee");
+    const payer = el("button", "bouton-payer", `Payer ${euros(s.total)}`) as HTMLButtonElement;
+    payer.type = "button";
+    const annuler = el("button", "bouton-annuler machine", "Annuler") as HTMLButtonElement;
+    annuler.type = "button";
+    actions.append(payer, annuler);
+    zone.replaceChildren(recap, carte, note, actions, etat);
+
+    payer.addEventListener("click", async () => {
+      payer.disabled = true;
+      etat.textContent = "Paiement en cours…";
+      try {
+        location.href = await demo!.payer(s.id);
+      } catch (err) {
+        etat.textContent = (err as Error).message;
+        payer.disabled = false;
+      }
+    });
+    annuler.addEventListener("click", () => history.back());
+  }
+</script>
+
+<style>
+  .paiement { max-width: 520px; display: grid; gap: 20px; }
+  .paiement :global(.paiement-bloc) { border: var(--filet); background: var(--papier); padding: 18px 20px; display: grid; gap: 8px; }
+  .paiement :global(.paiement-montant) { font-size: 2.5rem; }
+  .paiement :global(.paiement-ligne) { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid var(--kraft); padding-top: 6px; }
+  .paiement :global(.faux-champ) { border: var(--filet); background: var(--bouleau); padding: 10px 12px; }
+  .paiement :global(.bouton-payer) {
+    min-height: 56px; padding: 14px 26px; border: 2px solid var(--gravure); background: var(--gravure); color: #fff;
+    font-family: var(--f-titre); font-weight: 800; font-size: 1.5rem; letter-spacing: 0.03em; text-transform: uppercase; cursor: pointer;
+  }
+  .paiement :global(.bouton-payer:hover) { background: var(--gravure-fonce); border-color: var(--gravure-fonce); }
+  .paiement :global(.bouton-payer:disabled) { opacity: 0.5; cursor: wait; }
+  .paiement :global(.bouton-annuler) { background: none; border: 0; min-height: var(--cible); text-decoration: underline; cursor: pointer; }
+</style>
