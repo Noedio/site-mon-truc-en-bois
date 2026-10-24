@@ -1,0 +1,167 @@
+---
+// Commandes du configurateur de gravure : pièce (si plusieurs), texte, police, et le bandeau d'aperçu
+// collé en haut de l'écran sur téléphone pendant la saisie. Le grand aperçu est dans ApercuGravure.astro.
+// Rendu complet au build (sans JavaScript, l'aperçu montre le texte de départ) ; le script prend le relais.
+//
+// Emplacements : « tete » (titre), « avant » (variantes, avant le bandeau), « apres-bandeau »,
+// puis l'emplacement par défaut après les polices (quantité, achat…).
+import "@fontsource/sacramento/400.css";
+import { POLICES, policeDe, gabaritDe, dessiner, limiterTexte, titreApercu } from "../lib/configurateur";
+import { prixDe, type Produit } from "../lib/donnees";
+import { euros, numeroPiece } from "../lib/format";
+import type { PieceClient } from "../lib/configurateur-client";
+
+interface Props {
+  pieces: (Produit & { numero: number })[];
+  texte?: string;
+  police?: string; // id de la police de départ
+  numeroter?: boolean; // « 1. La pièce, 2. Votre texte… » sur l'accueil
+  aide?: string; // exemple affiché dans le champ vide
+  personnalisable?: boolean; // false : pièce sans texte, seuls les emplacements sont rendus (même mise en page)
+}
+const { pieces, texte: texteDepart = "", police: policeDepart = "atelier", numeroter = false, aide = "Ex. : Marie & Paul, 14.06.2026", personnalisable = true } = Astro.props;
+
+/** « Planche apéro gravée » → « Planche apéro » pour les boutons de choix. */
+const nomCourt = (nom: string) => nom.replace(/\s+grav(é|ée|és|ées)$/i, "");
+const config: PieceClient[] = pieces.map((p) => {
+  const { prix, plusieurs } = prixDe(p);
+  return {
+    id: p.id, categorie: p.categorie, variantes: p.variantes ?? null,
+    nom: p.nom, numero: numeroPiece(p.numero), prix: `${plusieurs ? "dès " : ""}${euros(prix)}`, lien: `/produit/${p.id}/`,
+  };
+});
+
+const premiere = pieces[0];
+const police = policeDe(policeDepart);
+const gabarit = gabaritDe(premiere, premiere.variantes?.choix?.length ? 0 : null);
+const texte = limiterTexte(texteDepart, gabarit);
+const svg = dessiner({ gabarit, texte, police, prefixe: "bandeau", titre: titreApercu(premiere.nom.toLowerCase(), texte, police) });
+const n = (i: number, libelle: string) => (numeroter ? `${i}. ${libelle}` : libelle);
+const decalage = pieces.length > 1 ? 1 : 0;
+---
+{!personnalisable ? (
+  <div class="configurateur">
+    <slot name="tete" />
+    <slot name="avant" />
+    <slot />
+  </div>
+) : (
+<div class="configurateur" data-configurateur>
+  <script type="application/json" data-config set:html={JSON.stringify(config)} />
+  <slot name="tete" />
+  <slot name="avant" />
+  <div class="cfg-bandeau">
+    <div class="cfg-bandeau-scene" data-scene set:html={svg} />
+    <span class="cfg-bandeau-mention etiquette">Aperçu indicatif</span>
+  </div>
+  <slot name="apres-bandeau" />
+
+  {pieces.length > 1 && (
+    <fieldset class="cfg-groupe">
+      <legend class="cfg-legende">{n(1, "La pièce")}</legend>
+      <div class="cfg-choix-ligne">
+        {config.map((p, i) => (
+          <label class="cfg-choix">
+            <input type="radio" name="piece" value={p.id} checked={i === 0} />
+            <span>{nomCourt(p.nom)} · {p.prix}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  )}
+
+  <div class="cfg-groupe">
+    <label class="cfg-legende" for="texte-gravure">{n(1 + decalage, "Votre texte")}</label>
+    <textarea
+      id="texte-gravure"
+      class="cfg-texte"
+      data-cfg-texte
+      rows="2"
+      maxlength={gabarit.maxCaracteres}
+      placeholder={aide}
+      autocomplete="off"
+      aria-describedby="texte-gravure-compte"
+    >{texte}</textarea>
+    <span id="texte-gravure-compte" class="etiquette doux" data-cfg-compte>
+      {texte.length} / {gabarit.maxCaracteres} caractères · {gabarit.maxLignes} lignes au plus
+    </span>
+  </div>
+
+  <fieldset class="cfg-groupe">
+    <legend class="cfg-legende">{n(2 + decalage, "La police")}</legend>
+    <div class="cfg-polices">
+      {POLICES.map((p) => (
+        <label class="cfg-choix cfg-police">
+          <input type="radio" name="police" value={p.id} data-nom={p.nom} checked={p.id === police.id} />
+          <span class="cfg-echantillon" data-echantillon={p.id} style={`font-family: "${p.famille}"; font-weight: ${p.graisse}`} aria-hidden="true">
+            {p.capitales ? "MARIE" : "Marie"}
+          </span>
+          <span class="etiquette">{p.nom}</span>
+        </label>
+      ))}
+    </div>
+  </fieldset>
+
+  <slot />
+</div>
+)}
+
+<script>
+  import { monterConfigurateur } from "../lib/configurateur-client";
+  document.querySelectorAll<HTMLElement>("[data-configurateur]").forEach(monterConfigurateur);
+</script>
+
+<!-- Styles globaux : les variantes de la fiche, glissées dans les emplacements, reprennent les mêmes pastilles. -->
+<style is:global>
+  .configurateur { display: flex; flex-direction: column; gap: 26px; min-width: 0; }
+  .cfg-groupe { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .cfg-legende { padding: 0; margin-bottom: 2px; font-family: var(--f-machine); font-size: var(--t-machine); font-weight: 700; }
+
+  .cfg-texte { font-family: var(--f-texte); font-size: 1.25rem; line-height: 1.35; min-height: 88px; resize: vertical; }
+
+  /* Choix en pastilles carrées : de vrais boutons radio, flèches du clavier comprises. */
+  .cfg-choix-ligne { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cfg-polices { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(132px, 100%), 1fr)); gap: 8px; }
+  .cfg-choix {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: var(--cible);
+    padding: 10px 14px;
+    border: var(--filet);
+    font-family: var(--f-machine);
+    font-size: var(--t-machine);
+    cursor: pointer;
+    background: transparent;
+  }
+  .cfg-choix input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; min-height: 0; }
+  .cfg-choix:hover { background: var(--bouleau-fonce); }
+  .cfg-choix:has(input:checked) { background: var(--brule); color: var(--bouleau); }
+  .cfg-choix:has(input:focus-visible) { outline: 2px solid var(--gravure); outline-offset: 2px; }
+  .cfg-police { flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+  .cfg-echantillon { font-size: 1.5rem; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .cfg-echantillon[data-echantillon="machine"] { font-size: 1.3rem; }
+  .cfg-echantillon[data-echantillon="manuscrite"] { font-size: 1.9rem; line-height: 1; }
+
+  /* Bandeau d'aperçu : sur téléphone seulement, collé en haut tant que les commandes défilent. */
+  .cfg-bandeau { display: none; }
+  @media (max-width: 899px) {
+    .cfg-bandeau {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      height: 156px;
+      padding: 8px 10px 4px;
+      margin-inline: calc(-1 * var(--gouttiere));
+      background: var(--kraft);
+      border-block: var(--filet);
+    }
+    .cfg-bandeau-scene { width: 100%; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+    .cfg-bandeau-scene svg { width: 100%; height: 100%; }
+    .cfg-bandeau-mention { font-size: 0.75rem; line-height: 1.2; }
+  }
+</style>
