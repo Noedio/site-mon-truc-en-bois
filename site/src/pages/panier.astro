@@ -1,7 +1,1051 @@
 ---
+// Panier et commande « à maquetter » (chantier C5).
+// Les lignes viennent du navigateur (src/lib/panier.ts) ; la commande part vers la fonction Supabase `commande`
+// par src/lib/serveur.ts. Tant que le serveur n'est pas branché ou que le site est en aperçu,
+// la page le dit dès le haut et finit sur un email prérempli : le client n'est jamais bloqué.
+import "@fontsource/sacramento/400.css";
+import { getImage } from "astro:assets";
 import Base from "../layouts/Base.astro";
-import EnTravaux from "../components/EnTravaux.astro";
+import Bouton from "../components/Bouton.astro";
+import ACompleter from "../components/ACompleter.astro";
+import GrillePieces from "../components/GrillePieces.astro";
+import TeteSection from "../components/TeteSection.astro";
+import ModeleLigne from "../components/panier/ModeleLigne.astro";
+import ChoixReception from "../components/panier/ChoixReception.astro";
+import { site, produits } from "../lib/donnees";
+import { image, aVerifier } from "../lib/images";
+import { lienTel } from "../lib/format";
+import { LIBELLES_PAIEMENT } from "../lib/etapes";
+import type { ProduitPanier } from "../lib/commande";
+
+const { commandes } = site;
+const serveurConfigure = !!(commandes.supabaseUrl && commandes.supabaseCle);
+const commandeEnLigne = serveurConfigure && !site.apercu;
+const p = commandes.paiement;
+
+const modes = [
+  commandeEnLigne && p.enLigne && {
+    valeur: "en_ligne",
+    titre: "Payer maintenant par carte",
+    aide: "Sur la page sécurisée de Stripe : carte bancaire, Apple Pay ou Google Pay.",
+  },
+  p.apresValidation !== false && {
+    valeur: "apres_validation",
+    titre: "Payer après validation de la maquette",
+    aide: commandeEnLigne
+      ? "Rien à régler aujourd'hui. Une fois la maquette validée, nous vous envoyons un lien de paiement par email."
+      : "Rien à régler aujourd'hui. Nous convenons du paiement avec vous une fois la maquette validée.",
+  },
+  p.boutique !== false && {
+    valeur: "boutique",
+    titre: "Payer à la boutique, au retrait",
+    aide: "Vous réglez quand vous venez chercher votre commande.",
+  },
+].filter((m): m is { valeur: string; titre: string; aide: string } => !!m);
+const modeParDefaut = modes.find((m) => m.valeur === "apres_validation")?.valeur ?? modes[0]?.valeur;
+
+// Ce que le script sait de chaque produit : prix et variantes à jour, vignette, délai.
+const catalogue: Record<string, ProduitPanier> = Object.fromEntries(
+  await Promise.all(
+    produits.map(async (prod) => {
+      const meta = image(prod.image);
+      const vignette = meta && !aVerifier(prod.image) ? (await getImage({ src: meta, width: 240, format: "webp", quality: 70 })).src : "";
+      return [prod.id, {
+        nom: prod.nom,
+        numero: prod.numero,
+        prix: Number(prod.prix) || 0,
+        vignette,
+        varianteNom: prod.variantes?.nom ?? "",
+        variantes: (prod.variantes?.choix ?? []).map((c) => ({ nom: c.nom, prix: Number(c.prix) || 0 })),
+        texte: !!prod.options?.texte,
+        delai: Number(prod.delai) || 0,
+        epuise: prod.dispo === "epuise",
+      }];
+    })
+  )
+);
+
+const donneesPage = {
+  catalogue,
+  reglages: { livraison: site.livraison, livraisonOfferteDes: site.livraisonOfferteDes, emballage: site.emballage },
+  commandes: { supabaseUrl: commandes.supabaseUrl, supabaseCle: commandes.supabaseCle },
+  commandeEnLigne,
+  telephone: site.telephone,
+  email: site.email,
+  adresse: site.adresse,
+  libellesPaiement: LIBELLES_PAIEMENT,
+};
+const json = JSON.stringify(donneesPage).replace(/</g, "\\u003c");
+
+const vedettes = produits.filter((x) => x.vedette && !aVerifier(x.image)).slice(0, 4);
 ---
 <Base titre="Panier" indexer={false}>
-  <EnTravaux titre="Panier" chantier="chantier C5" contenu="Le panier, le choix du retrait gratuit ou de la livraison, puis la commande à maquetter." />
+  <div class="page-panier" data-page-panier data-etat="chargement">
+    <section class="bande panier-tete">
+      <div class="conteneur pile" style="--pile: 16px">
+        <h1>Votre panier</h1>
+        <p class="chapeau" data-chapeau>Nous vous envoyons une maquette à valider avant de graver.</p>
+        {!commandeEnLigne && (
+          <p class="avis-fermeture">
+            <strong>La commande en ligne n'est pas encore ouverte.</strong>
+            Préparez votre panier ici : à la fin, nous ouvrons un email prêt à nous envoyer avec tout le détail.
+            Vous pouvez aussi nous appeler au <a href={lienTel(site.telephone)}>{site.telephone}</a>.
+          </p>
+        )}
+      </div>
+    </section>
+
+    <noscript>
+      <div class="conteneur bloc-noscript">
+        <p>Le panier a besoin de JavaScript pour s'afficher. Pour commander, appelez-nous au <a href={lienTel(site.telephone)}>{site.telephone}</a> ou écrivez à <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+      </div>
+    </noscript>
+
+    <div class="conteneur panier-grille" data-zone="rempli" hidden>
+      <form id="commande" class="panier-formulaire" novalidate>
+        <section class="etape" aria-labelledby="t-date">
+          <h2 id="t-date" class="etape-titre"><span class="etape-num" aria-hidden="true">01</span> Pour quelle date ?</h2>
+          <div class="champ champ-date">
+            <label for="c-date">Date de l'occasion, ou date à laquelle vous voulez la pièce <span class="facultatif">facultatif</span></label>
+            <input type="date" id="c-date" name="date" aria-describedby="date-info e-date" />
+            <p class="erreur" id="e-date" hidden></p>
+          </div>
+          <div id="date-info" class="date-info" data-date-info aria-live="polite" hidden></div>
+          <p class="doux">
+            Nous vous envoyons d'abord une maquette à valider, puis nous gravons.
+            Délai de fabrication : <span data-delai-connu hidden></span><span data-delai-inconnu><ACompleter quoi="délai de fabrication" /></span>.
+          </p>
+        </section>
+
+        <section class="etape" aria-labelledby="t-pieces">
+          <h2 id="t-pieces" class="etape-titre"><span class="etape-num" aria-hidden="true">02</span> Vos pièces</h2>
+          <p class="erreur" id="e-pieces" hidden></p>
+          <ul class="lignes" data-lignes></ul>
+          <a class="machine lien-suite" href="/boutique/">Ajouter une autre pièce</a>
+        </section>
+
+        <section class="etape" aria-labelledby="t-reception">
+          <h2 id="t-reception" class="etape-titre"><span class="etape-num" aria-hidden="true">03</span> Retrait ou livraison</h2>
+          <ChoixReception />
+        </section>
+
+        <section class="etape" aria-labelledby="t-coordonnees">
+          <h2 id="t-coordonnees" class="etape-titre"><span class="etape-num" aria-hidden="true">04</span> Vos coordonnées</h2>
+          <p class="doux">Pour vous envoyer la maquette et vous appeler s'il manque une précision.</p>
+          <div class="champ">
+            <label for="c-nom">Nom et prénom</label>
+            <input type="text" id="c-nom" name="nom" autocomplete="name" maxlength="120" aria-describedby="e-nom" />
+            <p class="erreur" id="e-nom" hidden></p>
+          </div>
+          <div class="deux-champs">
+            <div class="champ">
+              <label for="c-email">Email</label>
+              <input type="email" id="c-email" name="email" autocomplete="email" inputmode="email" maxlength="160" aria-describedby="e-email" />
+              <p class="erreur" id="e-email" hidden></p>
+            </div>
+            <div class="champ">
+              <label for="c-tel">Téléphone</label>
+              <input type="tel" id="c-tel" name="tel" autocomplete="tel" maxlength="30" aria-describedby="e-tel" />
+              <p class="erreur" id="e-tel" hidden></p>
+            </div>
+          </div>
+          {site.emballage?.actif && (
+            <div class="champ">
+              <label class="case"><input type="checkbox" id="c-emballage" name="emballage" /> <span>Emballage cadeau (+{site.emballage.prix.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })})</span></label>
+              <label for="c-carte">Message pour la carte <span class="facultatif">facultatif</span></label>
+              <input type="text" id="c-carte" name="carte" maxlength="160" />
+            </div>
+          )}
+          <div class="champ">
+            <label for="c-message">Un mot pour l'atelier <span class="facultatif">facultatif</span></label>
+            <textarea id="c-message" name="message" rows="3" maxlength="1000"></textarea>
+          </div>
+        </section>
+
+        <section class="etape" aria-labelledby="t-paiement">
+          <h2 id="t-paiement" class="etape-titre"><span class="etape-num" aria-hidden="true">05</span> Paiement</h2>
+          <fieldset class="paiements">
+            <legend class="visuellement-cache">Mode de paiement</legend>
+            {modes.map((m) => (
+              <label class="choix-paiement" data-paiement={m.valeur}>
+                <input type="radio" name="paiement" value={m.valeur} checked={m.valeur === modeParDefaut} />
+                <span class="choix-texte">
+                  <span class="choix-titre">{m.titre}</span>
+                  <span class="choix-aide">{m.aide}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        </section>
+      </form>
+
+      <aside class="recap" id="recapitulatif" aria-labelledby="t-recap">
+        <h2 id="t-recap" class="recap-titre">Récapitulatif</h2>
+        <ul class="recap-lignes" data-recap-lignes></ul>
+        <dl class="recap-montants">
+          <div><dt>Sous-total</dt><dd data-sous-total></dd></div>
+          <div><dt data-libelle-port>Retrait à la boutique</dt><dd data-port></dd></div>
+          <div data-ligne-emballage hidden><dt>Emballage cadeau</dt><dd data-emballage></dd></div>
+          <div data-ligne-remise hidden>
+            <dt>Code <span data-code></span> <button type="button" class="lien-petit" data-retirer-code>Retirer</button></dt>
+            <dd data-remise></dd>
+          </div>
+          <div class="recap-total"><dt>Total</dt><dd class="prix" data-total-recap></dd></div>
+        </dl>
+        <p class="recap-seuil" data-seuil hidden></p>
+
+        {commandeEnLigne && (
+          <div class="champ code-promo">
+            <label for="c-code">Code promo <span class="facultatif">facultatif</span></label>
+            <div class="code-promo-ligne">
+              <input type="text" id="c-code" autocomplete="off" maxlength="30" aria-describedby="e-code" />
+              <button type="button" class="bouton-secondaire" data-appliquer-code>Appliquer</button>
+            </div>
+            <p class="erreur" id="e-code" hidden></p>
+          </div>
+        )}
+
+        <div class="consentements">
+          <label class="case">
+            <input type="checkbox" id="c-cgv" name="cgv" form="commande" aria-describedby="e-cgv" />
+            <span>J'accepte les <a href="/cgv/" target="_blank" rel="noopener">conditions générales de vente</a> (s'ouvrent dans un nouvel onglet)</span>
+          </label>
+          <p class="erreur" id="e-cgv" hidden></p>
+          <label class="case">
+            <input type="checkbox" id="c-nouveautes" name="nouveautes" form="commande" />
+            <span>Recevoir les nouveautés et les idées cadeaux par email <span class="facultatif">facultatif</span></span>
+          </label>
+        </div>
+
+        <Bouton genre="achat" taille="grand" type="submit" form="commande" class="recap-bouton" data-bouton-final>
+          {commandeEnLigne ? "Envoyer ma commande à maquetter" : "Préparer l'email de commande"}
+        </Bouton>
+        <div class="etat-envoi" data-etat-envoi aria-live="polite"></div>
+        <p class="recap-aide" data-aide-final></p>
+      </aside>
+    </div>
+
+    <section class="bande zone-email" data-zone="email" hidden aria-labelledby="t-email">
+      <div class="conteneur pile" style="--pile: 20px">
+        <h2 id="t-email" tabindex="-1">Votre commande est prête à nous envoyer</h2>
+        <p class="chapeau">La commande en ligne n'est pas encore ouverte : envoyez-nous ce récapitulatif par email. Nous vous répondons avec la maquette à valider.</p>
+        <div class="rangee">
+          <Bouton genre="achat" taille="grand" href="#" data-ouvrir-email>Ouvrir l'email prérempli</Bouton>
+          <Bouton genre="contour" data-copier>Copier le récapitulatif</Bouton>
+        </div>
+        <p class="etat-copie" data-etat-copie aria-live="polite"></p>
+        <p>Pas de messagerie sur cet appareil ? Collez le récapitulatif dans un email à <a href={`mailto:${site.email}`}>{site.email}</a>, ou appelez-nous au <a href={lienTel(site.telephone)}>{site.telephone}</a>.</p>
+        <p class="rappel-photos" data-rappel-photos hidden>Pensez à joindre vos photos à l'email : elles ne partent pas toutes seules.</p>
+        <pre class="recap-texte" data-recap-texte tabindex="0" aria-label="Récapitulatif de la commande"></pre>
+        <div class="rangee">
+          <button type="button" class="bouton-secondaire" data-revenir>Modifier ma commande</button>
+          <button type="button" class="bouton-secondaire" data-vider>J'ai envoyé l'email : vider le panier</button>
+        </div>
+      </div>
+    </section>
+
+    <div data-zone="vide" hidden>
+      <section class="bande" aria-labelledby="t-vide">
+        <div class="conteneur pile vide" style="--pile: 20px">
+          <p class="merci" data-merci hidden>Merci. Nous revenons vers vous avec la maquette dès que nous avons lu votre email.</p>
+          <ul class="lignes lignes-retirees" data-retirees-vide></ul>
+          <h2 id="t-vide">Il est vide pour l'instant</h2>
+          <p class="chapeau">Chaque pièce se personnalise sur sa fiche : vous écrivez votre texte, vous choisissez la police, et nous vous envoyons la maquette avant de graver.</p>
+          <div class="rangee">
+            <Bouton href="/boutique/">Voir la boutique</Bouton>
+            <Bouton genre="contour" href="/occasions/">Idées par occasion</Bouton>
+          </div>
+          <p class="machine">Vous avez déjà commandé ? <a href="/suivi/">Suivre ma commande</a>. Une question : <a href={lienTel(site.telephone)}>{site.telephone}</a>.</p>
+        </div>
+      </section>
+      {vedettes.length > 0 && (
+        <section class="bande" aria-labelledby="t-vedettes">
+          <div class="conteneur">
+            <TeteSection id="t-vedettes" titre="Quelques pièces à personnaliser" lien={{ href: "/boutique/", libelle: "Toute la boutique" }} />
+            <GrillePieces produits={vedettes} />
+          </div>
+        </section>
+      )}
+    </div>
+
+    <div class="barre-mobile" data-barre-mobile hidden>
+      <p><span class="etiquette">Total</span> <span class="prix" data-total-barre></span></p>
+      <a class="barre-lien" href="#recapitulatif">Finaliser</a>
+    </div>
+
+    <ModeleLigne />
+  </div>
+
+  <script type="application/json" id="donnees-panier" set:html={json} />
 </Base>
+
+<script>
+  import { lirePanier, modifierLigne, retirerLigne, remettreLigne, viderPanier, type LignePanier } from "../lib/panier";
+  import { configurerServeur, serveurDisponible, envoyerCommande, simulerCommande, deposerPhoto, ErreurServeur, type ModePaiement, type ModeReception, type Simulation } from "../lib/serveur";
+  import { lirePhoto, supprimerPhoto } from "../lib/photos-panier";
+  import { trouverPolice } from "../lib/polices";
+  import { totaux, lignesServeur, prixUnitaire, quantite, joursAvant, dateLongue, referenceLocale, recapitulatifTexte, type ProduitPanier, type ReglagesPanier } from "../lib/commande";
+  import { euros, numeroPiece, lienTel } from "../lib/format";
+
+  const D = JSON.parse(document.getElementById("donnees-panier")!.textContent!) as {
+    catalogue: Record<string, ProduitPanier>;
+    reglages: ReglagesPanier;
+    commandes: { supabaseUrl: string; supabaseCle: string };
+    commandeEnLigne: boolean;
+    telephone: string;
+    email: string;
+    adresse: string;
+    libellesPaiement: Record<string, string>;
+  };
+  const cat = D.catalogue;
+  configurerServeur(D.commandes);
+  const enLigne = D.commandeEnLigne && serveurDisponible();
+
+  // Seuils d'alerte de la date : choix prudents de l'agence, à revoir quand l'atelier aura donné ses délais.
+  const SEUIL_SANS_DELAI = 14; // jours, tant que le délai de fabrication est inconnu
+  const MARGE_MAQUETTE = 7; // jours ajoutés au délai connu pour la maquette et sa validation
+
+  const $ = <T extends Element = HTMLElement>(sel: string, racine: ParentNode = document) => racine.querySelector(sel) as T;
+  const page = $("[data-page-panier]");
+  const form = $<HTMLFormElement>("#commande");
+  const liste = $("[data-lignes]");
+  const listeVide = $("[data-retirees-vide]");
+  const bouton = $<HTMLButtonElement>("[data-bouton-final]");
+  const champDate = $<HTMLInputElement>("#c-date");
+  const barre = $("[data-barre-mobile]");
+
+  function el<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, string> = {}, ...enfants: (Node | string)[]) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    e.append(...enfants);
+    return e;
+  }
+
+  // ---------- Brouillon : ce que le client a saisi survit à un rechargement (sessionStorage, jamais dans l'adresse) ----------
+  const CLE_BROUILLON = "commande-mtb-brouillon";
+  const CHAMPS_BROUILLON = ["date", "nom", "email", "tel", "adresse", "message", "carte"];
+  function sauverBrouillon() {
+    const b: Record<string, string> = { mode, paiement: paiementChoisi() };
+    for (const n of CHAMPS_BROUILLON) {
+      const c = form.elements.namedItem(n) as HTMLInputElement | null;
+      if (c) b[n] = c.value;
+    }
+    try { sessionStorage.setItem(CLE_BROUILLON, JSON.stringify(b)); } catch { /* stockage indisponible */ }
+  }
+  function lireBrouillon() {
+    try { return JSON.parse(sessionStorage.getItem(CLE_BROUILLON) ?? "null") ?? {}; } catch { return {}; }
+  }
+  const effacerBrouillon = () => { try { sessionStorage.removeItem(CLE_BROUILLON); } catch { /* rien */ } };
+
+  // ---------- État ----------
+  let mode: ModeReception = "retrait";
+  let codePromo = "";
+  let simulation: (Simulation & { sig: string }) | null = null;
+  const retirees: { ligne: LignePanier; position: number; noeud: HTMLElement }[] = [];
+  const noeuds = new Map<string, HTMLElement>();
+
+  const paiementChoisi = () => ((form.elements.namedItem("paiement") as RadioNodeList | null)?.value ?? "") as ModePaiement | "";
+  const emballage = () => !!(document.getElementById("c-emballage") as HTMLInputElement | null)?.checked;
+  const valeur = (n: string) => ((form.elements.namedItem(n) as HTMLInputElement | null)?.value ?? "").trim();
+
+  function montrer(zone: "rempli" | "vide" | "email") {
+    page.dataset.etat = zone;
+    page.querySelectorAll<HTMLElement>("[data-zone]").forEach((z) => (z.hidden = z.dataset.zone !== zone));
+    $("[data-chapeau]").hidden = zone !== "rempli";
+    majBarre();
+  }
+
+  // ---------- Lignes ----------
+  function remplir(n: HTMLElement, l: LignePanier) {
+    const p = cat[l.id];
+    const q = quantite(l);
+    const nom = l.nom || p?.nom || "Pièce";
+    n.dataset.uid = l.uid;
+    n.querySelectorAll<HTMLAnchorElement>("[data-lien]").forEach((a) => (a.href = `/produit/${encodeURIComponent(l.id)}/`));
+    $("[data-nom]", n).textContent = nom;
+    $("[data-numero]", n).textContent = p ? numeroPiece(p.numero) : "";
+
+    const cadre = $(".ligne-vignette", n);
+    if (p?.vignette && !cadre.querySelector("img")) cadre.prepend(el("img", { src: p.vignette, alt: "", width: "240", height: "240", loading: "lazy", decoding: "async" }));
+    $("[data-sans-vignette]", n).hidden = !!p?.vignette;
+
+    const variante = $("[data-variante]", n);
+    variante.textContent = l.variante;
+    variante.hidden = !l.variante;
+
+    const gravable = !!l.texte || !!p?.texte;
+    $("[data-gravure]", n).hidden = !gravable;
+    if (gravable && !n.classList.contains("en-edition")) apercu(n, l.texte, l.police);
+    const modifier = $<HTMLButtonElement>("[data-modifier]", n);
+    modifier.hidden = !gravable || n.classList.contains("en-edition");
+    modifier.textContent = l.texte ? "Modifier le texte ou la police" : "Ajouter un texte à graver";
+
+    $("[data-photo-bloc]", n).hidden = !l.photoNom;
+    $("[data-photo-nom]", n).textContent = l.photoNom;
+    const cadrePhoto = $("[data-photo]", n);
+    cadrePhoto.replaceChildren(...(l.photo ? [el("img", { src: l.photo, alt: "" })] : []));
+
+    const remarque = $("[data-remarque]", n);
+    remarque.textContent = l.remarque ? `Précisions : ${l.remarque}` : "";
+    remarque.hidden = !l.remarque;
+
+    const alerte = $("[data-alerte]", n);
+    alerte.textContent = !p ? "Cette pièce n'est plus en vente : retirez-la pour envoyer la commande." : p.epuise ? "Épuisée pour le moment : retirez-la pour envoyer la commande." : "";
+    alerte.hidden = !alerte.textContent;
+
+    $("[data-groupe-quantite]", n).setAttribute("aria-label", `Quantité : ${nom}`);
+    const champ = $<HTMLInputElement>("[data-quantite]", n);
+    if (document.activeElement !== champ) champ.value = String(q);
+    champ.setAttribute("aria-label", `Quantité : ${nom}`);
+    const moins = $<HTMLButtonElement>("[data-moins]", n);
+    moins.disabled = q <= 1;
+    moins.setAttribute("aria-label", `Une pièce de moins : ${nom}`);
+    const plus = $<HTMLButtonElement>("[data-plus]", n);
+    plus.disabled = q >= 99;
+    plus.setAttribute("aria-label", `Une pièce de plus : ${nom}`);
+
+    const pu = prixUnitaire(l, p);
+    $("[data-total]", n).textContent = euros(pu * q);
+    const unitaire = $("[data-unitaire]", n);
+    unitaire.textContent = `${euros(pu)} l'unité`;
+    unitaire.hidden = q < 2;
+    $("[data-retirer]", n).setAttribute("aria-label", `Retirer du panier : ${nom}`);
+  }
+
+  /** Texte gravé montré dans sa police, comme sur la fiche. */
+  function apercu(n: HTMLElement, texte: string, police: string) {
+    const f = trouverPolice(police);
+    const t = $("[data-texte]", n);
+    t.textContent = texte;
+    t.hidden = !texte;
+    t.style.fontFamily = f?.famille ?? "";
+    t.style.fontWeight = f ? String(f.graisse) : "";
+    t.style.textTransform = f?.capitales ? "uppercase" : "";
+    $("[data-sans-texte]", n).hidden = !!texte;
+    $("[data-police-nom]", n).textContent = police || "police à choisir";
+  }
+
+  function nouvelleLigne(uid: string) {
+    const n = ($<HTMLTemplateElement>("#modele-ligne").content.firstElementChild as HTMLElement).cloneNode(true) as HTMLElement;
+    const champ = $<HTMLTextAreaElement>("[data-champ-texte]", n);
+    champ.id = `texte-${uid}`;
+    $("[data-libelle-texte]", n).setAttribute("for", champ.id);
+    n.querySelectorAll<HTMLInputElement>("[data-police]").forEach((r) => (r.name = `police-${uid}`));
+    noeuds.set(uid, n);
+    return n;
+  }
+
+  function noeudRetire(ligne: LignePanier) {
+    const n = ($<HTMLTemplateElement>("#modele-ligne-retiree").content.firstElementChild as HTMLElement).cloneNode(true) as HTMLElement;
+    n.dataset.retiree = ligne.uid;
+    $("[data-nom-retire]", n).textContent = `« ${ligne.nom} »`;
+    $("[data-annuler]", n).setAttribute("aria-label", `Annuler : remettre « ${ligne.nom} » dans le panier`);
+    return n;
+  }
+
+  function dessiner() {
+    const lignes = lirePanier();
+    if (page.dataset.etat === "email" && lignes.length) return majTotaux();
+    if (!lignes.length) {
+      listeVide.replaceChildren(...retirees.map((r) => r.noeud));
+      montrer("vide");
+      return;
+    }
+    montrer("rempli");
+    const voulus: HTMLElement[] = lignes.map((l) => {
+      const n = noeuds.get(l.uid) ?? nouvelleLigne(l.uid);
+      remplir(n, l);
+      return n;
+    });
+    for (const r of [...retirees].sort((a, b) => a.position - b.position)) voulus.splice(Math.min(r.position, voulus.length), 0, r.noeud);
+    const actuels = [...liste.children];
+    if (actuels.length !== voulus.length || actuels.some((c, i) => c !== voulus[i])) liste.replaceChildren(...voulus);
+    for (const uid of noeuds.keys()) if (!lignes.some((l) => l.uid === uid)) noeuds.delete(uid);
+
+    const n = lignes.reduce((s, l) => s + quantite(l), 0);
+    $("[data-chapeau]").textContent = `${n} pièce${n > 1 ? "s" : ""} à personnaliser. Nous vous envoyons une maquette à valider avant de graver.`;
+    majDelai(lignes);
+    majDate();
+    majTotaux();
+  }
+
+  // ---------- Date et délai ----------
+  function delaiMax(lignes: LignePanier[]) {
+    const delais = lignes.map((l) => cat[l.id]?.delai ?? 0);
+    return delais.length && delais.every((d) => d > 0) ? Math.max(...delais) : 0;
+  }
+  function majDelai(lignes: LignePanier[]) {
+    const d = delaiMax(lignes);
+    const connu = $("[data-delai-connu]");
+    connu.textContent = d ? `jusqu'à ${d} jour${d > 1 ? "s" : ""} après validation de la maquette` : "";
+    connu.hidden = !d;
+    $("[data-delai-inconnu]").hidden = !!d;
+  }
+  function majDate() {
+    const info = $("[data-date-info]");
+    const v = champDate.value;
+    const j = v ? joursAvant(v) : null;
+    info.classList.remove("date-proche");
+    if (j === null) {
+      info.hidden = true;
+      info.replaceChildren();
+      return;
+    }
+    info.hidden = false;
+    if (j < 0) {
+      info.classList.add("date-proche");
+      info.replaceChildren(el("p", {}, "Cette date est passée : choisissez une date à venir, ou laissez le champ vide."));
+      return;
+    }
+    const d = delaiMax(lirePanier());
+    const seuil = d ? d + MARGE_MAQUETTE : SEUIL_SANS_DELAI;
+    const quand = j === 0 ? "C'est aujourd'hui" : j === 1 ? "C'est demain" : `C'est dans ${j} jours`;
+    if (j <= seuil) {
+      info.classList.add("date-proche");
+      info.replaceChildren(
+        el("p", {}, el("strong", {}, `${quand}, ${dateLongue(v)}.`)),
+        el("p", {}, "Entre la maquette, votre validation et la gravure, ce sera peut-être juste. Appelez-nous avant de commander, nous vous dirons si c'est possible : ", el("a", { href: lienTel(D.telephone) }, D.telephone), "."),
+      );
+    } else {
+      info.replaceChildren(el("p", {}, `Noté : ${dateLongue(v)}, dans ${j} jours. Nous en tenons compte pour la maquette.`));
+    }
+  }
+
+  // ---------- Montants ----------
+  const signature = (lignes: LignePanier[]) => JSON.stringify([lignesServeur(lignes, cat).map((l) => [l.id, l.quantite, l.variante]), mode, emballage(), codePromo]);
+
+  function montants(lignes: LignePanier[]) {
+    if (simulation && simulation.sig === signature(lignes))
+      return { sousTotal: simulation.sous_total, port: simulation.port, emballage: simulation.emballage, remise: simulation.remise, total: simulation.total };
+    return totaux(lignes, cat, mode, D.reglages, emballage());
+  }
+
+  function libelleBouton(total: number) {
+    if (!enLigne) return "Préparer l'email de commande";
+    return paiementChoisi() === "en_ligne" ? `Commander et payer ${euros(total)}` : "Envoyer ma commande à maquetter";
+  }
+
+  function majTotaux() {
+    const lignes = lirePanier();
+    const t = montants(lignes);
+    $("[data-recap-lignes]").replaceChildren(
+      ...lignes.map((l) => el("li", {}, el("span", {}, `${l.nom}${quantite(l) > 1 ? ` × ${quantite(l)}` : ""}`), el("span", {}, euros(prixUnitaire(l, cat[l.id]) * quantite(l))))),
+    );
+    $("[data-sous-total]").textContent = euros(t.sousTotal);
+    $("[data-libelle-port]").textContent = mode === "retrait" ? "Retrait à la boutique" : "Livraison";
+    $("[data-port]").textContent = t.port ? euros(t.port) : mode === "retrait" ? "Gratuit" : "Offerte";
+    $("[data-ligne-emballage]").hidden = !t.emballage;
+    $("[data-emballage]").textContent = euros(t.emballage);
+    $("[data-ligne-remise]").hidden = !t.remise;
+    if (t.remise && simulation) {
+      $("[data-code]").textContent = simulation.code_promo + (simulation.promo_description ? ` (${simulation.promo_description})` : "");
+      $("[data-remise]").textContent = `−${euros(t.remise)}`;
+    }
+    const code = document.querySelector<HTMLElement>(".code-promo");
+    if (code) code.hidden = !!t.remise;
+    $("[data-total-recap]").textContent = euros(t.total);
+    $("[data-total-barre]").textContent = euros(t.total);
+
+    const seuil = $("[data-seuil]");
+    const restant = D.reglages.livraisonOfferteDes - t.sousTotal;
+    seuil.hidden = !(mode === "livraison" && restant > 0);
+    seuil.textContent = `Plus que ${euros(restant)} d'achat pour la livraison offerte.`;
+
+    bouton.textContent = libelleBouton(t.total);
+    $("[data-aide-final]").textContent = !enLigne
+      ? "Rien à payer aujourd'hui. À l'étape suivante, nous ouvrons un email prêt à envoyer avec tout le détail de la commande."
+      : paiementChoisi() === "en_ligne"
+        ? "Vous payez maintenant sur la page sécurisée de Stripe. Nous vous envoyons ensuite la maquette à valider avant de graver."
+        : "Rien à payer aujourd'hui. Vous recevez un email de confirmation avec un lien de suivi, puis la maquette à valider.";
+  }
+
+  let minuteur: ReturnType<typeof setTimeout>;
+  function simuler() {
+    if (!enLigne) return;
+    clearTimeout(minuteur);
+    minuteur = setTimeout(async () => {
+      const lignes = lirePanier();
+      if (!lignes.length) return;
+      const sig = signature(lignes);
+      try {
+        const r = await simulerCommande({ lignes: lignesServeur(lignes, cat), mode_reception: mode, cadeau: { emballage: emballage() }, code_promo: codePromo });
+        simulation = { ...r, sig };
+        if (r.erreur_code) {
+          codePromo = "";
+          erreur("e-code", r.erreur_code);
+        }
+      } catch {
+        simulation = null; // serveur injoignable : on garde le calcul du navigateur
+      }
+      majTotaux();
+    }, 150);
+  }
+
+  // ---------- Réception et paiement ----------
+  function majMode() {
+    $("[data-bloc-adresse]").hidden = mode !== "livraison";
+    const boutique = document.querySelector<HTMLElement>('[data-paiement="boutique"]');
+    if (boutique) {
+      boutique.hidden = mode !== "retrait";
+      const radio = $<HTMLInputElement>("input", boutique);
+      if (radio.checked && mode !== "retrait") {
+        const autre = form.querySelector<HTMLInputElement>('[data-paiement]:not([hidden]) input[name="paiement"]');
+        if (autre) autre.checked = true;
+      }
+    }
+  }
+
+  // ---------- Erreurs de saisie ----------
+  function erreur(id: string, message: string) {
+    const e = document.getElementById(id);
+    if (!e) return;
+    e.textContent = message;
+    e.hidden = !message;
+    const champ = document.querySelector<HTMLElement>(`[aria-describedby~="${id}"]`);
+    if (champ) message ? champ.setAttribute("aria-invalid", "true") : champ.removeAttribute("aria-invalid");
+  }
+
+  function verifier() {
+    const lignes = lirePanier();
+    const problemes: [string, string, string][] = [];
+    if (lignes.some((l) => !cat[l.id] || cat[l.id].epuise)) problemes.push(["e-pieces", "Une pièce n'est plus disponible : retirez-la pour envoyer la commande.", ""]);
+    const j = champDate.value ? joursAvant(champDate.value) : null;
+    if (j !== null && j < 0) problemes.push(["e-date", "Choisissez une date à venir, ou laissez le champ vide.", "c-date"]);
+    if (valeur("nom").length < 2) problemes.push(["e-nom", "Indiquez votre nom et votre prénom.", "c-nom"]);
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(valeur("email"))) problemes.push(["e-email", "Indiquez une adresse email valide, par exemple prenom.nom@exemple.fr.", "c-email"]);
+    if (valeur("tel").replace(/\D/g, "").length < 6) problemes.push(["e-tel", "Indiquez un numéro de téléphone pour que nous puissions vous joindre.", "c-tel"]);
+    if (mode === "livraison" && valeur("adresse").length < 8) problemes.push(["e-adresse", "Indiquez votre adresse de livraison complète : rue, code postal et ville.", "c-adresse"]);
+    if (!$<HTMLInputElement>("#c-cgv").checked) problemes.push(["e-cgv", "Cochez cette case pour accepter les conditions générales de vente.", "c-cgv"]);
+
+    for (const id of ["e-pieces", "e-date", "e-nom", "e-email", "e-tel", "e-adresse", "e-cgv"]) erreur(id, "");
+    for (const [id, message] of problemes) erreur(id, message);
+    if (!problemes.length) return true;
+    etatEnvoi(problemes.length > 1 ? `${problemes.length} points à corriger avant d'envoyer.` : "Un point à corriger avant d'envoyer.", true);
+    const premier = problemes[0];
+    const cible = premier[2] ? document.getElementById(premier[2]) : liste.querySelector<HTMLElement>(".ligne [data-alerte]:not([hidden])")?.closest(".ligne")?.querySelector<HTMLElement>("[data-retirer]");
+    cible?.focus();
+    return false;
+  }
+
+  function etatEnvoi(texte: string, alerte = false, ...suite: Node[]) {
+    const zone = $("[data-etat-envoi]");
+    zone.replaceChildren(...(texte ? [el("p", { class: alerte ? "message message-alerte" : "message" }, texte, ...suite)] : []));
+  }
+
+  // ---------- Envoi ----------
+  const client = () => ({ nom: valeur("nom"), email: valeur("email"), tel: valeur("tel"), adresse: mode === "livraison" ? valeur("adresse") : "", message: valeur("message") });
+
+  async function envoyerEnLigne(lignes: LignePanier[]) {
+    bouton.disabled = true;
+    etatEnvoi("Envoi de votre commande…");
+    try {
+      const c = client();
+      const r = await envoyerCommande({
+        client: { nom: c.nom, email: c.email, tel: c.tel, adresse: c.adresse },
+        mode_reception: mode,
+        lignes: lignesServeur(lignes, cat),
+        cadeau: { emballage: emballage(), message: valeur("carte"), date: champDate.value },
+        message: c.message,
+        paiement_mode: paiementChoisi() || "apres_validation",
+        code_promo: codePromo,
+        consentement_marketing: $<HTMLInputElement>("#c-nouveautes").checked,
+        retour: new URL("/suivi/", location.href).href,
+      });
+      // Photos : la version haute qualité gardée dans le navigateur, sinon l'aperçu réduit.
+      let photosRatees = 0;
+      for (const [i, envoi] of r.envois_photos.entries()) {
+        etatEnvoi(`Envoi des photos (${i + 1} sur ${r.envois_photos.length})…`);
+        const l = lignes[envoi.ligne];
+        try {
+          const photo = (l.photoCle && (await lirePhoto(l.photoCle))) || (l.photo && (await (await fetch(l.photo)).blob()));
+          if (!photo) throw new Error("photo absente");
+          await deposerPhoto(envoi.url, photo);
+        } catch {
+          photosRatees++;
+        }
+      }
+      lignes.forEach((l) => l.photoCle && supprimerPhoto(l.photoCle));
+      viderPanier();
+      effacerBrouillon();
+      const suite = new URL("/suivi/", location.href);
+      suite.searchParams.set("jeton", r.jeton);
+      suite.searchParams.set("merci", "1");
+      if (photosRatees) suite.searchParams.set("photos", "a-envoyer");
+      location.href = r.paiement_url || suite.href;
+    } catch (e) {
+      bouton.disabled = false;
+      const message = e instanceof Error ? e.message : "L'envoi n'a pas abouti.";
+      const parEmail = el("button", { type: "button", class: "lien-petit" }, "préparer un email à la place");
+      parEmail.addEventListener("click", () => preparerEmail(lirePanier()));
+      etatEnvoi(`${message} Vous pouvez réessayer, `, true, parEmail, ", ou nous appeler au ", el("a", { href: lienTel(D.telephone) }, D.telephone), ".");
+      if (e instanceof ErreurServeur && e.status === 403) parEmail.focus();
+    }
+  }
+
+  let texteRecap = "";
+  function preparerEmail(lignes: LignePanier[]) {
+    const reference = referenceLocale();
+    const paiement = paiementChoisi();
+    texteRecap = recapitulatifTexte({
+      reference,
+      lignes,
+      cat,
+      mode,
+      adresseBoutique: D.adresse,
+      t: totaux(lignes, cat, mode, D.reglages, emballage()),
+      date: champDate.value,
+      client: client(),
+      paiement,
+      libellePaiement: paiement ? D.libellesPaiement[paiement] ?? "" : "",
+      nouveautes: $<HTMLInputElement>("#c-nouveautes").checked,
+    });
+    const sujet = `Commande ${reference} à maquetter`;
+    $<HTMLAnchorElement>("[data-ouvrir-email]").href = `mailto:${D.email}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(texteRecap)}`;
+    $("[data-recap-texte]").textContent = texteRecap;
+    $("[data-rappel-photos]").hidden = !lignes.some((l) => l.photoNom);
+    $("[data-etat-copie]").textContent = "";
+    etatEnvoi("");
+    montrer("email");
+    scrollTo(0, 0);
+    $("#t-email").focus();
+  }
+
+  // ---------- Barre du total sur téléphone ----------
+  let recapVisible = false;
+  function majBarre() {
+    barre.hidden = page.dataset.etat !== "rempli" || recapVisible;
+  }
+  new IntersectionObserver((entrees) => {
+    recapVisible = entrees.some((e) => e.isIntersecting);
+    majBarre();
+  }).observe($("#recapitulatif"));
+
+  // ---------- Événements ----------
+  const annonce = (texte: string) => {
+    const a = $("[data-etat-envoi]");
+    a.replaceChildren(el("p", { class: "visuellement-cache" }, texte));
+  };
+
+  page.addEventListener("click", (e) => {
+    const cible = e.target as HTMLElement;
+    const n = cible.closest<HTMLElement>(".ligne");
+    const uid = n?.dataset.uid ?? "";
+    const ligne = () => lirePanier().find((l) => l.uid === uid);
+
+    if (cible.closest("[data-moins], [data-plus]")) {
+      const l = ligne();
+      if (l) modifierLigne(uid, { quantite: Math.min(99, Math.max(1, quantite(l) + (cible.closest("[data-plus]") ? 1 : -1))) });
+    } else if (cible.closest("[data-retirer]")) {
+      const r = retirerLigne(uid);
+      if (!r) return;
+      const noeud = noeudRetire(r.ligne);
+      retirees.push({ ...r, noeud });
+      noeuds.delete(uid);
+      dessiner();
+      $<HTMLButtonElement>("[data-annuler]", noeud).focus();
+    } else if (cible.closest("[data-annuler]")) {
+      const id = cible.closest<HTMLElement>("[data-retiree]")!.dataset.retiree;
+      const i = retirees.findIndex((r) => r.ligne.uid === id);
+      if (i < 0) return;
+      const [r] = retirees.splice(i, 1);
+      r.noeud.remove();
+      remettreLigne(r.ligne, r.position);
+      noeuds.get(r.ligne.uid)?.querySelector<HTMLElement>("[data-retirer]")?.focus();
+      annonce(`« ${r.ligne.nom} » est de nouveau dans le panier.`);
+    } else if (cible.closest("[data-modifier]") && n) {
+      const l = ligne();
+      if (!l) return;
+      n.classList.add("en-edition");
+      const champ = $<HTMLTextAreaElement>("[data-champ-texte]", n);
+      champ.value = l.texte;
+      $("[data-compteur]", n).textContent = `${l.texte.length} sur 200 caractères`;
+      const ancienne = $("[data-police-ancienne]", n);
+      const connue = !l.police || !!trouverPolice(l.police);
+      ancienne.hidden = connue;
+      if (!connue) {
+        $<HTMLInputElement>("input", ancienne).value = l.police;
+        $("span", ancienne).textContent = l.police;
+      }
+      n.querySelectorAll<HTMLInputElement>("[data-police]").forEach((r) => (r.checked = r.value === (l.police || "Atelier")));
+      $("[data-edition]", n).hidden = false;
+      $("[data-modifier]", n).hidden = true;
+      champ.focus();
+    } else if (cible.closest("[data-enregistrer]") && n) {
+      const texte = $<HTMLTextAreaElement>("[data-champ-texte]", n).value.trim().slice(0, 200);
+      const police = n.querySelector<HTMLInputElement>("[data-police]:checked")?.value ?? "";
+      fermerEdition(n);
+      modifierLigne(uid, { texte, police });
+      $<HTMLButtonElement>("[data-modifier]", n).focus();
+      annonce("Texte enregistré.");
+    } else if (cible.closest("[data-fermer]") && n) {
+      fermerEdition(n);
+      const l = ligne();
+      if (l) remplir(n, l);
+      $<HTMLButtonElement>("[data-modifier]", n).focus();
+    } else if (cible.closest("[data-appliquer-code]")) {
+      codePromo = $<HTMLInputElement>("#c-code").value.trim().toUpperCase();
+      erreur("e-code", "");
+      if (codePromo) simuler();
+    } else if (cible.closest("[data-retirer-code]")) {
+      codePromo = "";
+      simulation = null;
+      majTotaux();
+      simuler();
+      $<HTMLInputElement>("#c-code").focus();
+    } else if (cible.closest("[data-copier]")) {
+      navigator.clipboard?.writeText(texteRecap).then(
+        () => ($("[data-etat-copie]").textContent = "Récapitulatif copié : collez-le dans votre email."),
+        () => ($("[data-etat-copie]").textContent = "Copie impossible : sélectionnez le texte ci-dessous."),
+      );
+    } else if (cible.closest("[data-revenir]")) {
+      montrer("rempli");
+      dessiner();
+      bouton.focus();
+    } else if (cible.closest("[data-vider]")) {
+      lirePanier().forEach((l) => l.photoCle && supprimerPhoto(l.photoCle));
+      viderPanier();
+      effacerBrouillon();
+      $("[data-merci]").hidden = false;
+      scrollTo(0, 0);
+    }
+  });
+
+  function fermerEdition(n: HTMLElement) {
+    n.classList.remove("en-edition");
+    $("[data-edition]", n).hidden = true;
+    $("[data-modifier]", n).hidden = false;
+  }
+
+  page.addEventListener("input", (e) => {
+    const cible = e.target as HTMLElement;
+    const n = cible.closest<HTMLElement>(".ligne");
+    if (n && cible.matches("[data-champ-texte], [data-police]")) {
+      const texte = $<HTMLTextAreaElement>("[data-champ-texte]", n).value;
+      $("[data-compteur]", n).textContent = `${texte.length} sur 200 caractères`;
+      apercu(n, texte, n.querySelector<HTMLInputElement>("[data-police]:checked")?.value ?? "");
+      return;
+    }
+    if (cible.id === "c-date") majDate();
+    if (cible.id === "c-code") erreur("e-code", "");
+    const idErreur = cible.getAttribute("aria-describedby")?.split(" ").find((id) => id.startsWith("e-"));
+    if (idErreur && cible.getAttribute("aria-invalid")) erreur(idErreur, "");
+    if (cible.closest("form")) sauverBrouillon();
+  });
+
+  page.addEventListener("change", (e) => {
+    const cible = e.target as HTMLInputElement;
+    if (cible.matches("[data-quantite]")) {
+      const uid = cible.closest<HTMLElement>(".ligne")!.dataset.uid!;
+      modifierLigne(uid, { quantite: Math.min(99, Math.max(1, Math.trunc(Number(cible.value)) || 1)) });
+      cible.value = String(quantite(lirePanier().find((l) => l.uid === uid)!));
+    } else if (cible.name === "mode_reception") {
+      mode = cible.value as ModeReception;
+      majMode();
+      majTotaux();
+      simuler();
+      sauverBrouillon();
+    } else if (cible.name === "paiement" || cible.id === "c-emballage") {
+      majTotaux();
+      simuler();
+      sauverBrouillon();
+    } else if (cible.id === "c-cgv" && cible.checked) {
+      erreur("e-cgv", "");
+    }
+  });
+
+  page.addEventListener("keydown", (e) => {
+    if ((e.target as HTMLElement).id === "c-code" && e.key === "Enter") {
+      e.preventDefault();
+      $<HTMLButtonElement>("[data-appliquer-code]").click();
+    }
+  });
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!verifier()) return;
+    const lignes = lirePanier();
+    if (enLigne) envoyerEnLigne(lignes);
+    else preparerEmail(lignes);
+  });
+
+  document.addEventListener("panier:change", () => {
+    dessiner();
+    simuler();
+  });
+  window.addEventListener("storage", (e) => {
+    if (e.key === "panier-mtb") dessiner();
+  });
+  // Une pièce retirée et non remise : sa photo haute qualité est effacée en quittant la page.
+  window.addEventListener("pagehide", () => retirees.forEach((r) => r.ligne.photoCle && supprimerPhoto(r.ligne.photoCle)));
+
+  // ---------- Démarrage ----------
+  const auj = new Date();
+  champDate.min = `${auj.getFullYear()}-${String(auj.getMonth() + 1).padStart(2, "0")}-${String(auj.getDate()).padStart(2, "0")}`;
+  const b = lireBrouillon();
+  for (const n of CHAMPS_BROUILLON) {
+    const c = form.elements.namedItem(n) as HTMLInputElement | null;
+    if (c && typeof b[n] === "string") c.value = b[n];
+  }
+  if (b.mode === "livraison") {
+    mode = "livraison";
+    form.querySelector<HTMLInputElement>('input[name="mode_reception"][value="livraison"]')!.checked = true;
+  }
+  if (b.paiement) {
+    const r = form.querySelector<HTMLInputElement>(`input[name="paiement"][value="${CSS.escape(b.paiement)}"]`);
+    if (r) r.checked = true;
+  }
+  majMode();
+  dessiner();
+  simuler();
+</script>
+
+<style is:global>
+  .page-panier [hidden] { display: none !important; }
+
+  .panier-tete > .conteneur { padding-block: var(--section) 32px; }
+  .avis-fermeture { max-width: 46rem; padding: 14px 18px; border: var(--filet); background: var(--papier); }
+  .bloc-noscript { padding-block: 32px; }
+
+  .panier-grille {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+    gap: 0 56px;
+    align-items: start;
+    padding-bottom: var(--section);
+  }
+  .panier-formulaire { min-width: 0; }
+
+  .etape { padding-block: 32px; border-bottom: var(--filet); display: flex; flex-direction: column; gap: 14px; }
+  .etape:last-child { border-bottom: 0; }
+  .etape-titre { font-size: var(--t-sous-titre); display: flex; align-items: baseline; gap: 14px; }
+  .etape-num { font-family: var(--f-machine); font-weight: 400; font-size: var(--t-machine); letter-spacing: 0.04em; color: var(--texte-doux); }
+
+  .page-panier .champ { display: flex; flex-direction: column; gap: 6px; }
+  .page-panier .champ > label:not(.case) { font-weight: 600; }
+  .page-panier textarea { resize: vertical; }
+  .facultatif { font-family: var(--f-machine); font-weight: 400; font-size: var(--t-etiquette); color: var(--texte-doux); margin-left: 4px; }
+  .deux-champs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 14px 16px; }
+  .page-panier [aria-invalid="true"] { border: 2px solid var(--gravure); }
+  .erreur { color: var(--gravure); font-weight: 600; font-size: 0.9375rem; }
+  .champ-date input { max-width: 20rem; }
+
+  .date-info { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border: var(--filet); max-width: 40rem; }
+  .date-info.date-proche { border: 2px solid var(--gravure); }
+  .date-info.date-proche strong { color: var(--gravure); }
+
+  .lignes { list-style: none; margin: 0; padding: 0; border-top: var(--filet); }
+  .lien-suite { align-self: flex-start; min-height: var(--cible); display: inline-flex; align-items: center; font-weight: 700; }
+
+  .paiements { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 12px; }
+  .choix-paiement { display: flex; gap: 14px; align-items: flex-start; padding: 16px; border: var(--filet); background: var(--papier); cursor: pointer; }
+  .choix-paiement:has(input:checked) { border: var(--filet-fort); padding: 15px; background: var(--bouleau); }
+  .choix-paiement input { flex: none; width: 22px; height: 22px; min-height: 0; margin: 2px 0 0; padding: 0; accent-color: var(--brule); }
+  .choix-paiement .choix-texte { display: flex; flex-direction: column; gap: 4px; }
+  .choix-paiement .choix-titre { font-weight: 600; }
+  .choix-paiement .choix-aide { font-size: 0.9375rem; color: var(--texte-doux); }
+
+  .case { display: flex; gap: 12px; align-items: flex-start; min-height: var(--cible); padding-block: 6px; cursor: pointer; }
+  .case a { padding-block: 11px; }
+  .case input { flex: none; width: 22px; height: 22px; min-height: 0; margin: 1px 0 0; padding: 0; accent-color: var(--brule); }
+
+  /* Récapitulatif : collant sur PC */
+  .recap { position: sticky; top: 24px; margin-top: 32px; padding: 24px; border: var(--filet-fort); background: var(--papier); display: flex; flex-direction: column; gap: 16px; }
+  .recap-titre { font-size: var(--t-sous-titre); }
+  .recap-lignes { list-style: none; margin: 0; padding: 0; font-size: 0.9375rem; }
+  .recap-lignes li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dotted var(--texte-doux); }
+  .recap-lignes li span:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .recap-lignes li span:last-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .recap-montants { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+  .recap-montants > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .recap-montants dd { margin: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .recap-total { padding-top: 10px; margin-top: 4px; border-top: var(--filet); }
+  .recap-total dt { font-family: var(--f-titre); font-weight: 800; font-size: 1.5rem; text-transform: uppercase; }
+  .recap-total .prix { color: var(--gravure); }
+  .recap-seuil { font-size: 0.9375rem; }
+  .code-promo-ligne { display: flex; gap: 8px; }
+  .code-promo-ligne input { text-transform: uppercase; min-width: 0; }
+  .consentements { display: flex; flex-direction: column; gap: 2px; font-size: 0.9375rem; }
+  .recap-bouton { width: 100%; text-align: center; }
+  .recap-aide { font-size: 0.9375rem; color: var(--texte-doux); }
+  .message { font-size: 0.9375rem; }
+  .message-alerte { color: var(--gravure); font-weight: 600; }
+
+  .bouton-secondaire {
+    min-height: var(--cible);
+    padding: 8px 16px;
+    border: var(--filet);
+    background: transparent;
+    font-family: var(--f-machine);
+    font-size: var(--t-machine);
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .bouton-secondaire:hover { background: var(--brule); color: var(--bouleau); }
+  .lien-petit { min-height: var(--cible); padding: 0 2px; background: none; border: 0; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+  .lien-petit:hover { color: var(--gravure); }
+
+  /* Commande par email (commande en ligne fermée) */
+  .zone-email h2 { font-size: var(--t-titre); }
+  .zone-email h2:focus { outline: none; }
+  .recap-texte {
+    margin: 0;
+    padding: 18px;
+    max-width: 46rem;
+    border: var(--filet);
+    background: var(--papier);
+    font-family: var(--f-machine);
+    font-size: var(--t-machine);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .rappel-photos { font-weight: 600; }
+
+  /* Panier vide */
+  .vide h2 { font-size: var(--t-titre); }
+  .merci { padding: 14px 18px; border: var(--filet-fort); background: var(--papier); font-weight: 600; max-width: 46rem; }
+  .lignes-retirees { border-top: 0; max-width: 46rem; }
+  .lignes-retirees:empty { display: none; }
+
+  /* Barre du total sur téléphone */
+  .barre-mobile { display: none; }
+
+  @media (max-width: 1000px) {
+    .panier-grille { grid-template-columns: minmax(0, 1fr); }
+    .recap { position: static; margin-top: 8px; }
+    .barre-mobile {
+      position: fixed;
+      inset: auto 0 0 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px var(--gouttiere) calc(10px + env(safe-area-inset-bottom));
+      background: var(--brule);
+      color: var(--bouleau);
+    }
+    .barre-mobile p { display: flex; align-items: baseline; gap: 10px; }
+    .barre-mobile .prix { color: var(--bouleau); }
+    .barre-lien {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--cible);
+      padding: 8px 20px;
+      background: var(--gravure);
+      color: #fff;
+      font-family: var(--f-titre);
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+    .barre-lien:hover { background: var(--gravure-fonce); color: #fff; }
+    .page-panier[data-etat="rempli"] { padding-bottom: 72px; }
+  }
+  @media (max-width: 480px) {
+    .recap { padding: 18px 16px; }
+    .etape { padding-block: 24px; }
+  }
+</style>
