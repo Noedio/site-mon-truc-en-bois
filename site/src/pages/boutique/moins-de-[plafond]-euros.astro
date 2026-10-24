@@ -1,0 +1,16 @@
+---
+// Une page statique par budget : /boutique/moins-de-30-euros/, pièces triées par prix.
+import Base from "../../layouts/Base.astro";
+import PageBoutique from "../../components/PageBoutique.astro";
+import { PLAFONDS, piecesSousBudget } from "../../lib/catalogue";
+
+export function getStaticPaths() {
+  return PLAFONDS.map((p) => ({ params: { plafond: String(p) }, props: { plafond: p } }));
+}
+
+const { plafond } = Astro.props as { plafond: number };
+const pieces = piecesSousBudget(plafond);
+---
+<Base titre={`Pièces à moins de ${plafond} € · Boutique`} description={`Les ${pieces.length} pièces de l'atelier à moins de ${plafond} €, de la moins chère à la plus chère.`}>
+  <PageBoutique titre={`Pièces à moins de ${plafond} €`} pieces={pieces} plafond={plafond} />
+</Base>

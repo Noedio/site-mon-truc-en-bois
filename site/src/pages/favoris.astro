@@ -1,7 +1,89 @@
 ---
+// Favoris : les pièces mises de côté dans ce navigateur (lireFavoris, clé favoris-mtb).
+// Toutes les cartes sont rendues au build, masquées ; un petit script montre celles des favoris,
+// dans l'ordre où elles ont été ajoutées, la plus récente en premier.
 import Base from "../layouts/Base.astro";
-import EnTravaux from "../components/EnTravaux.astro";
+import CarteFavori from "../components/CarteFavori.astro";
+import Bouton from "../components/Bouton.astro";
+import { produits } from "../lib/donnees";
 ---
-<Base titre="Mes favoris" indexer={false}>
-  <EnTravaux titre="Mes favoris" chantier="chantier C2" contenu="Les pièces mises de côté sur cet appareil." />
+<Base titre="Mes favoris" description="Les pièces mises de côté sur cet appareil." indexer={false}>
+  <section class="bande" aria-labelledby="titre-favoris">
+    <div class="conteneur pile" style="--pile: 32px">
+      <div class="pile" style="--pile: 14px">
+        <div class="favoris-tete">
+          <h1 id="titre-favoris">Mes favoris</h1>
+          <p class="machine" data-favoris-compte aria-live="polite"></p>
+        </div>
+        <p class="chapeau">Les favoris restent dans ce navigateur, sur cet appareil. Pas besoin de compte.</p>
+      </div>
+
+      <div class="grille-favoris" data-favoris-grille hidden>
+        {produits.map((p) => <CarteFavori produit={p} data-favori-carte={p.id} hidden />)}
+      </div>
+
+      <div class="favoris-vide pile" style="--pile: 20px" data-favoris-vide hidden>
+        <p class="favoris-vide-titre">Aucune pièce mise de côté pour l'instant.</p>
+        <p>Le bouton cœur d'une pièce la met de côté ici.</p>
+        <div class="rangee">
+          <Bouton href="/boutique/">Voir la boutique</Bouton>
+          <Bouton href="/occasions/" genre="contour">Choisir par occasion</Bouton>
+        </div>
+      </div>
+
+      <noscript>
+        <p class="favoris-vide">Cette page lit les favoris enregistrés dans votre navigateur : elle a besoin de JavaScript. <a href="/boutique/">Voir la boutique</a>.</p>
+      </noscript>
+    </div>
+  </section>
 </Base>
+
+<script>
+  import { lireFavoris } from "../lib/panier";
+
+  const grille = document.querySelector<HTMLElement>("[data-favoris-grille]")!;
+  const vide = document.querySelector<HTMLElement>("[data-favoris-vide]")!;
+  const compte = document.querySelector<HTMLElement>("[data-favoris-compte]")!;
+  const cartes = new Map([...grille.querySelectorAll<HTMLElement>("[data-favori-carte]")].map((c) => [c.dataset.favoriCarte!, c]));
+
+  const afficher = () => {
+    const avant = ([...grille.children] as HTMLElement[]).filter((c) => !c.hidden);
+    const retiree = avant.find((c) => c.contains(document.activeElement));
+    // Les ids qui ne sont plus au catalogue sont ignorés.
+    const ids = lireFavoris().filter((id) => cartes.has(id)).reverse();
+    cartes.forEach((c, id) => (c.hidden = !ids.includes(id)));
+    ids.forEach((id) => grille.append(cartes.get(id)!));
+    grille.hidden = ids.length === 0;
+    vide.hidden = ids.length > 0;
+    compte.textContent = ids.length ? `${ids.length} pièce${ids.length > 1 ? "s" : ""}` : "";
+    // La carte retirée avait le focus : il passe à la carte voisine, ou à l'état vide.
+    if (retiree?.hidden) {
+      const i = avant.indexOf(retiree);
+      const voisine = [...avant.slice(i + 1), ...avant.slice(0, i).reverse()].find((c) => !c.hidden);
+      (voisine?.querySelector<HTMLElement>("[data-favori]") ?? vide.querySelector<HTMLElement>("a"))?.focus();
+    }
+  };
+
+  afficher();
+  document.addEventListener("favoris:change", afficher);
+  window.addEventListener("storage", afficher);
+</script>
+
+<style>
+  .favoris-tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 32px; }
+  /* Même grille à filets que GrillePieces, pour des cartes qui portent un bouton cœur. */
+  .grille-favoris {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+    border-top: var(--filet);
+    border-left: var(--filet);
+  }
+  .grille-favoris[hidden], .grille-favoris > :global([hidden]) { display: none; }
+  .grille-favoris > :global(*) { box-shadow: 1px 0 0 var(--brule), 0 1px 0 var(--brule); }
+  @media (max-width: 520px) {
+    .grille-favoris { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  .favoris-vide { border-top: var(--filet-fort); border-bottom: var(--filet); padding: 28px 0 32px; }
+  .favoris-vide[hidden] { display: none; }
+  .favoris-vide-titre { font-weight: 600; font-size: var(--t-chapeau); }
+</style>

@@ -1,0 +1,55 @@
+---
+// Contenu commun des pages de la boutique : titre, nombre de pièces, filtres par catégorie
+// et par budget (pages statiques), puis la grille à filets.
+import GrillePieces from "./GrillePieces.astro";
+import NavFiltres from "./NavFiltres.astro";
+import { produits, produitsDe, categories, site, type Produit } from "../lib/donnees";
+import { PLAFONDS, piecesSousBudget } from "../lib/catalogue";
+import { euros } from "../lib/format";
+
+interface Props {
+  titre: string;
+  pieces: (Produit & { numero: number })[];
+  chapeau?: string;
+  categorie?: string; // id de la catégorie affichée
+  plafond?: number; // plafond de la page budget affichée
+}
+const { titre, pieces, chapeau, categorie, plafond } = Astro.props;
+
+const liensCategories = [
+  { href: "/boutique/", libelle: "Tout", nombre: produits.length, actif: !categorie && !plafond },
+  ...categories.map((c) => ({ href: `/boutique/${c.id}/`, libelle: c.nom, nombre: produitsDe({ categorie: c.id }).length, actif: c.id === categorie })),
+];
+const liensBudget = PLAFONDS.map((p) => ({ href: `/boutique/moins-de-${p}-euros/`, libelle: `Moins de ${p} €`, nombre: piecesSousBudget(p).length, actif: p === plafond }));
+
+const compte = `${pieces.length} pièce${pieces.length > 1 ? "s" : ""}${plafond ? ", du prix le plus bas au plus haut" : ""}`;
+const livraison = site.livraisonOfferteDes ? `livraison ${euros(site.livraison)}, offerte dès ${euros(site.livraisonOfferteDes)}` : `livraison ${euros(site.livraison)}`;
+---
+<section class="bande" aria-labelledby="titre-boutique">
+  <div class="conteneur pile" style="--pile: 32px">
+    <div class="pile" style="--pile: 14px">
+      <div class="boutique-tete">
+        <h1 id="titre-boutique">{titre}</h1>
+        <p class="machine">{compte}</p>
+      </div>
+      {chapeau && <p class="chapeau">{chapeau}</p>}
+      <p class="etiquette doux">Retrait gratuit à la boutique d'Auchel · {livraison}</p>
+    </div>
+
+    <div class="pile" style="--pile: 12px">
+      <NavFiltres titre="Catégorie" liens={liensCategories} />
+      <NavFiltres titre="Budget" liens={liensBudget} />
+    </div>
+
+    {pieces.length ? (
+      <GrillePieces produits={pieces} prioritaires={4} />
+    ) : (
+      <p class="boutique-vide">Aucune pièce pour l'instant dans cette sélection. <a href="/boutique/">Voir toutes les pièces</a>.</p>
+    )}
+  </div>
+</section>
+
+<style>
+  .boutique-tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 32px; }
+  .boutique-vide { border-top: var(--filet); border-bottom: var(--filet); padding: 24px 0; }
+</style>

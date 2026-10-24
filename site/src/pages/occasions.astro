@@ -1,7 +1,24 @@
 ---
+// Occasions : date de chacune, date limite de commande et nombre de pièces, puis une page par occasion.
 import Base from "../layouts/Base.astro";
-import EnTravaux from "../components/EnTravaux.astro";
+import ListeOccasions from "../components/ListeOccasions.astro";
+import { occasions } from "../lib/donnees";
+
+const description = `Les pièces de l'atelier classées par occasion (${occasions.map((o) => o.nom.toLowerCase()).slice(0, 4).join(", ")}…), avec la date limite de commande.`;
 ---
-<Base titre="Occasions">
-  <EnTravaux titre="Occasions" chantier="chantier C2" contenu="Les occasions avec leur date et leur date limite de commande, et les pièces de chacune." />
+<Base titre="Par occasion" description={description}>
+  <section class="bande" aria-labelledby="titre-occasions">
+    <div class="conteneur pile" style="--pile: 32px">
+      <div class="occasions-tete">
+        <h1 id="titre-occasions">Par occasion</h1>
+        <p>La date limite tient compte du délai de fabrication et de la validation de la maquette.</p>
+      </div>
+      <ListeOccasions />
+    </div>
+  </section>
 </Base>
+
+<style>
+  .occasions-tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px 32px; }
+  .occasions-tete p { max-width: 32em; }
+</style>

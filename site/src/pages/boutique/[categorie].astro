@@ -1,0 +1,18 @@
+---
+// Une page statique par catégorie : /boutique/<categorie>/.
+import Base from "../../layouts/Base.astro";
+import PageBoutique from "../../components/PageBoutique.astro";
+import { categories, produitsDe, type Categorie } from "../../lib/donnees";
+import { aVerifier } from "../../lib/images";
+
+export function getStaticPaths() {
+  return categories.map((c) => ({ params: { categorie: c.id }, props: { categorie: c } }));
+}
+
+const { categorie } = Astro.props as { categorie: Categorie };
+// Image de partage : pas une photo que l'audit demande de faire valider.
+const image = aVerifier(categorie.image) ? undefined : categorie.image;
+---
+<Base titre={`${categorie.nom} · Boutique`} description={categorie.description} image={image}>
+  <PageBoutique titre={categorie.nom} chapeau={categorie.description} pieces={produitsDe({ categorie: categorie.id })} categorie={categorie.id} />
+</Base>
