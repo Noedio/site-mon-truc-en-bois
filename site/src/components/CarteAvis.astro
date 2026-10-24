@@ -1,0 +1,27 @@
+---
+// Un avis client tel qu'il a été laissé : texte, prénom et initiale, mois, plateforme.
+// Pas d'étoiles : Facebook ne donne qu'une recommandation, sans note.
+import type { Avis } from "../lib/donnees";
+
+interface Props { avis: Avis; grand?: boolean }
+const { avis, grand = false } = Astro.props;
+const SOURCES: Record<string, string> = { facebook: "Facebook", google: "Google" };
+const source = SOURCES[avis.source] ?? avis.source;
+---
+<blockquote class:list={["carte-avis", { "carte-avis-grand": grand }]}>
+  <p>« {avis.texte} »</p>
+  <footer class="etiquette">
+    <span class="carte-avis-nom">{avis.nom}</span>
+    <span>{avis.date.toLowerCase()}</span>
+    {source && <span>avis {source}</span>}
+  </footer>
+</blockquote>
+
+<style>
+  .carte-avis { margin: 0; padding: 18px 0 0; border-top: var(--filet-fort); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .carte-avis p { font-style: italic; font-size: 1.125rem; line-height: 1.55; }
+  .carte-avis-grand p { font-size: 1.25rem; }
+  .carte-avis footer { display: flex; flex-wrap: wrap; gap: 2px 0; }
+  .carte-avis footer span + span::before { content: "·"; margin-inline: 0.6em; }
+  .carte-avis-nom { font-weight: 700; }
+</style>

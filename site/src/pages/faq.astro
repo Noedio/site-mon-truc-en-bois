@@ -1,7 +1,92 @@
 ---
+// Questions fréquentes, lues dans donnees.faq.
+// Deux réponses de l'ancien site annoncent des services pas encore actifs (paiement par carte,
+// lien de suivi par email) : elles sont réécrites d'après site.commandes, et ce qui reste
+// à préciser par l'atelier s'affiche [À COMPLÉTER]. Seules les réponses complètes vont dans FAQPage.
 import Base from "../layouts/Base.astro";
-import EnTravaux from "../components/EnTravaux.astro";
+import TetePage from "../components/TetePage.astro";
+import ACompleter from "../components/ACompleter.astro";
+import { donnees, site } from "../lib/donnees";
+import { lienTel } from "../lib/format";
+import { modesPaiement, serveurBranche } from "../lib/legal";
+
+type Morceau = { texte: string; manque?: string };
+interface Entree { question: string; morceaux: Morceau[]; liste?: Morceau[]; lien?: { href: string; libelle: string } }
+
+// Le fichier publié par l'admin écrit { q, r } ; le type du socle annonce { question, reponse }.
+const brutes = donnees.faq as unknown as { q?: string; r?: string; question?: string; reponse?: string }[];
+
+const entrees: Entree[] = brutes.map((f) => {
+  const question = (f.q ?? f.question ?? "").trim();
+  const reponse = (f.r ?? f.reponse ?? "").trim();
+  if (/payer/i.test(question)) {
+    return { question, morceaux: [{ texte: "Selon les options proposées au moment de la commande :" }], liste: modesPaiement() };
+  }
+  if (/suivre/i.test(question) && !serveurBranche) {
+    return {
+      question,
+      morceaux: [{ texte: `Le suivi en ligne ouvrira avec la commande en ligne. En attendant, appelez-nous au ${site.telephone} pour connaître l'avancement de votre commande : nous vous prévenons dès que votre création est prête.` }],
+    };
+  }
+  if (/devis/i.test(reponse)) return { question, morceaux: [{ texte: reponse }], lien: { href: "/contact/#devis", libelle: "Demander un devis" } };
+  if (/suivre/i.test(question)) return { question, morceaux: [{ texte: reponse }], lien: { href: "/suivi/", libelle: "Suivre ma commande" } };
+  return { question, morceaux: [{ texte: reponse }] };
+});
+
+const complete = (e: Entree) => ![...e.morceaux, ...(e.liste ?? [])].some((m) => m.manque);
+const enTexte = (e: Entree) => [...e.morceaux.map((m) => m.texte), ...(e.liste ?? []).map((m) => `${m.texte.replace(/\s*:$/, "")}.`)].join(" ");
+const faqPage = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: entrees.filter(complete).map((e) => ({
+    "@type": "Question",
+    name: e.question,
+    acceptedAnswer: { "@type": "Answer", text: enTexte(e) },
+  })),
+};
 ---
-<Base titre="Questions fréquentes">
-  <EnTravaux titre="Questions fréquentes" chantier="chantier C4" contenu="Les réponses sur la maquette, les délais, le retrait, la livraison et le paiement." />
+<Base titre="Questions fréquentes" description={`Commande personnalisée, délais, retrait à Auchel, paiement, photos et commandes en quantité chez ${site.nom}.`}>
+  <script slot="tete" type="application/ld+json" set:html={JSON.stringify(faqPage)} />
+
+  <TetePage titre="Questions fréquentes">
+    <p class="chapeau">Vous ne trouvez pas votre réponse ? <a href="/contact/">Écrivez-nous</a> ou appelez-nous au <a class="tel" href={lienTel(site.telephone)}>{site.telephone}</a>.</p>
+  </TetePage>
+
+  <section class="bande" aria-label="Questions et réponses">
+    <div class="conteneur">
+      <div class="faq">
+        {entrees.map((e, i) => (
+          <article class="faq-ligne" aria-labelledby={`q-${i + 1}`}>
+            <h2 id={`q-${i + 1}`}>{e.question}</h2>
+            <div class="faq-reponse">
+              {e.morceaux.map((m) => (
+                <p>{m.texte}{m.manque && <> <ACompleter quoi={m.manque} /></>}</p>
+              ))}
+              {e.liste && (
+                <ul>
+                  {e.liste.map((m) => (
+                    <li>{m.texte}{m.manque && <> <ACompleter quoi={m.manque} /></>}</li>
+                  ))}
+                </ul>
+              )}
+              {e.lien && <a class="machine faq-lien" href={e.lien.href}>{e.lien.libelle}</a>}
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
 </Base>
+
+<style>
+  .tel { white-space: nowrap; }
+  .faq { border-top: var(--filet-fort); }
+  .faq-ligne { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 12px 64px; padding-block: 28px; border-bottom: var(--filet); }
+  .faq-ligne h2 { font-size: var(--t-sous-titre); line-height: 1.05; }
+  .faq-reponse { display: flex; flex-direction: column; gap: 12px; max-width: 40em; }
+  .faq-reponse ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+  .faq-lien { font-weight: 700; min-height: var(--cible); display: inline-flex; align-items: center; align-self: flex-start; }
+  @media (max-width: 760px) {
+    .faq-ligne { grid-template-columns: minmax(0, 1fr); padding-block: 22px; }
+  }
+</style>

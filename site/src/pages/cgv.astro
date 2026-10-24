@@ -1,7 +1,109 @@
 ---
+// Conditions générales de vente. Contenu repris de l'ancien cgv.html (modèle à faire valider par l'atelier).
+// Ce qui dépend du serveur de commandes (emails, suivi, Stripe, Supabase, Brevo) n'est écrit
+// que s'il est branché ; les informations légales absentes s'affichent [À COMPLÉTER].
 import Base from "../layouts/Base.astro";
-import EnTravaux from "../components/EnTravaux.astro";
+import GabaritLegal from "../components/GabaritLegal.astro";
+import ArticleLegal from "../components/ArticleLegal.astro";
+import ACompleter from "../components/ACompleter.astro";
+import { site } from "../lib/donnees";
+import { euros, lienTel } from "../lib/format";
+import { legal, modesPaiement, serveurBranche, paiementEnLigne } from "../lib/legal";
+
+const sommaire = [
+  { id: "vendeur", titre: "Vendeur" },
+  { id: "produits", titre: "Produits" },
+  { id: "commande", titre: "Commande" },
+  { id: "prix", titre: "Prix et paiement" },
+  { id: "livraison", titre: "Fabrication et livraison" },
+  { id: "retractation", titre: "Droit de rétractation" },
+  { id: "garanties", titre: "Garanties" },
+  { id: "donnees", titre: "Données personnelles" },
+  { id: "mediation", titre: "Médiation et litiges" },
+];
+const modes = modesPaiement();
+const m = legal.mediateur;
 ---
-<Base titre="Conditions générales de vente">
-  <EnTravaux titre="Conditions générales de vente" chantier="chantier C4" contenu="Les conditions de vente, avec les informations légales à compléter." />
+<Base titre="Conditions générales de vente" description={`Commande, paiement, fabrication, retrait et livraison chez ${site.nom}, à Auchel.`}>
+  <GabaritLegal titre="Conditions générales de vente" sommaire={sommaire}>
+    <p slot="tete" class="doux"><ACompleter quoi="validation des CGV par l'atelier" /></p>
+
+    <ArticleLegal numero={1} id="vendeur" titre="Vendeur">
+      <p>Les présentes conditions s'appliquent aux ventes conclues sur ce site par {site.nom}.</p>
+      <dl>
+        <div><dt>Exploitant</dt><dd>{legal.exploitant || <ACompleter quoi="exploitant (nom et prénom)" />}</dd></div>
+        <div><dt>Forme juridique</dt><dd>{legal.formeJuridique || <ACompleter quoi="forme juridique" />}</dd></div>
+        <div><dt>SIRET</dt><dd>{legal.siret || <ACompleter quoi="SIRET" />}</dd></div>
+        <div><dt>Immatriculation</dt><dd>{legal.immatriculation || <ACompleter quoi="inscription au RM ou au RCS" />}</dd></div>
+        <div><dt>Adresse</dt><dd>{site.adresse}</dd></div>
+        <div><dt>Contact</dt><dd><a href={`mailto:${site.email}`}>{site.email}</a> · <a href={lienTel(site.telephone)}>{site.telephone}</a></dd></div>
+      </dl>
+    </ArticleLegal>
+
+    <ArticleLegal numero={2} id="produits" titre="Produits">
+      <p>Les produits proposés sont des créations personnalisées réalisées à la main. Les visuels et aperçus sont indicatifs : de légères variations (veinage du bois, teinte, rendu de gravure) font partie du caractère artisanal de chaque pièce.</p>
+    </ArticleLegal>
+
+    <ArticleLegal numero={3} id="commande" titre="Commande">
+      {serveurBranche ? (
+        <p>Le client compose son panier, indique ses personnalisations (texte, police, photo) et ses coordonnées, puis valide sa commande. Il reçoit un email de confirmation avec un numéro de commande et un lien de suivi.</p>
+      ) : (
+        <p>Tant que la commande en ligne n'est pas ouverte, les commandes se passent par téléphone au {site.telephone}, par email ou à la boutique. Le client indique ses personnalisations (texte, police, photo) et ses coordonnées, et le vendeur lui confirme la commande par le même moyen.</p>
+      )}
+      <p>Le vendeur peut contacter le client pour valider le rendu (maquette) avant fabrication. Le client est seul responsable des textes et images transmis (orthographe, droits d'auteur, droit à l'image) et garantit disposer des droits sur les photos envoyées.</p>
+    </ArticleLegal>
+
+    <ArticleLegal numero={4} id="prix" titre="Prix et paiement">
+      <p>Les prix sont indiqués en euros, {legal.mentionTva || <ACompleter quoi="mention de TVA" />}. Les frais de livraison{site.emballage?.actif ? " et, le cas échéant, d'emballage cadeau" : ""} sont indiqués avant la validation de la commande.</p>
+      <p>Le paiement s'effectue, selon les options proposées au moment de la commande :</p>
+      <ul>
+        {modes.map((mode) => (
+          <li>{mode.texte}{mode.manque && <> <ACompleter quoi={mode.manque} /></>}</li>
+        ))}
+      </ul>
+      {paiementEnLigne && <p>Les paiements en ligne sont traités par le prestataire Stripe ; les coordonnées bancaires ne sont jamais transmises au vendeur.</p>}
+      <p>La fabrication débute après validation de la commande{paiementEnLigne ? " et, pour un paiement en ligne, après réception du paiement" : ""}. Une facture est émise à réception du paiement.</p>
+    </ArticleLegal>
+
+    <ArticleLegal numero={5} id="livraison" titre="Fabrication et livraison">
+      <p>Le délai de fabrication est indiqué sur la fiche produit lorsqu'il est connu, et confirmé au client lors de la validation ; il s'ajoute, en cas de livraison, le délai d'acheminement.{serveurBranche && " Le client peut suivre l'avancement de sa commande sur la page « Suivre ma commande »."}</p>
+      <p>Les commandes peuvent être retirées gratuitement à la boutique, {site.adresse}, aux heures d'ouverture, une fois signalées comme prêtes.</p>
+      {site.livraison > 0 && (
+        <p>Livraison : {euros(site.livraison)}{site.livraisonOfferteDes > 0 && `, offerte dès ${euros(site.livraisonOfferteDes)} d'achat`}.</p>
+      )}
+    </ArticleLegal>
+
+    <ArticleLegal numero={6} id="retractation" titre="Droit de rétractation">
+      <p>Conformément à l'article L221-28, 3° du Code de la consommation, le droit de rétractation <strong>ne s'applique pas</strong> aux biens confectionnés selon les spécifications du consommateur ou nettement personnalisés.</p>
+      <p>Pour les éventuels produits non personnalisés, le client dispose d'un délai de 14 jours à compter de la réception pour se rétracter.</p>
+    </ArticleLegal>
+
+    <ArticleLegal numero={7} id="garanties" titre="Garanties">
+      <p>Le client bénéficie de la garantie légale de conformité (articles L217-3 et suivants du Code de la consommation) et de la garantie des vices cachés (articles 1641 et suivants du Code civil).</p>
+      <p>En cas de produit endommagé à la réception, merci de nous contacter sous 48 h avec photos.</p>
+    </ArticleLegal>
+
+    <ArticleLegal numero={8} id="donnees" titre="Données personnelles">
+      <p>Les informations recueillies (nom, email, téléphone, adresse, personnalisations et photos envoyées) servent au traitement des commandes et des demandes de devis, à la facturation et au suivi client (fichier clients de la boutique). Elles ne sont jamais cédées ni vendues.</p>
+      {serveurBranche ? (
+        <p>Elles sont hébergées dans l'Union européenne par le prestataire Supabase ; {paiementEnLigne ? "les paiements sont traités par Stripe et " : ""}les emails sont envoyés via Brevo (France). Les nouveautés et offres ne sont envoyées par email qu'aux personnes qui l'ont accepté ; chaque email contient un lien de désinscription.</p>
+      ) : (
+        <p>Tant que la commande en ligne n'est pas ouverte, les demandes envoyées depuis le site arrivent dans la messagerie de la boutique ({site.email}).</p>
+      )}
+      <p>Les données de commande sont conservées 3 ans après la dernière commande, et les factures pendant la durée légale de 10 ans. Les photos envoyées sont supprimées 6 mois après la livraison.</p>
+      <p>Vous pouvez exercer vos droits d'accès, de rectification, d'opposition et de suppression en écrivant à <a href={`mailto:${site.email}`}>{site.email}</a>, et introduire une réclamation auprès de la CNIL.</p>
+    </ArticleLegal>
+
+    <ArticleLegal numero={9} id="mediation" titre="Médiation et litiges">
+      <p>
+        En cas de litige, le client peut recourir gratuitement au médiateur de la consommation :{" "}
+        {m ? (
+          <>{m.nom}{m.adresse && `, ${m.adresse}`}{m.url && <>, <a href={m.url} rel="noopener">{m.url.replace(/^https?:\/\//, "")}</a></>}.</>
+        ) : (
+          <ACompleter quoi="médiateur de la consommation" />
+        )}
+      </p>
+      <p>Le droit français est applicable.</p>
+    </ArticleLegal>
+  </GabaritLegal>
 </Base>

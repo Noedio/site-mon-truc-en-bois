@@ -1,7 +1,98 @@
 ---
+// Contact et devis : coordonnées en texte (pas d'icônes), horaires, formulaire de devis.
 import Base from "../layouts/Base.astro";
-import EnTravaux from "../components/EnTravaux.astro";
+import TetePage from "../components/TetePage.astro";
+import FormulaireDevis from "../components/FormulaireDevis.astro";
+import { site } from "../lib/donnees";
+import { adresseEnLignes, lienTel } from "../lib/format";
+
+const { rue, ville } = adresseEnLignes(site.adresse);
+const itineraire = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.adresse)}`;
+const horaires = site.horaires.map((h) => {
+  const [jour, ...plages] = h.split(":");
+  return { jour: jour.trim(), plages: plages.join(":").trim() };
+});
 ---
-<Base titre="Contact et devis">
-  <EnTravaux titre="Contact et devis" chantier="chantier C4" contenu="Adresse, horaires, téléphone et le formulaire de devis pour les séries." />
+<Base titre="Contact et devis" description={`Adresse, horaires et téléphone de ${site.nom}, ${site.adresse}. Demande de devis gratuite pour une pièce ou une série.`}>
+  <TetePage
+    titre="Contact et devis"
+    chapeau="Une question, un projet sur mesure, une commande en quantité pour une entreprise, une association, un club ou un mariage ? Écrivez-nous : le devis est gratuit."
+  />
+
+  <section class="bande">
+    <div class="conteneur contact">
+      <div class="contact-infos">
+        <h2 class="visuellement-cache">Nous trouver</h2>
+        <dl class="coordonnees">
+          <div>
+            <dt class="etiquette">Boutique</dt>
+            <dd>
+              {rue}<br />{ville}
+              <a class="machine lien" href={itineraire} rel="noopener">Itinéraire</a>
+            </dd>
+          </div>
+          <div>
+            <dt class="etiquette">Téléphone</dt>
+            <dd><a class="lien-fort" href={lienTel(site.telephone)}>{site.telephone}</a></dd>
+          </div>
+          <div>
+            <dt class="etiquette">Email</dt>
+            <dd><a class="lien-fort" href={`mailto:${site.email}`}>{site.email}</a></dd>
+          </div>
+          {site.facebook && (
+            <div>
+              <dt class="etiquette">Facebook</dt>
+              <dd><a class="lien" href={site.facebook} rel="noopener">Écrivez-nous sur Facebook ou Messenger</a></dd>
+            </div>
+          )}
+          {site.instagram && (
+            <div>
+              <dt class="etiquette">Instagram</dt>
+              <dd><a class="lien" href={site.instagram} rel="noopener">Suivez-nous sur Instagram</a></dd>
+            </div>
+          )}
+        </dl>
+
+        <div class="horaires">
+          <h2 id="titre-horaires">Horaires</h2>
+          <table aria-labelledby="titre-horaires">
+            <tbody>
+              {horaires.map(({ jour, plages }) => (
+                <tr class:list={{ ferme: /ferm/i.test(plages) }}>
+                  <th scope="row">{jour}</th>
+                  <td>{plages}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p class="doux">Une question sur une commande ? Voir les <a href="/faq/">questions fréquentes</a>.</p>
+      </div>
+
+      <FormulaireDevis />
+    </div>
+  </section>
 </Base>
+
+<style>
+  .contact { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px 72px; align-items: start; }
+  .contact-infos { display: flex; flex-direction: column; gap: 36px; min-width: 0; }
+
+  .coordonnees { margin: 0; border-top: var(--filet-fort); }
+  .coordonnees > div { padding: 12px 0; border-bottom: var(--filet); }
+  .coordonnees dd { margin: 4px 0 0; overflow-wrap: anywhere; }
+  .lien-fort { font-family: var(--f-titre); font-weight: 800; font-size: 1.6rem; line-height: 1.1; text-decoration: none; min-height: var(--cible); display: inline-flex; align-items: center; }
+  .lien-fort:hover { text-decoration: underline; }
+  .lien { min-height: var(--cible); display: flex; align-items: center; font-weight: 700; }
+
+  .horaires h2 { font-size: var(--t-sous-titre); margin-bottom: 12px; }
+  .horaires table { width: 100%; border-collapse: collapse; border-top: var(--filet); font-family: var(--f-machine); font-size: var(--t-machine); font-variant-numeric: tabular-nums; }
+  .horaires th, .horaires td { padding: 9px 0; border-bottom: var(--filet); text-align: left; vertical-align: top; }
+  .horaires th { font-weight: 700; padding-right: 16px; white-space: nowrap; }
+  .horaires .ferme { color: var(--texte-doux); }
+
+  @media (max-width: 900px) {
+    .contact { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>

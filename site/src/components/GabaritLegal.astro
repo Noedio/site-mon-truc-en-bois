@@ -1,0 +1,42 @@
+---
+// Gabarit des pages légales (CGV, mentions légales) : sommaire numéroté et colonne de lecture.
+// Les articles sont des <ArticleLegal> glissés dans le gabarit, dans l'ordre du sommaire.
+import TetePage from "./TetePage.astro";
+
+interface Props { titre: string; chapeau?: string; sommaire: { id: string; titre: string }[] }
+const { titre, chapeau, sommaire } = Astro.props;
+---
+<TetePage titre={titre} chapeau={chapeau}>
+  <slot name="tete" />
+</TetePage>
+<section class="bande">
+  <div class="conteneur legal">
+    <nav class="legal-sommaire" aria-labelledby="titre-sommaire">
+      <p class="etiquette" id="titre-sommaire">Sommaire</p>
+      <ol>
+        {sommaire.map((a, i) => (
+          <li><a href={`#${a.id}`}><span class="legal-num">{i + 1}.</span> {a.titre}</a></li>
+        ))}
+      </ol>
+    </nav>
+    <div class="legal-texte">
+      <slot />
+    </div>
+  </div>
+</section>
+
+<style>
+  .legal { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 68ch); gap: 40px 72px; align-items: start; }
+  .legal-sommaire { position: sticky; top: 24px; border-top: var(--filet-fort); padding-top: 12px; }
+  .legal-sommaire ol { list-style: none; margin: 8px 0 0; padding: 0; }
+  .legal-sommaire li { border-bottom: var(--filet); }
+  .legal-sommaire a { display: flex; gap: 8px; min-height: var(--cible); align-items: center; padding-block: 6px; text-decoration: none; line-height: 1.3; }
+  .legal-sommaire a:hover { text-decoration: underline; }
+  .legal-num { font-family: var(--f-machine); font-variant-numeric: tabular-nums; min-width: 2ch; }
+  .legal-texte { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
+
+  @media (max-width: 860px) {
+    .legal { grid-template-columns: minmax(0, 1fr); }
+    .legal-sommaire { position: static; }
+  }
+</style>

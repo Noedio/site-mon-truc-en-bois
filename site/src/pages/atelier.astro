@@ -1,7 +1,151 @@
 ---
+// L'atelier : Christophe et Laetitia, la boutique de la rue Salengro, techniques et matières.
+// Textes tirés de textes.aPropos et des catégories. Le deuxième paragraphe de aPropos est repris
+// en liste de définitions (techniques, matières, clients) plutôt que tel quel.
+// Pas de citation signée tant que l'atelier n'en a pas écrit une ; pas de img/boutique-auchel.jpg (c'est un flyer).
+import { Image } from "astro:assets";
 import Base from "../layouts/Base.astro";
-import EnTravaux from "../components/EnTravaux.astro";
+import ACompleter from "../components/ACompleter.astro";
+import TeteSection from "../components/TeteSection.astro";
+import Bouton from "../components/Bouton.astro";
+import { donnees, categories, site } from "../lib/donnees";
+import { adresseEnLignes } from "../lib/format";
+import { image } from "../lib/images";
+
+const { equipe, aPropos } = donnees.textes;
+const [presentation, , salons] = aPropos;
+const boutique = image("img/boutique-interieur.jpg");
+const stand = image("img/salon-stand.jpg");
+const { rue, ville } = adresseEnLignes(site.adresse);
+
+const savoirFaire: [string, string][] = [
+  ["Techniques", "Gravure laser, sérigraphie et impression, bijoux gravés"],
+  ["Matières", "Bois, verre et ardoise pour la gravure ; mugs, verres et textiles pour l'impression"],
+  ["Pour qui", "Particuliers, commerçants, associations et entreprises"],
+  ["Quantités", "Une pièce seule ou une série"],
+  ["Avant fabrication", "Nous vous recontactons pour valider le rendu, avec une maquette si nécessaire"],
+];
+const PHOTOS = ["photo de l'atelier", "photo de la machine laser", "photo de Christophe et Laetitia"];
+const largeurs = (w: number) => [480, 720, 960, 1200].filter((x) => x <= w);
 ---
-<Base titre="L'atelier">
-  <EnTravaux titre="L'atelier" chantier="chantier C4" contenu="Christophe et Laetitia, la boutique de la rue Salengro, les techniques et les matières." />
+<Base titre="L'atelier" description={`${equipe}, gravure laser, sérigraphie et bijoux gravés dans leur boutique de la rue Salengro, à Auchel.`} image="img/boutique-interieur.jpg">
+  <section class="bande">
+    <div class="conteneur ouverture">
+      <div class="pile ouverture-texte" style="--pile: 24px">
+        <p class="etiquette">{equipe} · {ville}</p>
+        <h1>L'atelier-boutique de la rue Salengro</h1>
+        {presentation && <p class="chapeau">{presentation}</p>}
+      </div>
+      <figure class="photo">
+        {boutique && (
+          <Image src={boutique} alt="L'intérieur de la boutique Mon Truc en Bois, avec ses étagères de pièces gravées" widths={largeurs(boutique.width)} sizes="(max-width: 900px) 100vw, 560px" format="webp" quality={78} loading="eager" fetchpriority="high" />
+        )}
+        <figcaption class="etiquette">La boutique, {rue} à Auchel.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="bande" aria-labelledby="titre-savoir">
+    <div class="conteneur">
+      <TeteSection id="titre-savoir" titre="Ce que nous fabriquons" lien={{ href: "/boutique/", libelle: "Voir les pièces de la boutique" }} />
+      <dl class="definitions">
+        {savoirFaire.map(([terme, definition]) => (
+          <div><dt class="etiquette">{terme}</dt><dd>{definition}</dd></div>
+        ))}
+        <div><dt class="etiquette">Machine</dt><dd><ACompleter quoi="machine laser utilisée (type, surface de travail)" /></dd></div>
+      </dl>
+
+      <dl class="familles">
+        {categories.map((c) => (
+          <div><dt>{c.nom}</dt><dd>{c.description}</dd></div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="bande" aria-labelledby="titre-mot">
+    <div class="conteneur mot">
+      <h2 id="titre-mot" class="visuellement-cache">Le mot de {equipe}</h2>
+      <blockquote>
+        <p><ACompleter quoi="mot de Christophe et Laetitia" /></p>
+        <footer class="etiquette">{equipe}</footer>
+      </blockquote>
+    </div>
+  </section>
+
+  <section class="bande" aria-labelledby="titre-photos">
+    <div class="conteneur">
+      <TeteSection id="titre-photos" titre="Dans l'atelier" />
+      <div class="photos">
+        {PHOTOS.map((p) => (
+          <figure class="photo-a-venir">
+            <div class="cadre"><ACompleter quoi={p} /></div>
+          </figure>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="bande" aria-labelledby="titre-salons">
+    <div class="conteneur salons">
+      <figure class="photo">
+        {stand && (
+          <Image src={stand} alt="Le stand Mon Truc en Bois en salon, avec planches, plaques et porte-clés gravés" widths={largeurs(stand.width)} sizes="(max-width: 900px) 100vw, 640px" format="webp" quality={78} />
+        )}
+        <figcaption class="etiquette">Le stand, aux salons et marchés de la région.</figcaption>
+      </figure>
+      <div class="pile" style="--pile: 20px">
+        <h2 id="titre-salons">Sur les salons et marchés</h2>
+        {salons && <p class="chapeau">{salons.replace(/\s*!$/, ".")}</p>}
+        {site.facebook && <a class="machine lien" href={site.facebook} rel="noopener">Notre page Facebook</a>}
+      </div>
+    </div>
+  </section>
+
+  <section class="bande bande-kraft" aria-labelledby="titre-visite">
+    <div class="conteneur visite">
+      <div class="pile" style="--pile: 8px">
+        <h2 id="titre-visite">Venir à la boutique</h2>
+        <p>{rue}, {ville}. Horaires, téléphone et email sur la page contact.</p>
+      </div>
+      <div class="rangee">
+        <Bouton href="/contact/#devis">Demander un devis</Bouton>
+        <Bouton href="/contact/" genre="contour">Horaires et accès</Bouton>
+      </div>
+    </div>
+  </section>
 </Base>
+
+<style>
+  .ouverture { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 40px 64px; align-items: end; }
+  .ouverture h1 { max-width: 12ch; }
+
+  .photo { margin: 0; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .photo :global(img) { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border: var(--filet); background: var(--kraft); }
+  .ouverture .photo :global(img) { aspect-ratio: 4 / 5; }
+
+  .definitions { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); column-gap: 32px; border-top: var(--filet-fort); }
+  .definitions div, .familles div { padding: 14px 0; border-bottom: var(--filet); min-width: 0; }
+  .definitions dd, .familles dd { margin: 4px 0 0; }
+
+  .familles { margin: 40px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); column-gap: 32px; }
+  .familles dt { font-family: var(--f-titre); font-weight: 800; font-size: 1.5rem; text-transform: uppercase; line-height: 1.05; }
+
+  .mot blockquote { margin: 0; max-width: 46em; border-top: var(--filet-fort); padding-top: 20px; display: flex; flex-direction: column; gap: 14px; font-size: 1.375rem; font-style: italic; }
+  .mot footer { font-style: normal; }
+
+  .photos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 24px; }
+  .photo-a-venir { margin: 0; }
+  .cadre { aspect-ratio: 4 / 3; border: 1px dashed var(--brule); background: var(--papier); display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+
+  .salons { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px 64px; align-items: center; }
+  .lien { font-weight: 700; min-height: var(--cible); display: inline-flex; align-items: center; align-self: flex-start; }
+
+  .visite { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 40px; }
+  .visite h2 { font-size: var(--t-sous-titre); }
+
+  @media (max-width: 900px) {
+    .ouverture, .salons { grid-template-columns: minmax(0, 1fr); }
+    .cadre { aspect-ratio: 16 / 9; }
+  }
+</style>
