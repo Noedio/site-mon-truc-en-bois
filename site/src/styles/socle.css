@@ -67,7 +67,7 @@ img, svg { display: block; max-width: 100%; }
 [hidden] { display: none !important; }
 
 h1, h2, h3 { margin: 0; font-family: var(--f-titre); font-weight: 800; line-height: 1; text-transform: uppercase; text-wrap: balance; letter-spacing: 0.005em; }
-h1 { font-size: var(--t-affiche); line-height: 1; } /* capitales accentuées : la ligne du dessus ne doit pas toucher les accents */
+h1 { font-size: var(--t-affiche); line-height: 1.08; } /* capitales accentuées : la ligne du dessus ne doit pas toucher les accents */
 h2 { font-size: var(--t-titre); line-height: 1; }
 h3 { font-size: var(--t-sous-titre); line-height: 1.05; }
 p { margin: 0; text-wrap: pretty; }

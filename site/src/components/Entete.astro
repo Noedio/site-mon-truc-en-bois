@@ -82,16 +82,19 @@ const ici = Astro.url.pathname;
   @media (max-width: 760px) {
     .adresse-texte { display: none; }
     .adresse-ligne { justify-content: flex-end; padding-block: 0; }
-    .entete-ligne { padding-block: 6px 0; gap: 0 8px; flex-wrap: wrap; }
-    .marque { gap: 6px; flex: 1 1 auto; min-width: 0; }
+    /* Grille fixe : le nom se raccourcit au lieu de pousser le panier à la ligne,
+       pour que la hauteur ne change pas quand la police arrive (pas de décalage de page). */
+    .entete-ligne { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding-block: 6px 0; gap: 0 8px; }
+    .marque { gap: 6px; min-width: 0; }
     .marque img { width: 34px; }
     .marque span { font-size: 1.12rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .panier { padding: 6px 8px; font-size: 0.875rem; }
     .favoris { padding: 0 6px; gap: 4px; }
-    .actions-haut { margin-bottom: 6px; gap: 2px; }
+    .actions-haut { gap: 2px; grid-row: 1; grid-column: 2; }
     .navigation {
-      order: 3;
-      flex-basis: 100%;
+      grid-row: 2;
+      grid-column: 1 / -1;
+      margin-top: 6px;
       flex-wrap: wrap;
       gap: 0 18px;
       border-top: var(--filet);

@@ -1,6 +1,8 @@
 ---
 // Mise en page commune : balises SEO, données structurées du commerce, en-tête et pied.
 import "../styles/socle.css";
+// Police des titres préchargée : elle donne leur taille au nom et aux grands titres du premier écran.
+import policeTitres from "@fontsource/big-shoulders/files/big-shoulders-latin-800-normal.woff2?url";
 import Entete from "../components/Entete.astro";
 import Pied from "../components/Pied.astro";
 import { site, donnees, DEMO } from "../lib/donnees";
@@ -65,6 +67,7 @@ const commerce = {
     <meta property="og:image" content={new URL(`/${image.replace(/^\//, "")}`, Astro.site).href} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#231a14" />
+    <link rel="preload" href={policeTitres} as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="/img/favicon-64.png" sizes="64x64" type="image/png" />
     <link rel="icon" href="/img/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
