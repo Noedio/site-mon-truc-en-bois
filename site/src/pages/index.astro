@@ -36,6 +36,7 @@ const facebook = site.plateformesAvis.facebook;
 const photoAtelier = image("img/salon-stand.jpg") ?? image("img/boutique-interieur.jpg");
 const [aProposDebut, , aProposSalons] = donnees.textes.aPropos;
 const texteDepart = "Marie & Paul\n14.06.2026";
+import { maquetteCourte, questionMaquette } from "../lib/promesses";
 ---
 <Base titre={site.nom} description="Gravure laser, impression et bijoux gravés à Auchel : planches, plaques, verres, mugs. Aperçu de votre texte en direct, retrait gratuit en boutique.">
   <section class="bande accueil-tete" aria-labelledby="titre-accueil">
@@ -119,7 +120,7 @@ const texteDepart = "Marie & Paul\n14.06.2026";
           <div><dt class="etiquette">Techniques</dt><dd>Gravure laser, impression, bijoux gravés</dd></div>
           <div><dt class="etiquette">Matières</dt><dd>Bois, verre, ardoise, céramique, textile</dd></div>
           <div><dt class="etiquette">Séries</dt><dd>À l'unité ou en série, pour les particuliers, commerçants, associations et entreprises</dd></div>
-          <div><dt class="etiquette">Avant gravure</dt><dd><ACompleter quoi="maquette envoyée au client : à chaque commande ou sur demande ?" /></dd></div>
+          <div><dt class="etiquette">Avant gravure</dt><dd>{maquetteCourte || <ACompleter quoi={questionMaquette} />}</dd></div>
         </dl>
         <a class="machine lien-fort" href="/atelier/">Voir l'atelier et la boutique</a>
       </div>
@@ -151,7 +152,7 @@ const texteDepart = "Marie & Paul\n14.06.2026";
         <h2 id="titre-series" class="series-titre">Associations, clubs, entreprises</h2>
         <p>Nous réalisons aussi des séries gravées ou imprimées pour les commerçants, les associations et les entreprises.</p>
       </div>
-      <Bouton href="/contact/" genre="contour">Demander un devis</Bouton>
+      <Bouton href="/contact/#devis" genre="contour">Demander un devis</Bouton>
     </div>
   </section>
 </Base>

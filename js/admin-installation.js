@@ -116,7 +116,7 @@
     return `<div class="champ large"><label for="${id}">${libelle}${requis ? "" : ' <span class="aide">(facultatif)</span>'}</label>
       <input id="${id}" type="${type}" value="${e(valeur)}" placeholder="${e(placeholder)}" autocomplete="${auto}" spellcheck="false">${aide ? `<small>${aide}</small>` : ""}</div>`;
   }
-  const garde = (nom) => (gh?.secrets[nom] ? `Déjà enregistrée le ${date(gh.secrets[nom])} — laissez vide pour la garder.` : "");
+  const garde = (nom) => (gh?.secrets[nom] ? `Déjà enregistrée le ${date(gh.secrets[nom])} . Laissez vide pour la garder.` : "");
 
   function blocAssistant() {
     const v = gh?.variables || {};
@@ -176,7 +176,7 @@
           </li>
 
           <li>
-            <h3>4. Paiement par carte — Stripe</h3>
+            <h3>4. Paiement par carte : Stripe</h3>
             <ol>
               <li>Créez un compte sur <a href="https://dashboard.stripe.com/register" target="_blank" rel="noopener">stripe.com</a>. Pour commencer, restez en <strong>mode test</strong> : aucun vrai paiement, cartes de test.</li>
               <li><em>Développeurs → Clés API</em> : copiez la <strong>clé secrète</strong> (<code>sk_test_…</code>). Quand Stripe a validé votre compte (pièce d'identité, IBAN), revenez coller la clé <code>sk_live_…</code> : les vrais paiements sont alors activés.</li>
@@ -188,7 +188,7 @@
           </li>
 
           <li>
-            <h3>5. Emails automatiques et newsletter — Brevo</h3>
+            <h3>5. Emails automatiques et newsletter : Brevo</h3>
             <ol>
               <li>Créez un compte gratuit sur <a href="https://onboarding.brevo.com/account/register" target="_blank" rel="noopener">brevo.com</a> <strong>avec l'email de la boutique</strong> (il devient l'expéditeur validé).</li>
               <li>Menu du compte → <em>SMTP &amp; API</em> → onglet <em>Clés API</em> → <strong>Générer une nouvelle clé API</strong>, copiez-la (<code>xkeysib-…</code>).</li>

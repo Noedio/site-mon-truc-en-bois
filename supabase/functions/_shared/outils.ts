@@ -340,6 +340,8 @@ export const nomFichier = (nom: string) =>
 
 export const STATUTS: Record<string, string> = {
   nouvelle: "Commande reçue",
+  maquette_envoyee: "Maquette envoyée",
+  retouche: "Maquette en retouche",
   confirmee: "Maquette validée",
   en_fabrication: "En fabrication",
   prete: "Prête à retirer en boutique",

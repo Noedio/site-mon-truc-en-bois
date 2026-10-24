@@ -135,7 +135,7 @@ const MODES_PAIEMENT: Record<string, string> = {
 // ---------- Emails ----------
 export function emailNouvelleCommande(c: any) {
   return {
-    sujet: `Nouvelle commande ${c.numero} — ${euros(c.total)}`,
+    sujet: `Nouvelle commande ${c.numero} · ${euros(c.total)}`,
     html: gabarit(`Nouvelle commande ${c.numero}`, `
       <p><strong>${echapper(c.client_nom)}</strong><br>${echapper(c.client_email)} · ${echapper(c.client_tel)}<br>
       ${c.mode_reception === "retrait" ? "Retrait à la boutique" : `Livraison : ${echapper(c.adresse)}`}</p>
@@ -164,7 +164,7 @@ export function emailConfirmationClient(c: any, paiementUrl?: string) {
 
 export function emailPaiementRecu(c: any) {
   return {
-    sujet: `Paiement reçu — commande ${c.numero}`,
+    sujet: `Paiement reçu pour la commande ${c.numero}`,
     html: gabarit("Paiement bien reçu", `
       <p>Bonjour ${echapper(c.client_nom.split(" ")[0])},</p>
       <p>Nous avons bien reçu votre paiement de <strong>${euros(c.total)}</strong> pour la commande <strong>${c.numero}</strong>${c.facture_numero ? ` (facture ${c.facture_numero})` : ""}. Merci !</p>
@@ -174,7 +174,7 @@ export function emailPaiementRecu(c: any) {
 
 export function emailPaiementRecuBoutique(c: any) {
   return {
-    sujet: `Paiement reçu : ${c.numero} — ${euros(c.total)}`,
+    sujet: `Paiement reçu : ${c.numero} · ${euros(c.total)}`,
     html: gabarit(`Paiement reçu pour ${c.numero}`, `<p>${echapper(c.client_nom)} a payé ${euros(c.total)} en ligne.</p>${bouton(`${site()}/admin.html#commandes`, "Ouvrir dans l'admin")}`, { pourClient: false }),
   };
 }
@@ -190,19 +190,21 @@ export function emailPaiementInattendu(c: any) {
   };
 }
 
-// Où en est la commande : quatre étapes, celle en cours en vert (rien pour une commande annulée)
+// Où en est la commande : cinq étapes, celle en cours en brûlé (rien pour une commande annulée)
 function frise(c: any) {
-  const etapes = ["confirmee", "en_fabrication", c.mode_reception === "livraison" ? "expediee" : "prete", "terminee"];
-  const libelles: Record<string, string> = { confirmee: "Maquette validée", en_fabrication: "En fabrication", prete: "Prête", expediee: "Expédiée", terminee: "Terminée" };
-  const rang = etapes.indexOf(c.statut);
+  const etapes = ["maquette_envoyee", "confirmee", "en_fabrication", c.mode_reception === "livraison" ? "expediee" : "prete", "terminee"];
+  const libelles: Record<string, string> = { maquette_envoyee: "Maquette envoyée", confirmee: "Maquette validée", en_fabrication: "En fabrication", prete: "Prête", expediee: "Expédiée", terminee: "Terminée" };
+  const rang = etapes.indexOf(c.statut === "retouche" ? "maquette_envoyee" : c.statut);
   if (rang < 0) return "";
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:18px 0 6px;border-collapse:separate;border-spacing:4px 0"><tr>${etapes
-    .map((e, i) => `<td style="width:25%;padding-top:8px;border-top:4px solid ${i <= rang ? "#231a14" : "#d7bf9c"};font-size:12px;color:${i === rang ? "#231a14" : "#6b5a4a"};${i === rang ? "font-weight:bold;" : ""}vertical-align:top">${libelles[e]}</td>`)
+    .map((e, i) => `<td style="width:20%;padding-top:8px;border-top:4px solid ${i <= rang ? "#231a14" : "#d7bf9c"};font-size:12px;color:${i === rang ? "#231a14" : "#6b5a4a"};${i === rang ? "font-weight:bold;" : ""}vertical-align:top">${libelles[e]}</td>`)
     .join("")}</tr></table>`;
 }
 
 export function emailStatut(c: any, message = "") {
   const textes: Record<string, string> = {
+    maquette_envoyee: "La maquette de votre gravure est prête : nous vous l'avons envoyée. Dites-nous si elle vous convient ou ce qu'il faut changer.",
+    retouche: "Nous reprenons votre maquette avec vos remarques ; la nouvelle version arrive très vite.",
     confirmee: "Votre maquette est validée : nous lançons la fabrication très bientôt.",
     en_fabrication: "Votre création est en cours de fabrication.",
     prete: "Bonne nouvelle : votre commande est prête ! Vous pouvez venir la retirer à la boutique aux heures d'ouverture.",
@@ -237,7 +239,7 @@ export function emailLienPaiement(c: any, message = "") {
 const TYPES: Record<string, string> = { devis: "Demande de devis", contact: "Message", newsletter: "Inscription à la newsletter" };
 export function emailDemandeBoutique(d: any) {
   return {
-    sujet: `${TYPES[d.type] ?? "Demande"} — ${d.nom}${d.sujet ? ` (${d.sujet})` : ""}`,
+    sujet: `${TYPES[d.type] ?? "Demande"} : ${d.nom}${d.sujet ? ` (${d.sujet})` : ""}`,
     html: gabarit(TYPES[d.type] ?? "Nouvelle demande", `
       <p><strong>${echapper(d.nom)}</strong><br>${echapper(d.email)}${d.tel ? ` · ${echapper(d.tel)}` : ""}</p>
       ${d.sujet ? `<p>Sujet : <strong>${echapper(d.sujet)}</strong>${d.quantite ? ` · quantité : ${d.quantite}` : ""}</p>` : ""}
@@ -251,7 +253,7 @@ export async function emailAccuseDemande(d: any) {
       ? "Merci, vous êtes bien inscrit(e) : vous recevrez nos nouveautés et idées cadeaux. Vous pouvez vous désinscrire à tout moment depuis notre site."
       : "Nous avons bien reçu votre demande et nous vous répondons très vite (en général sous 48 h).";
   return {
-    sujet: d.type === "newsletter" ? "Inscription confirmée — Mon Truc en Bois" : "Votre demande a bien été reçue — Mon Truc en Bois",
+    sujet: d.type === "newsletter" ? "Inscription confirmée chez Mon Truc en Bois" : "Mon Truc en Bois a bien reçu votre demande",
     html: gabarit(d.type === "newsletter" ? "Bienvenue !" : "Merci pour votre message", `
       <p>Bonjour ${echapper(String(d.nom || "").split(" ")[0])},</p><p>${texte}</p>
       ${d.type === "newsletter" ? `<p style="font-size:13px;color:#6b5a4a"><a href="${await lienDesinscription(d.email)}" style="color:#6b5a4a">Se désinscrire</a></p>` : ""}`),
@@ -286,7 +288,7 @@ export async function emailCampagne(c: { nom?: string; email: string; sujet: str
 /** Demande de désinscription sans le lien personnel (formulaire du site) : on écrit à l'adresse pour confirmer. */
 export async function emailConfirmerDesinscription(email: string) {
   return {
-    sujet: "Confirmez votre désinscription — Mon Truc en Bois",
+    sujet: "Confirmez votre désinscription de Mon Truc en Bois",
     html: gabarit("Ne plus recevoir nos emails", `
       <p>Bonjour,</p>
       <p>Vous avez demandé à ne plus recevoir nos nouveautés et promotions. Cliquez sur le bouton pour confirmer.</p>

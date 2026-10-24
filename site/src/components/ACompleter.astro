@@ -11,7 +11,8 @@ const { quoi } = Astro.props;
   .a-completer {
     font-family: var(--f-machine);
     font-size: 0.92em;
-    color: var(--gravure);
+    /* Pas la couleur gravure : elle est réservée à l'achat. Visible sans gêner la lecture. */
+    color: var(--texte-doux);
     border-bottom: 1px dashed currentColor;
     overflow-wrap: anywhere;
   }

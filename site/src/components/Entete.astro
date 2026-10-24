@@ -31,14 +31,24 @@ const ici = Astro.url.pathname;
         <a href={l.href} aria-current={ici.startsWith(l.href) ? "page" : undefined}>{l.libelle}</a>
       ))}
     </nav>
-    <a class="panier machine" href="/panier/">Panier (<span data-compteur-panier>0</span>)</a>
+    <div class="actions-haut">
+      <a class="favoris machine" href="/favoris/" aria-label="Mes favoris">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M12 20.5 3.9 12.6a5 5 0 0 1 0-7.1 5 5 0 0 1 7.1 0l1 1 1-1a5 5 0 0 1 7.1 7.1Z" /></svg>
+        <span data-compteur-favoris>0</span>
+      </a>
+      <a class="panier machine" href="/panier/">Panier (<span data-compteur-panier>0</span>)</a>
+    </div>
   </div>
 </div>
 </header>
 
 <script>
-  import { nombreArticles } from "../lib/panier";
-  const maj = () => document.querySelectorAll("[data-compteur-panier]").forEach((e) => (e.textContent = String(nombreArticles())));
+  import { nombreArticles, lireFavoris } from "../lib/panier";
+  const maj = () => {
+    document.querySelectorAll("[data-compteur-panier]").forEach((e) => (e.textContent = String(nombreArticles())));
+    document.querySelectorAll("[data-compteur-favoris]").forEach((e) => (e.textContent = String(lireFavoris().length)));
+  };
+  document.addEventListener("favoris:change", maj);
   maj();
   document.addEventListener("panier:change", maj);
   window.addEventListener("storage", maj);
@@ -61,27 +71,32 @@ const ici = Astro.url.pathname;
   .navigation a { text-decoration: none; min-height: var(--cible); display: flex; align-items: center; white-space: nowrap; }
   .navigation a[aria-current="page"] { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.35em; }
 
+  .actions-haut { display: flex; gap: 8px; align-items: center; }
+  .favoris { text-decoration: none; min-height: var(--cible); min-width: var(--cible); padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .favoris svg { fill: none; stroke: currentColor; stroke-width: 1.6; }
+  .favoris:hover svg { fill: currentColor; }
+  .adresse a { min-height: var(--cible); display: inline-flex; align-items: center; }
   .panier { text-decoration: none; border: var(--filet); padding: 8px 14px; min-height: var(--cible); display: flex; align-items: center; white-space: nowrap; }
   .panier:hover { background: var(--brule); color: var(--bouleau); }
 
   @media (max-width: 760px) {
     .adresse-texte { display: none; }
-    .adresse-ligne { justify-content: flex-end; padding-block: 6px; }
-    .entete-ligne { padding-block: 6px 0; gap: 0 12px; flex-wrap: wrap; }
-    .marque { gap: 8px; flex: 1 1 auto; min-width: 0; }
+    .adresse-ligne { justify-content: flex-end; padding-block: 0; }
+    .entete-ligne { padding-block: 6px 0; gap: 0 8px; flex-wrap: wrap; }
+    .marque { gap: 6px; flex: 1 1 auto; min-width: 0; }
     .marque img { width: 34px; }
-    .marque span { font-size: 1.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .panier { padding: 6px 10px; margin-bottom: 6px; }
+    .marque span { font-size: 1.12rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .panier { padding: 6px 8px; font-size: 0.875rem; }
+    .favoris { padding: 0 6px; gap: 4px; }
+    .actions-haut { margin-bottom: 6px; gap: 2px; }
     .navigation {
       order: 3;
       flex-basis: 100%;
-      overflow-x: auto;
-      gap: 0 22px;
+      flex-wrap: wrap;
+      gap: 0 18px;
       border-top: var(--filet);
       margin-inline: calc(-1 * var(--gouttiere));
       padding-inline: var(--gouttiere);
-      scrollbar-width: none;
     }
-    .navigation::-webkit-scrollbar { display: none; }
   }
 </style>

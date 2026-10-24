@@ -85,26 +85,26 @@
         <img src="img/logo-200.webp" alt="" width="48" height="44">
         <span><span class="logo-nom">Mon Truc en Bois</span><span class="logo-lieu">Administration</span></span>
       </a>
-      <nav class="onglets" role="tablist" aria-label="Sections">
+      <nav class="onglets" aria-label="Sections">
         <p class="nav-groupe">Au quotidien</p>
-        <button role="tab" data-onglet="accueil" aria-selected="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><span class="nav-libelle">Accueil</span></button>
-        <button role="tab" data-onglet="commandes" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg><span class="nav-libelle">Commandes</span><span class="compteur" data-compteur="commandes" hidden></span></button>
-        <button role="tab" data-onglet="caisse" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg><span class="nav-libelle">Caisse</span></button>
-        <button role="tab" data-onglet="clients" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 6M17.5 19a5 5 0 0 0-2-4"/></svg><span class="nav-libelle">Clients</span></button>
-        <button role="tab" data-onglet="demandes" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="nav-libelle">Demandes</span><span class="compteur" data-compteur="demandes" hidden></span></button>
-        <button role="tab" data-onglet="marketing" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3l7 4V6L7 10z"/><path d="M18 9a4 4 0 0 1 0 6"/></svg><span class="nav-libelle">Marketing</span></button>
+        <button data-onglet="accueil" aria-current="page"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><span class="nav-libelle">Accueil</span></button>
+        <button data-onglet="commandes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg><span class="nav-libelle">Commandes</span><span class="compteur" data-compteur="commandes" hidden></span></button>
+        <button data-onglet="caisse"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg><span class="nav-libelle">Caisse</span></button>
+        <button data-onglet="clients"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 6M17.5 19a5 5 0 0 0-2-4"/></svg><span class="nav-libelle">Clients</span></button>
+        <button data-onglet="demandes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="nav-libelle">Demandes</span><span class="compteur" data-compteur="demandes" hidden></span></button>
+        <button data-onglet="marketing"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3l7 4V6L7 10z"/><path d="M18 9a4 4 0 0 1 0 6"/></svg><span class="nav-libelle">Marketing</span></button>
         <p class="nav-groupe">Le site</p>
-        <button role="tab" data-onglet="questionnaire" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg><span class="nav-libelle">Questionnaire</span></button>
-        <button role="tab" data-onglet="produits" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg><span class="nav-libelle">Produits</span></button>
-        <button role="tab" data-onglet="categories" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span class="nav-libelle">Catégories & occasions</span></button>
-        <button role="tab" data-onglet="avis" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 2.4 5 5.4.6-4 3.7 1.1 5.4L12 16l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6z"/></svg><span class="nav-libelle">Avis clients</span></button>
-        <button role="tab" data-onglet="faq" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01"/></svg><span class="nav-libelle">Questions fréquentes</span></button>
-        <button role="tab" data-onglet="boutique" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5 5.5 4h13L20 9.5M4 9.5V20h16V9.5M4 9.5h16"/><path d="M10 20v-5h4v5"/></svg><span class="nav-libelle">Infos boutique</span></button>
-        <button role="tab" data-onglet="textes" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 11h14M5 16h9"/></svg><span class="nav-libelle">Textes & annonce</span></button>
-        <button role="tab" data-onglet="galerie" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m20.5 16-5-5-9 8"/></svg><span class="nav-libelle">Galerie</span></button>
+        <button data-onglet="questionnaire"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg><span class="nav-libelle">Questionnaire</span></button>
+        <button data-onglet="produits"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg><span class="nav-libelle">Produits</span></button>
+        <button data-onglet="categories"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span class="nav-libelle">Catégories & occasions</span></button>
+        <button data-onglet="avis"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 2.4 5 5.4.6-4 3.7 1.1 5.4L12 16l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6z"/></svg><span class="nav-libelle">Avis clients</span></button>
+        <button data-onglet="faq"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01"/></svg><span class="nav-libelle">Questions fréquentes</span></button>
+        <button data-onglet="boutique"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5 5.5 4h13L20 9.5M4 9.5V20h16V9.5M4 9.5h16"/><path d="M10 20v-5h4v5"/></svg><span class="nav-libelle">Infos boutique</span></button>
+        <button data-onglet="textes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 11h14M5 16h9"/></svg><span class="nav-libelle">Textes & annonce</span></button>
+        <button data-onglet="galerie"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m20.5 16-5-5-9 8"/></svg><span class="nav-libelle">Galerie</span></button>
         <div class="nav-agence">
           <p class="nav-groupe">Agence</p>
-          <button role="tab" data-onglet="installation" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></svg><span class="nav-libelle">Installation</span></button>
+          <button data-onglet="installation"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></svg><span class="nav-libelle">Installation</span></button>
         </div>
       </nav>
       <div class="nav-pied">
@@ -129,10 +129,10 @@
       <main class="admin-contenu" id="contenu"></main>
     </div>
     <nav class="barre-mobile" aria-label="Raccourcis">
-      <button data-onglet="accueil" aria-selected="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><span>Accueil</span></button>
-      <button data-onglet="commandes" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg><span>Commandes</span><span class="compteur" data-compteur="commandes" hidden></span></button>
-      <button data-onglet="caisse" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg><span>Caisse</span></button>
-      <button data-onglet="demandes" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Demandes</span><span class="compteur" data-compteur="demandes" hidden></span></button>
+      <button data-onglet="accueil" aria-current="page"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><span>Accueil</span></button>
+      <button data-onglet="commandes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg><span>Commandes</span><span class="compteur" data-compteur="commandes" hidden></span></button>
+      <button data-onglet="caisse"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg><span>Caisse</span></button>
+      <button data-onglet="demandes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Demandes</span><span class="compteur" data-compteur="demandes" hidden></span></button>
       <button type="button" id="ouvrir-menu" aria-controls="admin-nav" aria-expanded="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg><span>Plus</span></button>
     </nav>
   </div>

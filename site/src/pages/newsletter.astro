@@ -1,0 +1,129 @@
+---
+// Nouveautés par email : inscription, et désinscription par le lien personnel de chaque email
+// (newsletter.html?desinscription=1&email=…&cle=…, redirigé ici avec ses paramètres).
+// Obligatoire : chaque email marketing porte ce lien (CGV art. 8, code des postes et des communications électroniques).
+import Base from "../layouts/Base.astro";
+import Bouton from "../components/Bouton.astro";
+import TetePage from "../components/TetePage.astro";
+import { site } from "../lib/donnees";
+import { lienTel } from "../lib/format";
+
+const commandes = { supabaseUrl: site.commandes.supabaseUrl, supabaseCle: site.commandes.supabaseCle };
+---
+<Base titre="Nouveautés par email" description="Quelques emails par an avant les grandes occasions, avec les nouvelles pièces de l'atelier." indexer={false}>
+  <div data-vue="inscription">
+    <TetePage
+      titre="Nouveautés par email"
+      chapeau="Quelques emails par an, avant les grandes occasions (fête des mères, fête des pères, Noël), avec les nouvelles pièces de l'atelier."
+    />
+    <section class="bande">
+      <div class="conteneur">
+        <form class="formulaire pile" data-inscription style="--pile: 16px" novalidate hidden>
+          <div class="champ"><label for="n-prenom">Prénom</label><input type="text" id="n-prenom" name="nom" autocomplete="given-name" /></div>
+          <div class="champ"><label for="n-email">Email</label><input type="email" id="n-email" name="email" required autocomplete="email" /></div>
+          <input type="text" name="site_web" tabindex="-1" autocomplete="off" class="visuellement-cache" aria-hidden="true" />
+          <div><Bouton type="submit">Je m'inscris</Bouton></div>
+          <p class="retour" data-retour aria-live="polite"></p>
+          <p class="doux">Votre email sert uniquement à vous envoyer nos nouveautés, il n'est transmis à personne. Chaque email contient un lien pour vous désinscrire.</p>
+        </form>
+        <div class="pile" data-sans-serveur style="--pile: 12px">
+          <p>L'inscription en ligne n'est pas encore ouverte. Pour suivre les nouvelles pièces, suivez la page Facebook de la boutique{site.telephone && <> ou appelez-nous au <a href={lienTel(site.telephone)}>{site.telephone}</a></>}.</p>
+          {site.facebook && <div><Bouton href={site.facebook} genre="contour">Page Facebook</Bouton></div>}
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div data-vue="desinscription" hidden>
+    <TetePage
+      titre="Ne plus recevoir nos emails"
+      chapeau="Vous ne recevrez plus nos nouveautés ni nos promotions. Les emails liés à vos commandes (confirmation, suivi) continuent d'arriver."
+    />
+    <section class="bande">
+      <div class="conteneur">
+        <form class="formulaire pile" data-desinscription style="--pile: 16px" novalidate>
+          <div class="champ"><label for="d-email">Votre email</label><input type="email" id="d-email" name="email" required autocomplete="email" /></div>
+          <div><Bouton type="submit">Me désinscrire</Bouton></div>
+          <p class="retour" data-retour aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </div>
+  <noscript>
+    <section class="bande"><div class="conteneur"><p>Pour vous inscrire ou vous désinscrire, écrivez-nous à {site.email}.</p></div></section>
+  </noscript>
+  <script type="application/json" data-config set:html={JSON.stringify({ commandes, email: site.email }).replace(/</g, "\\u003c")} />
+</Base>
+
+<script>
+  import { configurerServeur, serveurDisponible, appelServeur, ErreurServeur } from "../lib/serveur";
+
+  const config = JSON.parse(document.querySelector("[data-config]")!.textContent!) as { commandes: { supabaseUrl: string; supabaseCle: string }; email: string };
+  configurerServeur(config.commandes);
+  const params = new URLSearchParams(location.search);
+  const emailLien = params.get("email") ?? "";
+  const emailValide = (v: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
+
+  const montrer = (vue: string) =>
+    document.querySelectorAll<HTMLElement>("[data-vue]").forEach((v) => (v.hidden = v.dataset.vue !== vue));
+
+  const ecrire = (form: HTMLFormElement, texte: string, erreur = false) => {
+    const r = form.querySelector<HTMLElement>("[data-retour]")!;
+    r.textContent = texte;
+    r.classList.toggle("erreur", erreur);
+  };
+
+  if (params.get("desinscription")) {
+    montrer("desinscription");
+    const form = document.querySelector<HTMLFormElement>("[data-desinscription]")!;
+    const champ = form.querySelector<HTMLInputElement>("input[name=email]")!;
+    champ.value = emailLien;
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const adresse = champ.value.trim();
+      if (!emailValide(adresse)) return ecrire(form, "Indiquez une adresse email valide, par exemple prenom@exemple.fr.", true);
+      if (!serveurDisponible()) {
+        location.href = `mailto:${config.email}?subject=${encodeURIComponent("Désinscription")}&body=${encodeURIComponent(`Merci de ne plus m'envoyer d'emails : ${adresse}`)}`;
+        return ecrire(form, `Un email prêt à envoyer s'ouvre. S'il ne s'ouvre pas, écrivez-nous à ${config.email}.`);
+      }
+      try {
+        // La clé du lien reçu par email ne vaut que pour l'adresse de ce lien.
+        const cle = adresse.toLowerCase() === emailLien.toLowerCase() ? params.get("cle") ?? "" : "";
+        const r = await appelServeur<{ desinscrit?: boolean }>("contact", { action: "desinscription", email: adresse, cle });
+        ecrire(form, r.desinscrit
+          ? "C'est fait : vous ne recevrez plus nos nouveautés."
+          : "Si cette adresse est inscrite, un email vient de lui être envoyé : cliquez sur le bouton qu'il contient pour confirmer.");
+        form.querySelector("button")!.disabled = true;
+      } catch (err) {
+        ecrire(form, err instanceof ErreurServeur ? err.message : "Envoi impossible pour le moment. Réessayez plus tard.", true);
+      }
+    });
+  } else if (serveurDisponible()) {
+    const form = document.querySelector<HTMLFormElement>("[data-inscription]")!;
+    form.hidden = false;
+    document.querySelector<HTMLElement>("[data-sans-serveur]")!.hidden = true;
+    form.querySelector<HTMLInputElement>("input[name=email]")!.value = emailLien;
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const d = new FormData(form);
+      const email = String(d.get("email") ?? "").trim();
+      if (!emailValide(email)) return ecrire(form, "Indiquez une adresse email valide, par exemple prenom@exemple.fr.", true);
+      try {
+        await appelServeur("contact", { type: "newsletter", nom: String(d.get("nom") ?? "").trim(), email, site_web: String(d.get("site_web") ?? "") });
+        ecrire(form, "Merci, c'est noté : vous recevrez nos prochaines nouveautés.");
+        form.querySelector("button")!.disabled = true;
+      } catch (err) {
+        ecrire(form, err instanceof ErreurServeur ? err.message : "Envoi impossible pour le moment. Réessayez plus tard.", true);
+      }
+    });
+  }
+</script>
+
+<style>
+  .formulaire { max-width: 520px; }
+  .champ { display: grid; gap: 6px; }
+  .champ label { font-family: var(--f-machine); font-weight: 700; font-size: var(--t-etiquette); }
+  .retour:empty { display: none; }
+  .retour { border: var(--filet); padding: 12px 14px; background: var(--papier); }
+  .retour.erreur { border-color: var(--gravure); }
+</style>

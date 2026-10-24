@@ -23,12 +23,31 @@ const { id, nom, class: classe } = Astro.props;
 
   document.addEventListener("click", (e) => {
     const bouton = (e.target as Element).closest<HTMLButtonElement>("[data-favori]");
-    if (bouton) basculerFavori(bouton.dataset.favori!);
+    if (!bouton) return;
+    basculerFavori(bouton.dataset.favori!);
+    const garde = lireFavoris().includes(bouton.dataset.favori!);
+    let annonce = document.getElementById("annonce-favori");
+    if (!annonce) {
+      annonce = document.createElement("p");
+      annonce.id = "annonce-favori";
+      annonce.className = "annonce-favori etiquette";
+      annonce.setAttribute("role", "status");
+      document.body.append(annonce);
+    }
+    annonce.innerHTML = garde ? 'Gardé dans vos favoris. <a href="/favoris/">Voir mes favoris</a>' : "Retiré de vos favoris.";
+    annonce.hidden = false;
+    clearTimeout(Number(annonce.dataset.minuteur));
+    annonce.dataset.minuteur = String(setTimeout(() => (annonce!.hidden = true), 5000));
   });
   document.addEventListener("favoris:change", synchroniser);
   window.addEventListener("storage", synchroniser);
   synchroniser();
 </script>
+
+<style is:global>
+  .annonce-favori { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 60; margin: 0; background: var(--brule); color: var(--bouleau); padding: 12px 16px; max-width: calc(100vw - 32px); }
+  .annonce-favori a { color: var(--bouleau); font-weight: 700; }
+</style>
 
 <style>
   .bouton-favori {

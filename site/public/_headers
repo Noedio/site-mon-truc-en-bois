@@ -1,10 +1,33 @@
-# Cloudflare Pages : cache long pour les fichiers versionnés par Astro (nom avec empreinte).
+# En-têtes HTTP appliqués par Cloudflare Pages.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  X-Frame-Options: DENY
+  Strict-Transport-Security: max-age=31536000
+  # La clé GitHub de l'agence est gardée dans le navigateur de l'admin, sur la même origine que le site :
+  # politique de contenu d'abord en mode rapport (erreurs visibles dans la console), à durcir avant la bascule.
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co https://api.github.com; frame-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+
+# Fichiers versionnés par Astro (nom avec empreinte) : cache long.
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
 
 /img/*
   Cache-Control: public, max-age=604800
 
-/*
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
+# Contenu publié depuis l'admin et scripts de l'admin : toujours revérifiés.
+/data/*
+  Cache-Control: no-cache
+
+/js/*
+  Cache-Control: no-cache
+
+/admin.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+
+# Cloudflare Pages sert aussi l'admin à l'adresse courte /admin
+/admin
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache

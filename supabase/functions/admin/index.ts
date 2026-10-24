@@ -149,7 +149,7 @@ async function creerVente(v: NonNullable<Demande["vente"]>) {
       paiement_statut: paye ? "paye" : "en_attente",
       paiement_moyen: texte(v.paiement_moyen, 30),
       // Réglée et remise sur place (boutique, salon) : terminée. Commande par téléphone ou à livrer : à traiter.
-      statut: ["nouvelle", "confirmee", "en_fabrication", "prete", "expediee", "terminee"].includes(v.statut ?? "") ? v.statut : paye && canal !== "telephone" && v.mode_reception !== "livraison" ? "terminee" : "nouvelle",
+      statut: ["nouvelle", "maquette_envoyee", "retouche", "confirmee", "en_fabrication", "prete", "expediee", "terminee"].includes(v.statut ?? "") ? v.statut : paye && canal !== "telephone" && v.mode_reception !== "livraison" ? "terminee" : "nouvelle",
       notes: texte(v.notes, 2000),
       cadeau: /^\d{4}-\d{2}-\d{2}$/.test(v.date_souhaitee ?? "") ? { date: v.date_souhaitee } : {},
     }),

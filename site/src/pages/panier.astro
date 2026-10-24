@@ -16,17 +16,13 @@ import { site, produits } from "../lib/donnees";
 import { image, aVerifier } from "../lib/images";
 import { lienTel } from "../lib/format";
 import { LIBELLES_PAIEMENT } from "../lib/etapes";
+import { phraseMaquette } from "../lib/promesses";
 import type { ProduitPanier } from "../lib/commande";
 
 const { commandes } = site;
 const serveurConfigure = !!(commandes.supabaseUrl && commandes.supabaseCle);
 const commandeEnLigne = serveurConfigure && !site.apercu;
 const p = commandes.paiement;
-// Maquette systématique ou seulement si besoin : réponse du questionnaire (question 3), vide tant qu'elle manque.
-const maquette = commandes.maquette ?? "";
-const phraseMaquette = maquette === "si-besoin"
-  ? "Si votre pièce le demande, nous vous envoyons une maquette à valider avant de graver."
-  : "Nous vous envoyons une maquette à valider avant de graver.";
 
 const modes = [
   commandeEnLigne && p.enLigne && {
@@ -90,7 +86,7 @@ const vedettes = produits.filter((x) => x.vedette && !aVerifier(x.image)).slice(
     <section class="bande panier-tete">
       <div class="conteneur pile" style="--pile: 16px">
         <h1>Votre panier</h1>
-        <p class="chapeau"><span data-chapeau>{phraseMaquette}</span>{maquette === "" && <> <ACompleter quoi="maquette pour chaque commande ou seulement si besoin" /></>}</p>
+        <p class="chapeau"><span data-chapeau>{phraseMaquette}</span></p>
         {!commandeEnLigne && (
           <p class="avis-fermeture">
             <strong>La commande en ligne n'est pas encore ouverte.</strong>
@@ -234,7 +230,7 @@ const vedettes = produits.filter((x) => x.vedette && !aVerifier(x.image)).slice(
     <section class="bande zone-email" data-zone="email" hidden aria-labelledby="t-email">
       <div class="conteneur pile" style="--pile: 20px">
         <h2 id="t-email" tabindex="-1">Votre commande est prête à nous envoyer</h2>
-        <p class="chapeau">La commande en ligne n'est pas encore ouverte : envoyez-nous ce récapitulatif par email. Nous vous répondons avec la maquette à valider.</p>
+        <p class="chapeau">La commande en ligne n'est pas encore ouverte : envoyez-nous ce récapitulatif par email. Nous vous répondons pour valider la personnalisation avant de graver.</p>
         <div class="rangee">
           <Bouton genre="achat" taille="grand" href="#" data-ouvrir-email>Ouvrir l'email prérempli</Bouton>
           <Bouton genre="contour" data-copier>Copier le récapitulatif</Bouton>
@@ -562,8 +558,8 @@ const vedettes = produits.filter((x) => x.vedette && !aVerifier(x.image)).slice(
     $("[data-aide-final]").textContent = !enLigne
       ? "Rien à payer aujourd'hui. À l'étape suivante, nous ouvrons un email prêt à envoyer avec tout le détail de la commande."
       : paiementChoisi() === "en_ligne"
-        ? "Vous payez maintenant sur la page sécurisée de Stripe. Nous vous envoyons ensuite la maquette à valider avant de graver."
-        : "Rien à payer aujourd'hui. Vous recevez un email de confirmation avec un lien de suivi, puis la maquette à valider.";
+        ? `Vous payez maintenant sur la page sécurisée de Stripe. ${D.phraseMaquette}`
+        : `Rien à payer aujourd'hui. Vous recevez un email de confirmation avec un lien de suivi. ${D.phraseMaquette}`;
   }
 
   let minuteur: ReturnType<typeof setTimeout>;
@@ -634,7 +630,7 @@ const vedettes = produits.filter((x) => x.vedette && !aVerifier(x.image)).slice(
     return false;
   }
 
-  function etatEnvoi(texte: string, alerte = false, ...suite: Node[]) {
+  function etatEnvoi(texte: string, alerte = false, ...suite: (Node | string)[]) {
     const zone = $("[data-etat-envoi]");
     zone.replaceChildren(...(texte ? [el("p", { class: alerte ? "message message-alerte" : "message" }, texte, ...suite)] : []));
   }
@@ -1018,6 +1014,9 @@ const vedettes = produits.filter((x) => x.vedette && !aVerifier(x.image)).slice(
   .barre-mobile { display: none; }
 
   @media (max-width: 1000px) {
+    /* La barre du total est fixée en bas : le focus et le bas de page restent visibles au-dessus d'elle. */
+    :global(html) { scroll-padding-bottom: 96px; }
+    :global(body) { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
     .panier-grille { grid-template-columns: minmax(0, 1fr); }
     .recap { position: static; margin-top: 8px; }
     .barre-mobile {

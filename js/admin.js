@@ -34,11 +34,14 @@
     const brut = localStorage.getItem(CLE_STOCKAGE) || sessionStorage.getItem(CLE_STOCKAGE);
     if (brut) cfg = { ...cfg, ...JSON.parse(brut) };
   } catch {}
+  // La branche imposée par la page qui sert l'admin passe avant celle gardée dans ce navigateur.
+  if (REGLAGES.branche) cfg.branche = REGLAGES.branche;
   function enregistrerCfg(souvenir) {
     try {
       localStorage.removeItem(CLE_STOCKAGE);
       sessionStorage.removeItem(CLE_STOCKAGE);
-      (souvenir ? localStorage : sessionStorage).setItem(CLE_STOCKAGE, JSON.stringify(cfg));
+      const aGarder = REGLAGES.branche ? { ...cfg, branche: undefined } : cfg; // branche imposée : pas gardée
+      (souvenir ? localStorage : sessionStorage).setItem(CLE_STOCKAGE, JSON.stringify(aGarder));
     } catch {}
   }
   const lienGithub = (chemin) => `https://github.com/${cfg.proprio}/${cfg.depot}/${chemin}`;
@@ -283,7 +286,9 @@
     // Brouillon non publié laissé lors d'une session précédente ?
     try {
       const b = JSON.parse(localStorage.getItem(CLE_BROUILLON) || "null");
-      if (b && JSON.stringify(b.donnees) !== JSON.stringify(D)) {
+      const memeDepot = !b?.depot || b.depot === `${cfg.proprio}/${cfg.depot}/${cfg.branche}`;
+      if (b && !memeDepot) localStorage.removeItem(CLE_BROUILLON); // brouillon fait pour une autre branche : pas proposé ici
+      else if (b && JSON.stringify(b.donnees) !== JSON.stringify(D)) {
         const quand = new Date(b.date).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
         // Si le site a été publié ailleurs depuis (par l'agence, ou depuis un autre appareil), reprendre le brouillon
         // remplace ces changements-là : on le dit avant de demander.
@@ -424,7 +429,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
   function allerA(nom) {
     if (nom === "installation" && mode === "serveur") nom = "accueil"; // réservé à l'agence
     onglet = nom;
-    document.querySelectorAll("#app [data-onglet]").forEach((x) => x.setAttribute("aria-selected", x.dataset.onglet === nom));
+    document.querySelectorAll("#app [data-onglet]").forEach((x) => (x.dataset.onglet === nom ? x.setAttribute("aria-current", "page") : x.removeAttribute("aria-current")));
     const bouton = document.querySelector(`.onglets [data-onglet="${nom}"] .nav-libelle`);
     $("#titre-vue").textContent = bouton ? bouton.textContent : "";
     menu(false);
@@ -436,6 +441,12 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
     if (b) allerA(b.dataset.onglet);
     if (e.target.closest("#ouvrir-menu")) menu(!$("#admin-nav").classList.contains("ouvert"));
     if (e.target.closest("#admin-voile")) menu(false);
+  });
+  // Échap referme le menu « Plus » et rend le focus au bouton qui l'a ouvert
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !$("#admin-nav").classList.contains("ouvert")) return;
+    menu(false);
+    $("#ouvrir-menu").focus();
   });
   // Un seul menu « … » ouvert à la fois ; un clic ailleurs (ou sur une action) le referme
   document.addEventListener("click", (e) => {
@@ -673,7 +684,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
           ${etape(D.site.commandes?.supabaseUrl ? "ok" : "option", "Commandes en ligne et paiement par carte", D.site.commandes?.supabaseUrl ? `Reliées à Supabase${D.site.commandes?.paiement?.enLigne ? " · paiement par carte activé" : " · paiement par carte désactivé"}.` : "Recommandé : commandes enregistrées ici avec les photos, paiement par carte, fichier clients, suivi pour le client.", mode === "serveur" ? "" : aller("installation", D.site.commandes?.supabaseUrl ? "Vérifier" : "Installer"))}
           ${etape(D.site.formulaireCommande ? "ok" : "option", "Réception des commandes par email (Formspree)", D.site.formulaireCommande ? "Activée." : "Recommandé : sans cela, le client doit envoyer lui-même l'email depuis sa messagerie.", D.site.formulaireCommande ? "" : aller("boutique", "Régler"))}
           ${etape(D.site.whatsapp ? "ok" : "option", "Commandes et questions par WhatsApp", D.site.whatsapp ? `Numéro : ${echapper(D.site.whatsapp)}` : "Facultatif : ajoute un bouton « Commander par WhatsApp » et un bouton de contact.", D.site.whatsapp ? "" : aller("boutique", "Ajouter"))}
-          ${etape(legalOk ? "ok" : "afaire", "Informations légales", legalOk ? `${echapper(L.formeJuridique)} · SIRET ${echapper(D.site.siret)} · ${L.regimeTva === "franchise" ? "franchise de TVA" : "assujetti à la TVA"} — reprises dans les CGV, les mentions légales et les factures.` : "Exploitant, forme juridique, SIRET et régime de TVA : obligatoires dans les CGV, les mentions légales et sur les factures.", legalOk ? "" : aller("boutique", "Compléter"))}
+          ${etape(legalOk ? "ok" : "afaire", "Informations légales", legalOk ? `${echapper(L.formeJuridique)} · SIRET ${echapper(D.site.siret)} · ${L.regimeTva === "franchise" ? "franchise de TVA" : "assujetti à la TVA"} · reprises dans les CGV, les mentions légales et les factures.` : "Exploitant, forme juridique, SIRET et régime de TVA : obligatoires dans les CGV, les mentions légales et sur les factures.", legalOk ? "" : aller("boutique", "Compléter"))}
           ${etape(mediateurOk ? "ok" : "afaire", "Médiateur de la consommation", mediateurOk ? echapper(L.mediateur.nom) : "Obligatoire pour vendre aux particuliers (amende jusqu'à 3 000 €) : adhésion de 30 à 150 € auprès d'un médiateur référencé par la CECMC.", mediateurOk ? "" : aller("boutique", "Renseigner"))}
           ${etape(L.plateformeFacturation ? "ok" : "afaire", "Factures électroniques", L.plateformeFacturation ? "Compte ouvert sur une plateforme agréée." : "Obligatoire depuis le 1er septembre 2026 : pouvoir recevoir les factures de vos fournisseurs sur une plateforme agréée (souvent proposée par la banque ou le logiciel comptable). L'émission suivra en septembre 2027.", `<label class="case"><input type="checkbox" data-chemin="site.legal.plateformeFacturation" data-type="case" data-rendre ${L.plateformeFacturation ? "checked" : ""}> Fait</label>`)}
         </ul>
@@ -1038,7 +1049,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
   // ---------- Vue : Avis clients ----------
   function vueAvis() {
     const pg = D.site.plateformesAvis;
-    const produits = [["", "— Aucun produit précis —"], ...D.produits.map((p) => [p.id, p.nom])];
+    const produits = [["", "Aucun produit précis"], ...D.produits.map((p) => [p.id, p.nom])];
     return `
       <section class="bloc">
         <div class="bloc-tete"><h2>Vos pages d'avis</h2></div>
@@ -1106,7 +1117,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
   function imprimerCarteQR() {
     const w = open("", "_blank");
     if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer la carte.", true);
-    w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Carte avis — Mon Truc en Bois</title>
+    w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Carte avis · Mon Truc en Bois</title>
       <style>@page{size:A6;margin:0}html,body{margin:0}img{display:block;width:105mm;height:148mm}</style></head>
       <body><img src="${carteQR}" alt="Carte « Laissez-nous un avis »"></body></html>`);
     w.document.close();
@@ -1307,7 +1318,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
       </section>
       <section class="bloc">
         <div class="bloc-tete"><h2>Page « Qui sommes-nous ? »</h2></div>
-        ${champ("textes.equipe", "Prénoms affichés", { aide: "Ex. : Christophe et Laetitia — laissez vide pour ne rien afficher." })}
+        ${champ("textes.equipe", "Prénoms affichés", { aide: "Ex. : Christophe et Laetitia. Laissez vide pour ne rien afficher." })}
         ${champ("textes.aPropos", "Présentation (un paragraphe par ligne)", { type: "lignes", lignes: 8 })}
       </section>`;
   }

@@ -12,6 +12,7 @@ import GrillePieces from "../../components/GrillePieces.astro";
 import TeteSection from "../../components/TeteSection.astro";
 import ACompleter from "../../components/ACompleter.astro";
 import BoutonFavori from "../../components/BoutonFavori.astro";
+import { maquetteCourte, phraseMaquette, questionMaquette } from "../../lib/promesses";
 import { produits, categorieDe, prixDe, produitsDe, occasions, site } from "../../lib/donnees";
 import { euros, numeroPiece, adresseEnLignes } from "../../lib/format";
 import { aVerifier } from "../../lib/images";
@@ -90,8 +91,8 @@ const pourScript = {
 };
 ---
 <Base titre={produit.nom} description={produit.description} image={photoPublique || undefined}>
-  <script type="application/ld+json" slot="tete" set:html={JSON.stringify(schemaProduit)} />
-  <script type="application/ld+json" slot="tete" set:html={JSON.stringify(schemaAriane)} />
+  <script type="application/ld+json" slot="tete" set:html={JSON.stringify(schemaProduit).replace(/</g, "\u003c")} />
+  <script type="application/ld+json" slot="tete" set:html={JSON.stringify(schemaAriane).replace(/</g, "\u003c")} />
 
   <div class="conteneur fiche-page">
     <nav class="ariane etiquette" aria-label="Fil d'Ariane">
@@ -112,7 +113,7 @@ const pourScript = {
       </div>
 
       <form class="fiche-achat" data-fiche novalidate>
-        <script type="application/json" data-fiche-donnees set:html={JSON.stringify(pourScript)} />
+        <script type="application/json" data-fiche-donnees set:html={JSON.stringify(pourScript).replace(/</g, "\u003c")} />
         <Configurateur pieces={[produit]} personnalisable={avecTexte}>
           <div class="pile" style="--pile: 12px" slot="tete">
             <p class="etiquette">{numeroPiece(produit.numero)} · {categorie?.nom}</p>
@@ -196,7 +197,7 @@ const pourScript = {
             <div><dt class="etiquette">Retrait en boutique</dt><dd>Gratuit, {rue}, {ville}</dd></div>
             <div><dt class="etiquette">Livraison</dt><dd>{euros(site.livraison)}, offerte dès {euros(site.livraisonOfferteDes)} d'achat</dd></div>
             {modesPaiement.length > 0 && <div><dt class="etiquette">Paiement</dt><dd>{modesPaiement.join(", ou ").replace(/^./, (c) => c.toUpperCase())}</dd></div>}
-            <div><dt class="etiquette">Maquette</dt><dd><ACompleter quoi="maquette envoyée au client : à chaque commande ou sur demande ?" /></dd></div>
+            <div><dt class="etiquette">Maquette</dt><dd>{maquetteCourte || <ACompleter quoi={questionMaquette} />}</dd></div>
           </dl>
         </Configurateur>
       </form>
@@ -212,7 +213,7 @@ const pourScript = {
         <TeteSection id="titre-etapes" titre="Comment se passe votre commande" />
         <ol class="etapes" role="list">
           <li><span class="etape-n">01</span><strong>Vous écrivez votre texte</strong><span>Et vous choisissez {variantes ? `${variantes.nom.toLowerCase()} et ` : ""}la police.</span></li>
-          <li><span class="etape-n">02</span><strong>La maquette</strong><span><ACompleter quoi="comment la maquette est envoyée et validée" /></span></li>
+          <li><span class="etape-n">02</span><strong>La maquette</strong><span>{phraseMaquette}</span></li>
           <li><span class="etape-n">03</span><strong>Nous gravons à l'atelier</strong><span>Christophe ou Laetitia, à Auchel.</span></li>
           <li><span class="etape-n">04</span><strong>Retrait ou livraison</strong><span>Gratuit en boutique, ou livré chez vous.</span></li>
         </ol>

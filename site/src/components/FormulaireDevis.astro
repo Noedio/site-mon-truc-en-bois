@@ -10,9 +10,14 @@ const { supabaseUrl, supabaseCle } = site.commandes;
 const enLigne = Boolean(supabaseUrl && supabaseCle);
 const PROJETS = ["Gravure texte ou photo", "Sérigraphie ou impression", "Naissance, mariage, fête", "Bijoux", "Commande pro ou association", "Autre"];
 ---
+<noscript>
+  <p class="devis-avis">Pour demander un devis, écrivez-nous à {site.email} ou appelez le {site.telephone}.</p>
+</noscript>
 <form
   id="devis"
   class="devis"
+  method="post"
+  action="#devis"
   aria-labelledby="titre-devis"
   data-supabase-url={supabaseUrl}
   data-supabase-cle={supabaseCle}

@@ -45,7 +45,7 @@ const donneesAvis = {
 };
 ---
 <Base titre="Avis clients" description={`Les avis laissés par les clients de ${site.nom}, atelier-boutique de gravure à Auchel.`}>
-  <script slot="tete" type="application/ld+json" set:html={JSON.stringify(donneesAvis)} />
+  <script slot="tete" type="application/ld+json" set:html={JSON.stringify(donneesAvis).replace(/</g, "\u003c")} />
 
   <TetePage titre="Les avis de nos clients" chapeau={`Recopiés tels qu'ils ont été laissés sur notre page Facebook${avecGoogle ? " et sur Google" : ""}, avec le prénom et le mois.`}>
     <div class="scores">

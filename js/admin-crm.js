@@ -184,8 +184,8 @@
 
           <fieldset class="pile">
             <legend>Client</legend>
-            <input list="crm-liste-clients" data-caisse="client" value="${client ? e(`${client.nom}${client.email ? ` — ${client.email}` : client.tel ? ` — ${client.tel}` : ""}`) : ""}" placeholder="Client existant (nom, email…) — ou laissez vide" aria-label="Client existant">
-            <datalist id="crm-liste-clients">${donnees.clients.map((c) => `<option value="${e(`${c.nom}${c.email ? ` — ${c.email}` : c.tel ? ` — ${c.tel}` : ""}`)}"></option>`).join("")}</datalist>
+            <input list="crm-liste-clients" data-caisse="client" value="${client ? e(`${client.nom}${client.email ? ` · ${client.email}` : client.tel ? ` · ${client.tel}` : ""}`) : ""}" placeholder="Client existant (nom, email…) · ou laissez vide" aria-label="Client existant">
+            <datalist id="crm-liste-clients">${donnees.clients.map((c) => `<option value="${e(`${c.nom}${c.email ? ` · ${c.email}` : c.tel ? ` · ${c.tel}` : ""}`)}"></option>`).join("")}</datalist>
             ${client ? `<p class="aide">Fiche : ${e(client.nom)}${client.tel ? ` · ${e(client.tel)}` : ""} <button class="mini" data-crm="sans-client" type="button">Changer</button></p>` : `
             <div class="grille-champs">
               <div class="champ"><label for="cs-nom">Nouveau client : nom</label><input id="cs-nom" data-nouveau="nom" value="${e(caisse.nouveau.nom)}" autocomplete="off"></div>
@@ -254,7 +254,7 @@
     // sinon on demande de choisir (la vente ne doit pas partir sans client par erreur).
     const saisie = String(caisse.saisieClient || "").trim().toLowerCase();
     if (!caisse.clientId && saisie) {
-      const trouves = donnees.clients.filter((c) => `${c.nom} ${c.email ?? ""} ${c.tel}`.toLowerCase().includes(saisie.split(" — ")[0]));
+      const trouves = donnees.clients.filter((c) => `${c.nom} ${c.email ?? ""} ${c.tel}`.toLowerCase().includes(saisie.split(" · ")[0]));
       if (trouves.length !== 1) return ctx.toast(trouves.length ? "Plusieurs clients correspondent : choisissez le bon dans la liste proposée." : "Ce client n'est pas dans le fichier : videz le champ « Client existant » et remplissez « Nouveau client ».", true);
       caisse.clientId = trouves[0].id;
     }
@@ -356,7 +356,7 @@
               const s = st(c.id);
               return `<button class="ligne ligne-commande" data-crm="client" data-id="${c.id}">
                 ${avatar(c.nom || c.email)}
-                <span class="ligne-texte"><strong>${e(c.nom || "(sans nom)")}</strong><span>${[c.email, c.tel].filter(Boolean).map(e).join(" · ") || "—"}${s.derniere ? ` · dernier achat le ${date(s.derniere)}` : ""}</span></span>
+                <span class="ligne-texte"><strong>${e(c.nom || "(sans nom)")}</strong><span>${[c.email, c.tel].filter(Boolean).map(e).join(" · ") || "aucun contact"}${s.derniere ? ` · dernier achat le ${date(s.derniere)}` : ""}</span></span>
                 <span class="pastilles">${c.consentement_marketing ? `<span class="pastille ok">Abonné</span>` : ""}${(c.etiquettes || []).map((t) => `<span class="pastille">#${e(t)}</span>`).join("")}</span>
                 <span class="prix"><strong>${euros(s.total)}</strong><small class="aide"> ${s.n} achat${s.n > 1 ? "s" : ""}</small></span>
               </button>`;
@@ -409,7 +409,7 @@
         <p class="fiche-client-chiffres"><span><strong>${st.n}</strong> achat${st.n > 1 ? "s" : ""}</span><span><strong>${euros(st.total)}</strong> dépensés</span>${st.n ? `<span>panier moyen <strong>${euros(st.total / st.n)}</strong></span>` : ""}</p>` : `<h2 style="font-size:1.35rem">Nouveau client</h2>`}
         <div class="champ"><label for="cl-notes">Notes</label><textarea id="cl-notes" name="notes" rows="3" placeholder="Préférences, tailles, dates importantes (anniversaire, mariage…)">${e(c.notes)}</textarea></div>
         ${achats.length ? `<h3>Achats</h3><div class="liste">${achats.map((a) => `<div class="ligne ligne-simple"><span class="ligne-texte"><strong>${e(a.numero)}</strong><span>${date(a.cree_le)} · ${e(CANAUX_STATS[a.canal] || "Site internet")}</span></span><span class="pastilles"><span class="pastille statut-${a.statut}">${e(STATUTS_CMD[a.statut] || a.statut)}</span></span><strong class="prix">${euros(a.total)}</strong></div>`).join("")}</div>` : id ? `<p class="aide">Pas encore d'achat.</p>` : ""}
-        ${demandes.length ? `<h3>Demandes</h3><div class="liste">${demandes.map((d) => `<div class="ligne ligne-simple"><span class="ligne-texte"><strong>${e(TYPES_DEM[d.type])}${d.sujet ? ` — ${e(d.sujet)}` : ""}</strong><span>${date(d.cree_le)} · ${e(ST_DEM[d.statut])}</span></span></div>`).join("")}</div>` : ""}
+        ${demandes.length ? `<h3>Demandes</h3><div class="liste">${demandes.map((d) => `<div class="ligne ligne-simple"><span class="ligne-texte"><strong>${e(TYPES_DEM[d.type])}${d.sujet ? ` · ${e(d.sujet)}` : ""}</strong><span>${date(d.cree_le)} · ${e(ST_DEM[d.statut])}</span></span></div>`).join("")}</div>` : ""}
         ${id ? `<details class="coordonnees"><summary>Coordonnées, étiquettes et accord pour les emails</summary>${champs}</details>` : champs}
         <div class="raccourcis">
           <button class="btn" value="ok">Enregistrer</button>
@@ -486,7 +486,7 @@
             .map(
               (d) => `<button class="ligne ligne-commande" data-crm="demande" data-id="${d.id}">
                 ${avatar(d.nom || d.email)}
-                <span class="ligne-texte"><strong>${e(d.nom || d.email)}${d.sujet ? ` — ${e(d.sujet)}` : ""}</strong><span>${date(d.cree_le, true)}${d.quantite ? ` · quantité ${d.quantite}` : ""} · ${e(d.message.slice(0, 90))}${d.message.length > 90 ? "…" : ""}</span></span>
+                <span class="ligne-texte"><strong>${e(d.nom || d.email)}${d.sujet ? ` · ${e(d.sujet)}` : ""}</strong><span>${date(d.cree_le, true)}${d.quantite ? ` · quantité ${d.quantite}` : ""} · ${e(d.message.slice(0, 90))}${d.message.length > 90 ? "…" : ""}</span></span>
                 <span class="pastilles"><span class="pastille">${TYPES_DEM[d.type]}</span><span class="pastille demande-${d.statut}">${ST_DEM[d.statut]}</span></span>
               </button>`
             )
@@ -514,7 +514,7 @@
     const f = fenetre();
     f.innerHTML = `
       <form method="dialog" class="pile" style="max-width:680px">
-        <div class="bloc-tete"><h2 style="font-size:1.35rem">${TYPES_DEM[d.type]}${d.sujet ? ` — ${e(d.sujet)}` : ""}</h2><span class="aide">${date(d.cree_le, true)}</span></div>
+        <div class="bloc-tete"><h2 style="font-size:1.35rem">${TYPES_DEM[d.type]}${d.sujet ? ` · ${e(d.sujet)}` : ""}</h2><span class="aide">${date(d.cree_le, true)}</span></div>
         <p><strong>${e(d.nom)}</strong><br><a href="mailto:${e(d.email)}">${e(d.email)}</a>${d.tel ? ` · <a href="tel:${e(tel)}">${e(d.tel)}</a>` : ""}${d.quantite ? `<br>Quantité : <strong>${d.quantite}</strong>` : ""}</p>
         ${d.message ? `<div class="encart" style="white-space:pre-line">${e(d.message)}</div>` : ""}
         <div class="grille-champs">
@@ -589,8 +589,8 @@
         <div class="bloc-tete"><h2>Email aux abonnés <span class="aide">(${abonnes} abonné${abonnes > 1 ? "s" : ""})</span></h2></div>
         <p class="aide">Nouveautés, idées cadeaux avant une fête, code promo… Envoyé uniquement aux clients qui l'ont accepté, avec un lien de désinscription. Offre gratuite Brevo : 300 emails par jour (emails des commandes compris).</p>
         <form class="pile" data-crm-form="campagne">
-          <div class="champ"><label for="ca-sujet">Sujet</label><input id="ca-sujet" name="sujet" required placeholder="Fête des mères : nos idées cadeaux personnalisées 🎁"></div>
-          <div class="champ"><label for="ca-message">Message</label><textarea id="ca-message" name="message" rows="7" required placeholder="Pour la fête des mères, offrez un cadeau unique…&#10;&#10;Avec le code MAMAN10, profitez de 10 % de remise jusqu'au 25 mai."></textarea></div>
+          <div class="champ"><label for="ca-sujet">Sujet</label><input id="ca-sujet" name="sujet" required placeholder="Fête des mères : nos idées cadeaux personnalisées"></div>
+          <div class="champ"><label for="ca-message">Message</label><textarea id="ca-message" name="message" rows="7" required placeholder="Pour la fête des mères, offrez une planche gravée à son prénom…&#10;&#10;Avec le code MAMAN10, profitez de 10 % de remise jusqu'au 25 mai."></textarea></div>
           <div class="grille-champs">
             <div class="champ"><label for="ca-lien">Bouton vers</label><select id="ca-lien" name="lien">
               <option value="">Pas de bouton</option>
@@ -599,7 +599,7 @@
               ${ctx.D.occasions.map((o) => `<option value="${e(site)}boutique.html?occasion=${e(o.id)}">Occasion : ${e(o.nom)}</option>`).join("")}
               ${ctx.D.produits.filter((p) => p.visible !== false).map((p) => `<option value="${e(site)}produit.html?id=${e(p.id)}">Produit : ${e(p.nom)}</option>`).join("")}
             </select></div>
-            <div class="champ"><label for="ca-texte">Texte du bouton</label><input id="ca-texte" name="texte_lien" placeholder="Découvrir"></div>
+            <div class="champ"><label for="ca-texte">Texte du bouton</label><input id="ca-texte" name="texte_lien" placeholder="Voir les idées fête des mères"></div>
           </div>
           <div class="raccourcis">
             <button class="btn btn-ligne" value="essai">M'envoyer un essai</button>
@@ -720,7 +720,7 @@
       <div class="graphe" role="img" aria-label="Chiffre d'affaires des 12 derniers mois">
         ${douze.map((m) => `<div class="barre-mois" title="${new Date(m + "-01").toLocaleDateString("fr-FR", { month: "long", year: "numeric" })} : ${euros(parMois[m]?.ca || 0)}"><span style="height:${Math.round(((parMois[m]?.ca || 0) / max) * 100)}%"></span><small>${new Date(m + "-01").toLocaleDateString("fr-FR", { month: "short" }).replace(".", "")}</small></div>`).join("")}
       </div>
-      <p class="aide">Ventes du site, de la boutique, du téléphone et des salons, hors commandes annulées ou remboursées. 12 derniers mois : <strong>${euros(annee)}</strong>${Object.keys(canauxAnnee).length ? " — " + Object.entries(canauxAnnee).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${CANAUX_STATS[k] || k} ${Math.round((v / (annee || 1)) * 100)} %`).join(" · ") : ""}</p>`;
+      <p class="aide">Ventes du site, de la boutique, du téléphone et des salons, hors commandes annulées ou remboursées. 12 derniers mois : <strong>${euros(annee)}</strong>${Object.keys(canauxAnnee).length ? " · " + Object.entries(canauxAnnee).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${CANAUX_STATS[k] || k} ${Math.round((v / (annee || 1)) * 100)} %`).join(" · ") : ""}</p>`;
     el.hidden = false;
   }
 
@@ -809,7 +809,7 @@
     if (a === "repondre") {
       const d = donnees.demandes.find((x) => x.id === b.dataset.id);
       return ecrire({
-        email: d.email, nom: d.nom, sujet: `Votre demande${d.sujet ? ` : ${d.sujet}` : ""} — Mon Truc en Bois`,
+        email: d.email, nom: d.nom, sujet: `Votre demande${d.sujet ? ` : ${d.sujet}` : ""} · Mon Truc en Bois`,
         message: `Merci pour votre demande${d.type === "devis" ? " de devis" : ""}.\n\n`,
         apres: async () => {
           d.statut = "repondue";
@@ -823,7 +823,7 @@
       const d = donnees.demandes.find((x) => x.id === b.dataset.id);
       fenetre().close();
       const fiche = donnees.clients.find((x) => x.id === d.client_id);
-      caisse = { ...caisseVide(), clientId: d.client_id || "", consentement: !!fiche?.consentement_marketing, nouveau: { nom: d.nom, email: d.email, tel: d.tel }, canal: "telephone", paye: false, notes: [d.sujet, d.message].filter(Boolean).join(" — ").slice(0, 1500), demandeId: d.id };
+      caisse = { ...caisseVide(), clientId: d.client_id || "", consentement: !!fiche?.consentement_marketing, nouveau: { nom: d.nom, email: d.email, tel: d.tel }, canal: "telephone", paye: false, notes: [d.sujet, d.message].filter(Boolean).join(" · ").slice(0, 1500), demandeId: d.id };
       ctx.toast("Ajoutez les articles puis enregistrez : la demande passera en « Devenue commande ».");
       return ctx.allerA("caisse");
     }
@@ -847,7 +847,7 @@
     if (a === "partager-code") {
       const p = donnees.promos.find((x) => x.code === b.dataset.code);
       const site = adresseSite();
-      return copier(`🎁 ${p.description || "Offre spéciale"} chez Mon Truc en Bois ! Avec le code ${p.code}, profitez de ${p.type === "pourcentage" ? `${Number(p.valeur)} % de remise` : `${euros(p.valeur)} de remise`}${Number(p.minimum) ? ` dès ${euros(p.minimum)} d'achat` : ""}${p.fin ? ` jusqu'au ${new Date(p.fin).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}` : ""}. Cadeaux personnalisés gravés à Auchel 👉 ${site}boutique.html`);
+      return copier(`${p.description || "Offre spéciale"} chez Mon Truc en Bois ! Avec le code ${p.code}, profitez de ${p.type === "pourcentage" ? `${Number(p.valeur)} % de remise` : `${euros(p.valeur)} de remise`}${Number(p.minimum) ? ` dès ${euros(p.minimum)} d'achat` : ""}${p.fin ? ` jusqu'au ${new Date(p.fin).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}` : ""}. Cadeaux personnalisés gravés à Auchel ${site}boutique.html`);
     }
     if (a === "reprendre-campagne") {
       const c = donnees.campagnes.find((x) => x.id === b.dataset.id);
@@ -906,7 +906,7 @@
       return afficher();
     }
     if (c === "client") {
-      const choisi = donnees.clients.find((x) => `${x.nom}${x.email ? ` — ${x.email}` : x.tel ? ` — ${x.tel}` : ""}` === el.value);
+      const choisi = donnees.clients.find((x) => `${x.nom}${x.email ? ` · ${x.email}` : x.tel ? ` · ${x.tel}` : ""}` === el.value);
       if (choisi) {
         caisse.clientId = choisi.id;
         caisse.saisieClient = "";

@@ -14,7 +14,9 @@ on:
         type: boolean
         default: false
   push:
-    branches: [site-vitrine-boutique] # la branche mise en ligne : un envoi sur une autre branche ne touche pas au serveur
+    # Les branches du site : site-vitrine-boutique (en ligne) et refonte (nouveau site, le temps de la refonte ;
+    # à retirer après la bascule). Un envoi sur une autre branche ne touche pas au serveur.
+    branches: [site-vitrine-boutique, refonte]
     paths: ["supabase/functions/**", "supabase/migrations/**", "supabase/config.toml", "supabase/installation.json"]
 
 permissions:
@@ -151,7 +153,7 @@ jobs:
             echo "BREVO_API_KEY=$BREVO_API_KEY"
             echo "CONTENU_GITHUB_TOKEN=$CONTENU_GITHUB_TOKEN"
             echo "CONTENU_DEPOT=${{ github.repository }}"
-            echo "CONTENU_BRANCHE=${{ vars.BRANCHE_SITE || 'site-vitrine-boutique' }}"
+            echo "CONTENU_BRANCHE=${{ vars.BRANCHE_SITE || github.ref_name }}"
           } | grep -v '=$' > secrets.env
           supabase secrets set --project-ref "$PROJET" --env-file secrets.env
           rm secrets.env

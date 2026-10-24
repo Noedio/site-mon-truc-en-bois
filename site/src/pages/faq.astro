@@ -46,7 +46,7 @@ const faqPage = {
 };
 ---
 <Base titre="Questions fréquentes" description={`Commande personnalisée, délais, retrait à Auchel, paiement, photos et commandes en quantité chez ${site.nom}.`}>
-  <script slot="tete" type="application/ld+json" set:html={JSON.stringify(faqPage)} />
+  <script slot="tete" type="application/ld+json" set:html={JSON.stringify(faqPage).replace(/</g, "\u003c")} />
 
   <TetePage titre="Questions fréquentes">
     <p class="chapeau">Vous ne trouvez pas votre réponse ? <a href="/contact/">Écrivez-nous</a> ou appelez-nous au <a class="tel" href={lienTel(site.telephone)}>{site.telephone}</a>.</p>

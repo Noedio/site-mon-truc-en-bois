@@ -473,10 +473,10 @@
       b = document.createElement("div");
       b.id = "bandeau-demo";
       b.setAttribute("role", "note");
-      b.style.cssText = "background:#a8693a;color:#fff;font:500 13px/1.4 Figtree,system-ui,sans-serif;padding:6px max(16px,env(safe-area-inset-left,0px));display:flex;gap:4px 14px;flex-wrap:wrap;align-items:center;justify-content:center;text-align:center";
+      b.style.cssText = "background:#a4471c;color:#fff;font:400 13px/1.4 'Courier Prime','Courier New',monospace;padding:0 max(16px,env(safe-area-inset-left,0px));display:flex;gap:0 16px;flex-wrap:wrap;align-items:center;justify-content:center;text-align:center";
       document.body.prepend(b);
     }
-    const lien = "color:#fff;font-weight:600;text-decoration:underline";
+    const lien = "color:#fff;font-weight:700;text-decoration:underline;display:inline-flex;align-items:center;min-height:44px";
     if (document.body.firstElementChild !== b) document.body.prepend(b);
     b.innerHTML = `<span><strong>Démo</strong> : rien n'est envoyé ni payé</span>
       <a style="${lien}" href="${PAGES.guide}#boite">Boîte mail${n ? ` (${n})` : ""}</a>

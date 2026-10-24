@@ -417,6 +417,8 @@ async function signatureStripeValide(corps, entete, secret, toleranceSecondes = 
 var nomFichier = (nom) => (nom || "photo").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-60);
 var STATUTS = {
   nouvelle: "Commande re\xE7ue",
+  maquette_envoyee: "Maquette envoy\xE9e",
+  retouche: "Maquette en retouche",
   confirmee: "Maquette valid\xE9e",
   en_fabrication: "En fabrication",
   prete: "Pr\xEAte \xE0 retirer en boutique",
@@ -616,7 +618,7 @@ var MODES_PAIEMENT = {
 };
 function emailNouvelleCommande(c) {
   return {
-    sujet: `Nouvelle commande ${c.numero} \u2014 ${euros(c.total)}`,
+    sujet: `Nouvelle commande ${c.numero} \xB7 ${euros(c.total)}`,
     html: gabarit(`Nouvelle commande ${c.numero}`, `
       <p><strong>${echapper(c.client_nom)}</strong><br>${echapper(c.client_email)} \xB7 ${echapper(c.client_tel)}<br>
       ${c.mode_reception === "retrait" ? "Retrait \xE0 la boutique" : `Livraison : ${echapper(c.adresse)}`}</p>
@@ -647,7 +649,7 @@ function emailConfirmationClient(c, paiementUrl) {
 }
 function emailPaiementRecu(c) {
   return {
-    sujet: `Paiement re\xE7u \u2014 commande ${c.numero}`,
+    sujet: `Paiement re\xE7u pour la commande ${c.numero}`,
     html: gabarit("Paiement bien re\xE7u", `
       <p>Bonjour ${echapper(c.client_nom.split(" ")[0])},</p>
       <p>Nous avons bien re\xE7u votre paiement de <strong>${euros(c.total)}</strong> pour la commande <strong>${c.numero}</strong>${c.facture_numero ? ` (facture ${c.facture_numero})` : ""}. Merci !</p>
@@ -656,7 +658,7 @@ function emailPaiementRecu(c) {
 }
 function emailPaiementRecuBoutique(c) {
   return {
-    sujet: `Paiement re\xE7u : ${c.numero} \u2014 ${euros(c.total)}`,
+    sujet: `Paiement re\xE7u : ${c.numero} \xB7 ${euros(c.total)}`,
     html: gabarit(`Paiement re\xE7u pour ${c.numero}`, `<p>${echapper(c.client_nom)} a pay\xE9 ${euros(c.total)} en ligne.</p>${bouton(`${site()}/admin.html#commandes`, "Ouvrir dans l'admin")}`, {
       pourClient: false
     })
@@ -676,24 +678,28 @@ function emailPaiementInattendu(c) {
 }
 function frise(c) {
   const etapes = [
+    "maquette_envoyee",
     "confirmee",
     "en_fabrication",
     c.mode_reception === "livraison" ? "expediee" : "prete",
     "terminee"
   ];
   const libelles = {
+    maquette_envoyee: "Maquette envoy\xE9e",
     confirmee: "Maquette valid\xE9e",
     en_fabrication: "En fabrication",
     prete: "Pr\xEAte",
     expediee: "Exp\xE9di\xE9e",
     terminee: "Termin\xE9e"
   };
-  const rang = etapes.indexOf(c.statut);
+  const rang = etapes.indexOf(c.statut === "retouche" ? "maquette_envoyee" : c.statut);
   if (rang < 0) return "";
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:18px 0 6px;border-collapse:separate;border-spacing:4px 0"><tr>${etapes.map((e, i) => `<td style="width:25%;padding-top:8px;border-top:4px solid ${i <= rang ? "#231a14" : "#d7bf9c"};font-size:12px;color:${i === rang ? "#231a14" : "#6b5a4a"};${i === rang ? "font-weight:bold;" : ""}vertical-align:top">${libelles[e]}</td>`).join("")}</tr></table>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:18px 0 6px;border-collapse:separate;border-spacing:4px 0"><tr>${etapes.map((e, i) => `<td style="width:20%;padding-top:8px;border-top:4px solid ${i <= rang ? "#231a14" : "#d7bf9c"};font-size:12px;color:${i === rang ? "#231a14" : "#6b5a4a"};${i === rang ? "font-weight:bold;" : ""}vertical-align:top">${libelles[e]}</td>`).join("")}</tr></table>`;
 }
 function emailStatut(c, message = "") {
   const textes = {
+    maquette_envoyee: "La maquette de votre gravure est pr\xEAte : nous vous l'avons envoy\xE9e. Dites-nous si elle vous convient ou ce qu'il faut changer.",
+    retouche: "Nous reprenons votre maquette avec vos remarques ; la nouvelle version arrive tr\xE8s vite.",
     confirmee: "Votre maquette est valid\xE9e : nous lan\xE7ons la fabrication tr\xE8s bient\xF4t.",
     en_fabrication: "Votre cr\xE9ation est en cours de fabrication.",
     prete: "Bonne nouvelle : votre commande est pr\xEAte ! Vous pouvez venir la retirer \xE0 la boutique aux heures d'ouverture.",
@@ -729,7 +735,7 @@ var TYPES = {
 };
 function emailDemandeBoutique(d) {
   return {
-    sujet: `${TYPES[d.type] ?? "Demande"} \u2014 ${d.nom}${d.sujet ? ` (${d.sujet})` : ""}`,
+    sujet: `${TYPES[d.type] ?? "Demande"} : ${d.nom}${d.sujet ? ` (${d.sujet})` : ""}`,
     html: gabarit(TYPES[d.type] ?? "Nouvelle demande", `
       <p><strong>${echapper(d.nom)}</strong><br>${echapper(d.email)}${d.tel ? ` \xB7 ${echapper(d.tel)}` : ""}</p>
       ${d.sujet ? `<p>Sujet : <strong>${echapper(d.sujet)}</strong>${d.quantite ? ` \xB7 quantit\xE9 : ${d.quantite}` : ""}</p>` : ""}
@@ -742,7 +748,7 @@ function emailDemandeBoutique(d) {
 async function emailAccuseDemande(d) {
   const texte4 = d.type === "newsletter" ? "Merci, vous \xEAtes bien inscrit(e) : vous recevrez nos nouveaut\xE9s et id\xE9es cadeaux. Vous pouvez vous d\xE9sinscrire \xE0 tout moment depuis notre site." : "Nous avons bien re\xE7u votre demande et nous vous r\xE9pondons tr\xE8s vite (en g\xE9n\xE9ral sous 48 h).";
   return {
-    sujet: d.type === "newsletter" ? "Inscription confirm\xE9e \u2014 Mon Truc en Bois" : "Votre demande a bien \xE9t\xE9 re\xE7ue \u2014 Mon Truc en Bois",
+    sujet: d.type === "newsletter" ? "Inscription confirm\xE9e chez Mon Truc en Bois" : "Mon Truc en Bois a bien re\xE7u votre demande",
     html: gabarit(d.type === "newsletter" ? "Bienvenue !" : "Merci pour votre message", `
       <p>Bonjour ${echapper(String(d.nom || "").split(" ")[0])},</p><p>${texte4}</p>
       ${d.type === "newsletter" ? `<p style="font-size:13px;color:#6b5a4a"><a href="${await lienDesinscription(d.email)}" style="color:#6b5a4a">Se d\xE9sinscrire</a></p>` : ""}`)
@@ -772,7 +778,7 @@ async function emailCampagne(c) {
 }
 async function emailConfirmerDesinscription(email) {
   return {
-    sujet: "Confirmez votre d\xE9sinscription \u2014 Mon Truc en Bois",
+    sujet: "Confirmez votre d\xE9sinscription de Mon Truc en Bois",
     html: gabarit("Ne plus recevoir nos emails", `
       <p>Bonjour,</p>
       <p>Vous avez demand\xE9 \xE0 ne plus recevoir nos nouveaut\xE9s et promotions. Cliquez sur le bouton pour confirmer.</p>
@@ -1133,6 +1139,8 @@ async function creerVente(v) {
       // Réglée et remise sur place (boutique, salon) : terminée. Commande par téléphone ou à livrer : à traiter.
       statut: [
         "nouvelle",
+        "maquette_envoyee",
+        "retouche",
         "confirmee",
         "en_fabrication",
         "prete",

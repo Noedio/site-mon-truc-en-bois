@@ -3,6 +3,8 @@
 (function () {
   const STATUTS = {
     nouvelle: "Nouvelle",
+    maquette_envoyee: "Maquette envoyée",
+    retouche: "Retouche demandée",
     confirmee: "Maquette validée",
     en_fabrication: "En fabrication",
     prete: "Prête (retrait)",
@@ -15,7 +17,7 @@
   const CANAUX = { boutique: "Vente en boutique", telephone: "Par téléphone", salon: "Salon / marché" };
   const MOYENS = { carte: "carte bancaire", especes: "espèces", cheque: "chèque", virement: "virement", paypal: "PayPal", autre: "autre moyen" };
   const FILTRES = {
-    a_traiter: ["À traiter", (c) => ["nouvelle", "confirmee", "en_fabrication"].includes(c.statut)],
+    a_traiter: ["À traiter", (c) => ["nouvelle", "maquette_envoyee", "retouche", "confirmee", "en_fabrication"].includes(c.statut)],
     pretes: ["Prêtes / expédiées", (c) => ["prete", "expediee"].includes(c.statut)],
     a_payer: ["À payer", (c) => c.paiement_statut === "en_attente" && c.statut !== "annulee"],
     toutes: ["Toutes", () => true],
@@ -122,15 +124,17 @@
     const sansEmail = c.client_email.endsWith(".invalid");
     // Étape suivante proposée en un geste (le menu « Statut » reste là pour tout autre changement)
     const SUIVANT = {
-      nouvelle: ["confirmee", "Maquette validée"],
+      nouvelle: ["maquette_envoyee", "Maquette envoyée au client"],
+      maquette_envoyee: ["confirmee", "Maquette validée par le client"],
+      retouche: ["maquette_envoyee", "Nouvelle maquette envoyée"],
       confirmee: ["en_fabrication", "Lancer la fabrication"],
       en_fabrication: c.mode_reception === "livraison" ? ["expediee", "Marquer comme expédiée"] : ["prete", "Prête à retirer"],
       prete: ["terminee", "Remise au client"],
       expediee: ["terminee", "Livrée au client"],
     };
     const suivant = SUIVANT[c.statut];
-    const ETAPES = ["nouvelle", "confirmee", "en_fabrication", c.mode_reception === "livraison" ? "expediee" : "prete", "terminee"];
-    const rang = ETAPES.indexOf(c.statut);
+    const ETAPES = ["nouvelle", "maquette_envoyee", "confirmee", "en_fabrication", c.mode_reception === "livraison" ? "expediee" : "prete", "terminee"];
+    const rang = ETAPES.indexOf(c.statut === "retouche" ? "maquette_envoyee" : c.statut);
     f.innerHTML = `
       <form method="dialog" id="form-commande">
         <div class="bloc-tete">
@@ -148,7 +152,7 @@
           <div class="pile" style="gap:.3rem">
             <strong>${c.mode_reception === "retrait" ? "Retrait à la boutique" : "Livraison"}</strong>
             ${c.adresse ? `<span style="white-space:pre-line">${e(c.adresse)}</span>` : ""}
-            ${c.cadeau?.date ? `<span>📅 Souhaitée pour le <strong>${new Date(c.cadeau.date).toLocaleDateString("fr-FR")}</strong></span>` : ""}
+            ${c.cadeau?.date ? `<span>Souhaitée pour le <strong>${new Date(c.cadeau.date).toLocaleDateString("fr-FR")}</strong></span>` : ""}
           </div>
         </div>
 
@@ -159,9 +163,9 @@
             <div class="ligne-edit">
               <div class="ligne-edit-tete"><strong>${e(l.nom)} × ${l.quantite}</strong><span>${ctx.euros(l.total)}</span></div>
               ${l.variante ? `<span class="aide">${e(l.variante)}</span>` : ""}
-              ${l.texte ? `<div class="encart"><span>Texte à graver : <strong style="font-size:1.05rem">« ${e(l.texte)} »</strong>${l.police ? ` — police ${e(l.police)}` : ""}</span></div>` : ""}
+              ${l.texte ? `<div class="encart"><span>Texte à graver : <strong style="font-size:1.05rem">« ${e(l.texte)} »</strong>${l.police ? ` · police ${e(l.police)}` : ""}</span></div>` : ""}
               ${l.remarque ? `<span>Précisions : ${e(l.remarque)}</span>` : ""}
-              ${l.photo_chemin ? `<span>📷 Photo jointe : ${e(l.photo_nom)} <span class="photo-lien" data-ligne="${i}"></span></span>` : ""}
+              ${l.photo_chemin ? `<span>Photo jointe : ${e(l.photo_nom)} <span class="photo-lien" data-ligne="${i}"></span></span>` : ""}
             </div>`
             )
             .join("")}
@@ -173,8 +177,8 @@
           ${Number(c.emballage) ? `<div class="recap-ligne"><span>Emballage cadeau</span><span>${ctx.euros(c.emballage)}</span></div>` : ""}
           <div class="recap-ligne recap-total"><span>Total</span><span>${ctx.euros(c.total)}</span></div>
         </div>
-        ${c.cadeau?.emballage || c.cadeau?.message ? `<p class="encart">🎁 ${c.cadeau.emballage ? "Emballage cadeau. " : ""}${c.cadeau.message ? `Carte : « ${e(c.cadeau.message)} »` : ""}</p>` : ""}
-        ${c.message ? `<p class="encart">💬 ${e(c.message)}</p>` : ""}
+        ${c.cadeau?.emballage || c.cadeau?.message ? `<p class="encart">Cadeau : ${c.cadeau.emballage ? "Emballage cadeau. " : ""}${c.cadeau.message ? `Carte : « ${e(c.cadeau.message)} »` : ""}</p>` : ""}
+        ${c.message ? `<p class="encart">Message du client : ${e(c.message)}</p>` : ""}
         ${c.lignes.some((l) => l.photo_chemin) ? `<button type="button" class="btn btn-ligne" data-action-cmd="photos" style="justify-self:start">Voir / télécharger les photos du client</button>` : ""}
 
         <section class="pile" style="gap:.8rem;border-top:1px solid var(--trait);padding-top:1rem">
@@ -250,7 +254,7 @@
           for (const p of photos) {
             const el = f.querySelector(`.photo-lien[data-ligne="${p.ligne}"]`);
             const url = window.MTB_DEMO ? await window.MTB_DEMO.lienPhoto(p.url) : p.url; // démo : photo gardée dans ce navigateur
-            if (el) el.innerHTML = `— <a href="${e(url)}" target="_blank" rel="noopener">ouvrir / télécharger</a>`;
+            if (el) el.innerHTML = `· <a href="${e(url)}" target="_blank" rel="noopener">ouvrir / télécharger</a>`;
           }
           if (!photos.length) ctx.toast("Aucune photo trouvée.", true);
         } catch (err) {
@@ -320,7 +324,7 @@
         return `<tr><td colspan="3" class="n">Total HT</td><td class="n">${ctx.euros(ht)}</td></tr><tr><td colspan="3" class="n">TVA ${String(taux).replace(".", ",")} %</td><td class="n">${ctx.euros(Number(c.total) - ht)}</td></tr><tr class="total"><td colspan="3" class="n">Total TTC</td><td class="n">${ctx.euros(c.total)}</td></tr>`;
       })()}</tfoot></table>
       ${facture ? `<p>Réglée le ${date(c.paye_le)}${c.paiement_moyen ? ` par ${MOYENS[c.paiement_moyen] || e(c.paiement_moyen)}` : c.paiement_mode === "en_ligne" || c.stripe_session_id ? " par carte bancaire (paiement en ligne)" : ""}.</p>` : `<p>${c.cadeau?.date ? `Date souhaitée : ${new Date(c.cadeau.date).toLocaleDateString("fr-FR")}<br>` : ""}${c.cadeau?.message ? `Message carte : « ${e(c.cadeau.message)} »<br>` : ""}${c.message ? `Message client : ${e(c.message)}` : ""}</p>`}
-      <p class="mention">${[S.legal?.regimeTva === "franchise" ? "TVA non applicable, article 293 B du CGI." : "", S.legal?.formeJuridique ? `${e(S.legal.exploitant || S.nom)}, ${e(S.legal.formeJuridique)}${S.siret ? ` — SIRET ${e(S.siret)}` : ""}.` : "", e(S.mentionTva || "")].filter(Boolean).join("<br>")}</p>
+      <p class="mention">${[S.legal?.regimeTva === "franchise" ? "TVA non applicable, article 293 B du CGI." : "", S.legal?.formeJuridique ? `${e(S.legal.exploitant || S.nom)}, ${e(S.legal.formeJuridique)}${S.siret ? ` · SIRET ${e(S.siret)}` : ""}.` : "", e(S.mentionTva || "")].filter(Boolean).join("<br>")}</p>
       <button onclick="print()">Imprimer</button>
       <script>setTimeout(() => print(), 400)<\/script></body></html>`);
     w.document.close();
@@ -389,7 +393,7 @@
     ctx = contexte;
     if (!initialiser()) return null;
     if (!(await S().connecte(ctx.D))) return { connecte: false };
-    const { data, error } = await client.from("commandes").select("statut").in("statut", ["nouvelle", "confirmee", "en_fabrication"]);
+    const { data, error } = await client.from("commandes").select("statut").in("statut", ["nouvelle", "maquette_envoyee", "retouche", "confirmee", "en_fabrication"]);
     if (error) return { connecte: false };
     return { connecte: true, nouvelles: data.filter((c) => c.statut === "nouvelle").length, aTraiter: data.length };
   }

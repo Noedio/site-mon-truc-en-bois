@@ -68,7 +68,7 @@ const commerce = {
     <link rel="icon" href="/img/favicon-64.png" sizes="64x64" type="image/png" />
     <link rel="icon" href="/img/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
-    <script type="application/ld+json" set:html={JSON.stringify(commerce)} />
+    <script type="application/ld+json" set:html={JSON.stringify(commerce).replace(/</g, "\u003c")} />
     {DEMO && (
       <>
         {/* Démo : js/demo.js simule le serveur dans le navigateur ; il doit tourner avant les scripts de la page. */}

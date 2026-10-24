@@ -20,7 +20,7 @@ const PAGES = {
   "/suivi.html": "/suivi/",
   "/cgv.html": "/cgv/",
   "/mentions-legales.html": "/mentions-legales/",
-  "/newsletter.html": "/contact/",
+  "/newsletter.html": "/newsletter/",
   "/demo.html": "/demo/",
   "/demo-paiement.html": "/demo-paiement/",
 };

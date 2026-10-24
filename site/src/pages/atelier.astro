@@ -23,10 +23,11 @@ const savoirFaire: [string, string][] = [
   ["Matières", "Bois, verre et ardoise pour la gravure ; mugs, verres et textiles pour l'impression"],
   ["Pour qui", "Particuliers, commerçants, associations et entreprises"],
   ["Quantités", "Une pièce seule ou une série"],
-  ["Avant fabrication", "Nous vous recontactons pour valider le rendu, avec une maquette si nécessaire"],
+  ["Avant fabrication", phraseMaquette.replace(/\.$/, "")],
 ];
 const PHOTOS = ["photo de l'atelier", "photo de la machine laser", "photo de Christophe et Laetitia"];
 const largeurs = (w: number) => [480, 720, 960, 1200].filter((x) => x <= w);
+import { phraseMaquette } from "../lib/promesses";
 ---
 <Base titre="L'atelier" description={`${equipe}, gravure laser, sérigraphie et bijoux gravés dans leur boutique de la rue Salengro, à Auchel.`} image="img/boutique-interieur.jpg">
   <section class="bande">

@@ -1,14 +1,13 @@
 // Étapes d'une commande, dans l'ordre du parcours (brief §5) :
 // commande à maquetter → maquette envoyée → validée (sinon retouche) → paiement → gravure → remise.
 // `statuts` liste les statuts de la table `commandes` qui correspondent à l'étape.
-// « maquette_envoyee » n'existe pas encore dans la base (contrainte de supabase/migrations/20261017000000_commandes.sql) :
-// tant qu'il manque, l'étape « Maquette envoyée » est cochée dès que la maquette est validée.
+// « maquette_envoyee » et « retouche » viennent de supabase/migrations/20261025000000_statuts_maquette.sql.
 
 export interface Etape { cle: string; titre: string; texte: string; statuts: string[] }
 
 export const ETAPES: Etape[] = [
   { cle: "recue", titre: "Commande reçue, à maquetter", texte: "Nous préparons la maquette de votre gravure.", statuts: ["nouvelle"] },
-  { cle: "maquette", titre: "Maquette envoyée", texte: "Vous la validez, ou vous nous demandez une retouche.", statuts: ["maquette_envoyee"] },
+  { cle: "maquette", titre: "Maquette envoyée", texte: "Vous la validez, ou vous nous demandez une retouche.", statuts: ["maquette_envoyee", "retouche"] },
   { cle: "validee", titre: "Maquette validée", texte: "Vous réglez selon le mode choisi : en ligne ou à la boutique.", statuts: ["confirmee"] },
   { cle: "fabrication", titre: "En fabrication", texte: "Nous gravons votre pièce à l'atelier, à Auchel.", statuts: ["en_fabrication"] },
   { cle: "remise", titre: "Prête ou expédiée", texte: "Vous venez la chercher à la boutique, ou nous l'envoyons chez vous.", statuts: ["prete", "expediee"] },

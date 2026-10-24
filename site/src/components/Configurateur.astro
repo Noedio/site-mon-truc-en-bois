@@ -47,7 +47,7 @@ const decalage = pieces.length > 1 ? 1 : 0;
   </div>
 ) : (
 <div class="configurateur" data-configurateur>
-  <script type="application/json" data-config set:html={JSON.stringify(config)} />
+  <script type="application/json" data-config set:html={JSON.stringify(config).replace(/</g, "\u003c")} />
   <slot name="tete" />
   <slot name="avant" />
   <div class="cfg-bandeau">
@@ -146,6 +146,8 @@ const decalage = pieces.length > 1 ? 1 : 0;
   /* Bandeau d'aperçu : sur téléphone seulement, collé en haut tant que les commandes défilent. */
   .cfg-bandeau { display: none; }
   @media (max-width: 899px) {
+    /* L'aperçu reste collé en haut pendant la saisie : le champ qui reçoit le focus reste visible sous lui. */
+    :global(html) { scroll-padding-top: 172px; }
     .cfg-bandeau {
       display: flex;
       flex-direction: column;

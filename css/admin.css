@@ -101,7 +101,7 @@ body.admin { background: var(--bouleau); color: var(--brule); min-height: 100vh;
 .statut.modifie { color: var(--gravure); font-weight: 700; }
 .onglets { display: flex; gap: 0.25rem; overflow-x: auto; scrollbar-width: none; }
 .onglets button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 0.8em 0.9em; font: 500 0.95rem var(--f-texte); color: var(--encre-douce); cursor: pointer; white-space: nowrap; }
-.onglets button[aria-selected="true"] { color: var(--encre); border-bottom-color: var(--brule); font-weight: 600; }
+.onglets button[aria-current="page"] { color: var(--encre); border-bottom-color: var(--brule); font-weight: 600; }
 
 .admin-contenu { padding-block: 28px 80px; display: grid; gap: 20px; }
 .bloc { background: var(--bouleau); border: var(--filet); border-radius: 0; padding: clamp(18px, 3vw, 28px); display: grid; gap: 1.1rem; }
@@ -224,6 +224,8 @@ body.admin { background: var(--bouleau); color: var(--brule); min-height: 100vh;
 @media (max-width: 640px) { .ligne-commande { grid-template-columns: 1fr auto; } .ligne-commande .pastilles { grid-column: 1 / -1; grid-row: 2; } }
 .statut-nouvelle { background: var(--gravure); color: #fff; }
 .statut-confirmee { background: var(--papier); color: var(--brule); border-color: var(--brule); }
+.statut-maquette_envoyee { background: var(--kraft); color: var(--brule); border-color: var(--brule); }
+.statut-retouche { background: var(--papier); color: var(--gravure); border-color: var(--gravure); }
 .statut-en_fabrication { background: var(--kraft); color: var(--brule); }
 .statut-prete, .statut-expediee { background: var(--brule); color: var(--bouleau); }
 .statut-terminee { background: transparent; color: var(--texte-doux); border-color: var(--trait); }
@@ -326,8 +328,8 @@ body.admin { background: var(--bouleau); color: var(--brule); min-height: 100vh;
 }
 .admin-nav .onglets button .ico, .nav-lien .ico { width: 1.25em; height: 1.25em; color: var(--brule); }
 .admin-nav .onglets button:hover, .nav-lien:hover { background: var(--kraft); color: var(--brule); }
-.admin-nav .onglets button[aria-selected="true"] { background: var(--brule); color: var(--bouleau); font-weight: 600; border: 0; }
-.admin-nav .onglets button[aria-selected="true"] .ico { color: var(--bouleau); }
+.admin-nav .onglets button[aria-current="page"] { background: var(--brule); color: var(--bouleau); font-weight: 600; border: 0; }
+.admin-nav .onglets button[aria-current="page"] .ico { color: var(--bouleau); }
 .nav-libelle { flex: 1; }
 .admin-nav .compteur, .barre-mobile .compteur { background: var(--gravure); color: #fff; border-radius: 0; font-family: var(--f-mono); }
 .nav-pied { margin-top: auto; display: grid; gap: 0; border-top: var(--filet); padding-top: 0.8rem; }
@@ -348,9 +350,10 @@ body.admin { background: var(--bouleau); color: var(--brule); min-height: 100vh;
   /* Le menu complet s'ouvre par « Plus », par-dessus la page */
   .admin-nav {
     position: fixed; inset: 0 auto 0 0; z-index: 60; width: min(300px, 86vw); transform: translateX(-102%);
-    transition: transform 0.22s ease; box-shadow: none;
+    transition: transform 0.22s ease, visibility 0s 0.22s; box-shadow: none;
+    visibility: hidden; /* fermé : hors de l'ordre de tabulation */
   }
-  .admin-nav.ouvert { transform: none; }
+  .admin-nav.ouvert { transform: none; visibility: visible; transition: transform 0.22s ease; }
   .admin-voile { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(35, 26, 20, 0.5); }
   .admin-voile[hidden] { display: none; }
   .admin-tete-int { min-height: 56px; padding-block: 0.5rem; }
@@ -367,7 +370,7 @@ body.admin { background: var(--bouleau); color: var(--brule); min-height: 100vh;
     font: 600 0.72rem var(--f-texte); color: var(--texte-doux); cursor: pointer;
   }
   .barre-mobile button .ico { width: 1.45em; height: 1.45em; }
-  .barre-mobile button[aria-selected="true"] { color: var(--bouleau); background: var(--brule); }
+  .barre-mobile button[aria-current="page"] { color: var(--bouleau); background: var(--brule); }
   .barre-mobile .compteur { position: absolute; top: 2px; right: calc(50% - 22px); font-size: 0.68rem; }
   .toast { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
   .caisse-barre { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
