@@ -1,0 +1,15 @@
+---
+// Page provisoire du socle : dit quel chantier la construit. Chaque chantier remplace
+// la page entière par la sienne ; ce composant disparaîtra avec la dernière page provisoire.
+
+interface Props { titre: string; chantier: string; contenu: string }
+const { titre, chantier, contenu } = Astro.props;
+---
+<section class="bande">
+  <div class="conteneur pile" style="--pile: 20px">
+    <h1>{titre}</h1>
+    <p class="chapeau">Page en cours de construction ({chantier}).</p>
+    <p class="doux">{contenu}</p>
+    <a class="machine" href="/socle/">Voir le socle visuel de la refonte</a>
+  </div>
+</section>

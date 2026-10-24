@@ -1,0 +1,109 @@
+---
+// Nuancier du socle : la référence visuelle pour tous les chantiers, et un support
+// pour montrer la direction au commerçant. Données réelles du catalogue.
+import "@fontsource/sacramento/400.css";
+import Base from "../layouts/Base.astro";
+import Bouton from "../components/Bouton.astro";
+import GrillePieces from "../components/GrillePieces.astro";
+import FicheTechnique from "../components/FicheTechnique.astro";
+import TeteSection from "../components/TeteSection.astro";
+import ACompleter from "../components/ACompleter.astro";
+import { produits } from "../lib/donnees";
+
+const COULEURS = [
+  ["--bouleau", "Bouleau", "Fond principal"],
+  ["--bouleau-fonce", "Bouleau foncé", "Bandes secondaires"],
+  ["--kraft", "Kraft", "Fonds secondaires, aperçu"],
+  ["--brule", "Brûlé", "Texte, filets, pied de page"],
+  ["--texte-doux", "Texte doux", "Texte secondaire"],
+  ["--gravure", "Gravure", "Accent unique : achat, prix, date limite"],
+  ["--ardoise", "Ardoise", "Encadrés ardoise et verre"],
+];
+const POLICES = [
+  ["--f-titre", "Atelier", "Big Shoulders 800 en capitales : titres, prix, chiffres", "Marie & Paul"],
+  ["--f-texte", "Classique", "Literata 400 et 600 : texte courant", "Marie & Paul"],
+  ["--f-machine", "Machine à écrire", "Courier Prime : étiquettes, fiches techniques, n° de pièce", "Marie & Paul"],
+  ["--f-manuscrite", "Manuscrite", "Sacramento : aperçus de gravure uniquement, à valider par un essai", "Marie & Paul"],
+];
+const exemple = produits.find((p) => p.id === "planche-aperitif") ?? produits[0];
+---
+<Base titre="Socle visuel" indexer={false}>
+  <section class="bande">
+    <div class="conteneur pile" style="--pile: 20px">
+      <h1>Socle visuel de la refonte</h1>
+      <p class="chapeau">Les polices du site sont celles proposées au client pour la gravure, et la palette vient des matières de l'atelier. Cette page sert de référence à tous les chantiers.</p>
+    </div>
+  </section>
+
+  <section class="bande" aria-labelledby="titre-couleurs">
+    <div class="conteneur">
+      <TeteSection id="titre-couleurs" titre="Couleurs" texte="Une seule couleur d'accent, la gravure, réservée à l'achat, aux prix et aux dates limites." />
+      <div class="nuances">
+        {COULEURS.map(([jeton, nom, role]) => (
+          <div class="nuance">
+            <span class="pastille" style={`background: var(${jeton})`}></span>
+            <span class="nom">{nom}</span>
+            <span class="etiquette">{jeton}</span>
+            <span class="doux">{role}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="bande" aria-labelledby="titre-polices">
+    <div class="conteneur">
+      <TeteSection id="titre-polices" titre="Polices" texte="Le nom entre guillemets est celui que le client voit dans le configurateur." />
+      <div class="polices">
+        {POLICES.map(([jeton, nom, role, texte]) => (
+          <div class="police">
+            <span class="etiquette">« {nom} »</span>
+            <span class="echantillon" style={`font-family: var(${jeton})`} data-police={jeton}>{texte}</span>
+            <span class="doux">{role}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="bande" aria-labelledby="titre-composants">
+    <div class="conteneur pile" style="--pile: 32px">
+      <TeteSection id="titre-composants" titre="Boutons et marques" />
+      <div class="rangee">
+        <Bouton genre="achat" taille="grand">Ajouter au panier · 24,90 €</Bouton>
+        <Bouton>Voir la boutique</Bouton>
+        <Bouton genre="contour">Demander un devis</Bouton>
+      </div>
+      <p>Une information que l'atelier doit fournir s'affiche ainsi : <ACompleter quoi="délai de fabrication" />. Le questionnaire de l'admin la remplit.</p>
+    </div>
+  </section>
+
+  <section class="bande" aria-labelledby="titre-fiche">
+    <div class="conteneur">
+      <TeteSection id="titre-fiche" titre="Fiche technique" texte={`Exemple avec la ${exemple.nom.toLowerCase()} : les champs vides attendent les réponses de l'atelier.`} />
+      <FicheTechnique produit={exemple} />
+    </div>
+  </section>
+
+  <section class="bande" aria-labelledby="titre-grille">
+    <div class="conteneur">
+      <TeteSection id="titre-grille" titre="Grille à filets" texte="Photos carrées bord à bord, filets de 1 px, numéro de pièce." lien={{ href: "/boutique/", libelle: "Tout le catalogue" }} />
+      <GrillePieces produits={produits.slice(0, 8)} />
+    </div>
+  </section>
+</Base>
+
+<style>
+  .nuances { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr)); border-top: var(--filet); border-left: var(--filet); }
+  .nuance { box-shadow: 1px 0 0 var(--brule), 0 1px 0 var(--brule); margin: 0 1px 1px 0; display: flex; flex-direction: column; gap: 4px; padding: 0 0 14px; }
+  .nuance > span:not(.pastille) { padding-inline: 14px; }
+  .pastille { display: block; height: 96px; border-bottom: var(--filet); margin-bottom: 8px; }
+  .nom { font-weight: 600; }
+  .polices { display: grid; border-top: var(--filet); }
+  .police { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(0, 2fr) minmax(0, 2fr); gap: 8px 24px; align-items: baseline; padding: 18px 0; border-bottom: var(--filet); }
+  .echantillon { font-size: 2.6rem; line-height: 1.1; overflow-wrap: anywhere; }
+  .echantillon[data-police="--f-titre"] { font-weight: 800; text-transform: uppercase; }
+  .echantillon[data-police="--f-machine"] { font-weight: 700; font-size: 2rem; }
+  .echantillon[data-police="--f-manuscrite"] { font-size: 3.2rem; }
+  @media (max-width: 760px) { .police { grid-template-columns: 1fr; } }
+</style>

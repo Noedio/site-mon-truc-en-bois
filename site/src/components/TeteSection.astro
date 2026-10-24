@@ -1,0 +1,21 @@
+---
+// Titre de section (Big Shoulders) avec une phrase et un lien optionnels, alignés sur la ligne de base.
+interface Props { titre: string; id?: string; texte?: string; lien?: { href: string; libelle: string }; niveau?: 2 | 3 }
+const { titre, id, texte, lien, niveau = 2 } = Astro.props;
+const Titre = niveau === 2 ? "h2" : "h3";
+---
+<div class="tete-section">
+  <Titre id={id}>{titre}</Titre>
+  {(texte || lien) && (
+    <div class="tete-suite">
+      {texte && <p>{texte}</p>}
+      {lien && <a class="machine" href={lien.href}>{lien.libelle}</a>}
+    </div>
+  )}
+</div>
+
+<style>
+  .tete-section { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px 32px; margin-bottom: 28px; }
+  .tete-suite { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; max-width: 40em; }
+  .tete-suite a { font-weight: 700; min-height: var(--cible); display: inline-flex; align-items: center; }
+</style>

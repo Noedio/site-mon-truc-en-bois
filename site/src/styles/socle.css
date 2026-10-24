@@ -1,0 +1,120 @@
+/* ==========================================================================
+   Socle visuel de la refonte (brief §3, figé après validation de l'atelier).
+   Les polices du site sont celles proposées au client pour la gravure ;
+   la palette vient des matières. Une seule couleur d'accent : la gravure.
+   ========================================================================== */
+
+@import "@fontsource/big-shoulders/800.css";
+@import "@fontsource-variable/literata/index.css";
+@import "@fontsource-variable/literata/wght-italic.css";
+@import "@fontsource/courier-prime/400.css";
+@import "@fontsource/courier-prime/700.css";
+
+:root {
+  /* Matières */
+  --bouleau: #efe6d8; /* fond principal */
+  --bouleau-fonce: #e4d6bf; /* bandes secondaires */
+  --papier: #fbf7f0; /* champs de saisie */
+  --kraft: #d7bf9c; /* fonds secondaires, aperçu */
+  --brule: #231a14; /* texte, filets, pied de page */
+  --texte-doux: #6b5a4a; /* texte secondaire (5,3:1 sur bouleau) */
+  --gravure: #a4471c; /* accent unique : achat, prix, date limite */
+  --gravure-fonce: #8a3a16; /* survol des boutons d'achat */
+  --ardoise: #34383b; /* encadrés ardoise et verre */
+
+  /* Polices : nom dans le configurateur entre parenthèses */
+  --f-titre: "Big Shoulders", "Arial Narrow", sans-serif; /* Atelier */
+  --f-texte: "Literata Variable", Georgia, serif; /* Classique */
+  --f-machine: "Courier Prime", "Courier New", monospace; /* Machine à écrire */
+  --f-manuscrite: "Sacramento", cursive; /* Manuscrite : aperçus uniquement */
+
+  /* Échelle typographique */
+  --t-affiche: clamp(3rem, 6.2vw, 5.9rem);
+  --t-titre: clamp(2.4rem, 4.4vw, 3.5rem);
+  --t-sous-titre: clamp(1.6rem, 2.4vw, 2rem);
+  --t-prix: 1.75rem;
+  --t-chapeau: 1.15rem;
+  --t-texte: 1.0625rem; /* 17 px */
+  --t-etiquette: 0.8125rem; /* 13 px */
+  --t-machine: 0.9375rem; /* 15 px */
+
+  /* Mise en page : conteneur 1320 px, gouttière 24 px, angles droits, filets de 1 px */
+  --conteneur: 1320px;
+  --gouttiere: 24px;
+  --filet: 1px solid var(--brule);
+  --filet-fort: 2px solid var(--brule);
+  --rayon: 0;
+  --section: clamp(40px, 6vw, 64px);
+  --cible: 44px; /* cible tactile minimale */
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bouleau);
+  color: var(--brule);
+  font-family: var(--f-texte);
+  font-size: var(--t-texte);
+  line-height: 1.55;
+  font-optical-sizing: auto;
+}
+
+img, svg { display: block; max-width: 100%; }
+
+h1, h2, h3 { margin: 0; font-family: var(--f-titre); font-weight: 800; line-height: 0.95; text-transform: uppercase; text-wrap: balance; letter-spacing: 0.005em; }
+h1 { font-size: var(--t-affiche); line-height: 0.9; }
+h2 { font-size: var(--t-titre); line-height: 1; }
+h3 { font-size: var(--t-sous-titre); line-height: 1.05; }
+p { margin: 0; text-wrap: pretty; }
+
+a { color: var(--brule); text-underline-offset: 0.18em; text-decoration-thickness: 1px; }
+a:hover { color: var(--gravure); }
+
+:focus-visible { outline: 2px solid var(--gravure); outline-offset: 2px; }
+::selection { background: var(--brule); color: var(--bouleau); }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+input, select, textarea {
+  background: var(--papier);
+  border: var(--filet);
+  border-radius: var(--rayon);
+  padding: 12px 14px;
+  min-height: var(--cible);
+  width: 100%;
+  caret-color: var(--gravure);
+}
+input::placeholder, textarea::placeholder { color: var(--texte-doux); opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* --- Briques de mise en page ------------------------------------------- */
+
+.conteneur { max-width: var(--conteneur); margin-inline: auto; padding-inline: var(--gouttiere); }
+@media (max-width: 480px) { :root { --gouttiere: 16px; } }
+
+.bande { border-bottom: var(--filet); }
+.bande > .conteneur { padding-block: var(--section); }
+.bande-kraft { background: var(--kraft); }
+.bande-fonce { background: var(--bouleau-fonce); }
+
+.pile { display: flex; flex-direction: column; gap: var(--pile, 16px); }
+.rangee { display: flex; flex-wrap: wrap; align-items: center; gap: var(--rangee, 12px 24px); }
+
+/* Étiquettes, n° de pièce, fiches techniques : la voix « Machine à écrire » */
+.machine { font-family: var(--f-machine); font-size: var(--t-machine); letter-spacing: 0.01em; }
+.etiquette { font-family: var(--f-machine); font-size: var(--t-etiquette); letter-spacing: 0.04em; }
+.doux { color: var(--texte-doux); }
+.chapeau { font-size: var(--t-chapeau); max-width: 34em; }
+.prix { font-family: var(--f-titre); font-weight: 800; font-size: var(--t-prix); line-height: 1.1; font-variant-numeric: tabular-nums; }
+
+/* Lien d'évitement */
+.evitement { position: absolute; left: var(--gouttiere); top: -100px; z-index: 100; background: var(--brule); color: var(--bouleau); padding: 10px 14px; font-family: var(--f-machine); }
+.evitement:focus { top: 8px; color: var(--bouleau); }
+
+.visuellement-cache { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex">
+  <title>Mon Truc en Bois</title>
+  <!-- Ancienne adresse produit.html?id=<id> : renvoie vers /produit/<id>/ -->
+  <script>
+    var id = new URLSearchParams(location.search).get("id") || location.hash.slice(1);
+    location.replace(id && /^[a-z0-9-]+$/.test(id) ? "/produit/" + id + "/" : "/boutique/");
+  </script>
+  <meta http-equiv="refresh" content="2; url=/boutique/">
+</head>
+<body>
+  <p><a href="/boutique/">Voir la boutique</a></p>
+</body>
+</html>

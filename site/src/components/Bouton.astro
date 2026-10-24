@@ -1,0 +1,47 @@
+---
+// Boutons et liens-boutons. « achat » = la couleur gravure, réservée à l'achat.
+interface Props {
+  href?: string;
+  genre?: "achat" | "contour" | "plein";
+  type?: "button" | "submit";
+  taille?: "grand" | "normal";
+  [attr: string]: unknown;
+}
+const { href, genre = "plein", type = "button", taille = "normal", class: classe, ...reste } = Astro.props;
+const classes = ["bouton", `bouton-${genre}`, taille === "grand" && "bouton-grand", classe].filter(Boolean).join(" ");
+---
+{href ? (
+  <a class={classes} href={href} {...reste}><slot /></a>
+) : (
+  <button class={classes} type={type} {...reste}><slot /></button>
+)}
+
+<style>
+  .bouton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 12px 22px;
+    border: 2px solid var(--brule);
+    border-radius: var(--rayon);
+    font-family: var(--f-titre);
+    font-weight: 800;
+    font-size: 1.375rem;
+    letter-spacing: 0.03em;
+    line-height: 1;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease-out, color 0.15s ease-out;
+  }
+  .bouton-grand { min-height: 56px; padding: 14px 26px; font-size: 1.5rem; }
+  .bouton-plein { background: var(--brule); color: var(--bouleau); }
+  .bouton-plein:hover { background: var(--ardoise); color: var(--bouleau); }
+  .bouton-contour { background: transparent; color: var(--brule); }
+  .bouton-contour:hover { background: var(--brule); color: var(--bouleau); }
+  .bouton-achat { background: var(--gravure); border-color: var(--gravure); color: #fff; }
+  .bouton-achat:hover { background: var(--gravure-fonce); border-color: var(--gravure-fonce); color: #fff; }
+  .bouton:disabled { opacity: 0.45; cursor: not-allowed; }
+</style>

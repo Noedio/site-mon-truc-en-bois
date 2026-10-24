@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.astro/
+# Copié depuis ../img au lancement (voir scripts/copier-medias.mjs)
+public/img/

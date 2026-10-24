@@ -1,0 +1,37 @@
+---
+// Fiche produit provisoire du socle : une page par pièce du catalogue (/produit/<id>/).
+// Le chantier C3 la remplace par la fiche complète avec le configurateur.
+import Base from "../../layouts/Base.astro";
+import PhotoPiece from "../../components/PhotoPiece.astro";
+import FicheTechnique from "../../components/FicheTechnique.astro";
+import { produits, categorieDe, prixDe } from "../../lib/donnees";
+import { euros, numeroPiece } from "../../lib/format";
+
+export function getStaticPaths() {
+  return produits.map((produit) => ({ params: { id: produit.id }, props: { produit } }));
+}
+
+const { produit } = Astro.props;
+const { prix, plusieurs } = prixDe(produit);
+---
+<Base titre={produit.nom} description={produit.description} image={produit.image}>
+  <section class="bande">
+    <div class="conteneur fiche">
+      <PhotoPiece chemin={produit.image} alt={produit.nom} tailles="(max-width: 860px) 100vw, 640px" prioritaire />
+      <div class="pile" style="--pile: 20px">
+        <p class="etiquette">{numeroPiece(produit.numero)} · {categorieDe(produit)?.nom}</p>
+        <h1>{produit.nom}</h1>
+        <p class="prix prix-fiche">{plusieurs && "dès "}{euros(prix)}</p>
+        <p>{produit.description}</p>
+        <FicheTechnique produit={produit} />
+        <p class="doux machine">Configurateur et commande : chantier C3.</p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .fiche { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 40px 64px; align-items: start; }
+  .fiche :global(.photo-piece), .fiche :global(.photo-attente) { border: var(--filet); }
+  .prix-fiche { font-size: 2.5rem; color: var(--gravure); }
+</style>

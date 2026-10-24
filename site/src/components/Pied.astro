@@ -1,0 +1,43 @@
+---
+// Pied de page brûlé : adresse, horaires, contact, liens de commande.
+import { site } from "../lib/donnees";
+import { adresseEnLignes, lienTel } from "../lib/format";
+
+const { rue, ville } = adresseEnLignes(site.adresse);
+---
+<footer class="pied">
+  <div class="conteneur pied-grille">
+    <div class="pile" style="--pile: 8px">
+      <span class="pied-nom">{site.nom}</span>
+      <span>{rue}<br />{ville}</span>
+    </div>
+    <div class="pile machine" style="--pile: 4px">
+      <span class="pied-titre">Horaires</span>
+      {site.horaires.map((h) => <span>{h}</span>)}
+    </div>
+    <div class="pile" style="--pile: 6px">
+      <span class="pied-titre machine">Contact</span>
+      <a href={lienTel(site.telephone)}>{site.telephone}</a>
+      <a href={`mailto:${site.email}`}>{site.email}</a>
+      {site.facebook && <a href={site.facebook} rel="noopener">Facebook</a>}
+      {site.instagram && <a href={site.instagram} rel="noopener">Instagram</a>}
+    </div>
+    <div class="pile" style="--pile: 6px">
+      <span class="pied-titre machine">Commandes</span>
+      <a href="/suivi/">Suivre ma commande</a>
+      <a href="/faq/">Questions fréquentes</a>
+      <a href="/cgv/">Conditions générales de vente</a>
+      <a href="/mentions-legales/">Mentions légales</a>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .pied { background: var(--brule); color: var(--bouleau); }
+  .pied a { color: var(--bouleau); min-height: 32px; display: inline-flex; align-items: center; }
+  .pied a:hover { color: var(--kraft); }
+  .pied-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 32px 48px; padding-block: 56px 40px; }
+  .pied-nom { font-family: var(--f-titre); font-weight: 800; font-size: 1.875rem; text-transform: uppercase; line-height: 1; }
+  .pied-titre { font-weight: 700; margin-bottom: 4px; font-size: var(--t-machine); }
+  .pied :focus-visible { outline-color: var(--kraft); }
+</style>

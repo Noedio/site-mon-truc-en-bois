@@ -1,0 +1,31 @@
+---
+// Carte d'une pièce dans une grille à filets : photo bord à bord, n° de pièce, catégorie, nom, prix.
+import PhotoPiece from "./PhotoPiece.astro";
+import { categorieDe, prixDe, type Produit } from "../lib/donnees";
+import { euros, numeroPiece } from "../lib/format";
+
+interface Props { produit: Produit & { numero: number }; prioritaire?: boolean }
+const { produit, prioritaire = false } = Astro.props;
+const { prix, plusieurs } = prixDe(produit);
+---
+<a class="carte-piece" href={`/produit/${produit.id}/`}>
+  <PhotoPiece chemin={produit.image} alt={produit.nom} prioritaire={prioritaire} />
+  <div class="carte-texte">
+    <div class="carte-ligne etiquette">
+      <span>{numeroPiece(produit.numero)}</span>
+      <span>{categorieDe(produit)?.nom}</span>
+    </div>
+    <span class="carte-nom">{produit.nom}</span>
+    <span class="prix">{plusieurs && <span class="des">dès </span>}{euros(prix)}</span>
+  </div>
+</a>
+
+<style>
+  .carte-piece { background: var(--bouleau); margin: 0 1px 1px 0; text-decoration: none; color: var(--brule); display: flex; flex-direction: column; min-width: 0; }
+  .carte-piece:hover .carte-nom { text-decoration: underline; text-underline-offset: 0.18em; }
+  .carte-piece:hover { color: var(--brule); }
+  .carte-texte { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 4px; border-top: var(--filet); flex: 1; }
+  .carte-ligne { display: flex; justify-content: space-between; gap: 8px; }
+  .carte-nom { font-weight: 600; font-size: 1.125rem; line-height: 1.3; }
+  .des { font-family: var(--f-machine); font-weight: 400; font-size: var(--t-machine); text-transform: none; }
+</style>

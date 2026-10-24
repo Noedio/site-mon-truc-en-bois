@@ -1,0 +1,16 @@
+---
+import Base from "../layouts/Base.astro";
+import Bouton from "../components/Bouton.astro";
+---
+<Base titre="Page introuvable" indexer={false}>
+  <section class="bande">
+    <div class="conteneur pile" style="--pile: 24px">
+      <h1>Page introuvable</h1>
+      <p class="chapeau">Cette adresse ne mène à aucune page. La pièce a peut-être changé de nom ou quitté le catalogue.</p>
+      <div class="rangee">
+        <Bouton href="/boutique/">Voir la boutique</Bouton>
+        <Bouton href="/contact/" genre="contour">Nous contacter</Bouton>
+      </div>
+    </div>
+  </section>
+</Base>

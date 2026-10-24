@@ -1,0 +1,34 @@
+---
+// Fiche technique d'une pièce (brief §3) : matière, dimensions, zone gravable, délai, entretien.
+// Chaque champ vide s'affiche [À COMPLÉTER] : c'est le questionnaire de l'admin qui les remplit.
+import ACompleter from "./ACompleter.astro";
+import { numeroPiece } from "../lib/format";
+import type { Produit } from "../lib/donnees";
+
+interface Props { produit: Produit & { numero: number } }
+const { produit: p } = Astro.props;
+
+const tailles = p.variantes?.choix?.length ? p.variantes.choix.map((c) => c.nom).join(", ") : "";
+const lignes: [string, string | undefined, string][] = [
+  ["Pièce", numeroPiece(p.numero), ""],
+  ["Matière", p.matiere, "matière"],
+  ["Dimensions", p.dimensions, tailles ? `dimensions des tailles ${tailles}` : "dimensions"],
+  ["Zone gravable", p.zoneGravable, "zone gravable"],
+  ["Délai de fabrication", p.delai ? `${p.delai} jour${p.delai > 1 ? "s" : ""} après validation de la maquette` : undefined, "délai de fabrication"],
+  ["Entretien", p.entretien, "entretien"],
+];
+---
+<dl class="fiche-technique">
+  {lignes.map(([terme, valeur, manque]) => (
+    <div>
+      <dt class="etiquette">{terme}</dt>
+      <dd>{valeur ? valeur : <ACompleter quoi={manque} />}</dd>
+    </div>
+  ))}
+</dl>
+
+<style>
+  .fiche-technique { margin: 0; border-top: var(--filet); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); column-gap: 24px; }
+  .fiche-technique div { padding: 12px 0; border-bottom: var(--filet); min-width: 0; }
+  .fiche-technique dd { margin: 2px 0 0; }
+</style>

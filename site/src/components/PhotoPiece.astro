@@ -1,0 +1,49 @@
+---
+// Photo carrée d'une pièce, servie en WebP à la bonne taille.
+// Une photo signalée par l'audit (licence, marque, client) est remplacée par un cadre neutre
+// tant que l'atelier n'a pas répondu.
+import { Image } from "astro:assets";
+import { image, aVerifier } from "../lib/images";
+
+interface Props {
+  chemin: string | undefined;
+  alt: string;
+  tailles?: string; // attribut sizes
+  prioritaire?: boolean; // image principale du premier écran
+}
+const { chemin, alt, tailles = "(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 330px", prioritaire = false } = Astro.props;
+const meta = image(chemin);
+const raison = aVerifier(chemin);
+---
+{meta && !raison ? (
+  <Image
+    class="photo-piece"
+    src={meta}
+    alt={alt}
+    widths={[320, 480, 640, 800].filter((w) => w <= meta.width)}
+    sizes={tailles}
+    format="webp"
+    quality={78}
+    loading={prioritaire ? "eager" : "lazy"}
+    fetchpriority={prioritaire ? "high" : "auto"}
+  />
+) : (
+  <div class="photo-attente" role="img" aria-label={`${alt} : photo à venir`}>
+    <span class="etiquette">{raison ? "Photo en attente de validation" : "Photo à venir"}</span>
+  </div>
+)}
+
+<style>
+  :global(.photo-piece) { width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: cover; background: var(--kraft); }
+  .photo-attente {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    text-align: center;
+    background: var(--bouleau-fonce);
+    color: var(--texte-doux);
+  }
+</style>

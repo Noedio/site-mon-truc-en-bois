@@ -1,0 +1,95 @@
+---
+// Mise en page commune : balises SEO, données structurées du commerce, en-tête et pied.
+import "../styles/socle.css";
+import Entete from "../components/Entete.astro";
+import Pied from "../components/Pied.astro";
+import { site, donnees } from "../lib/donnees";
+import { adresseEnLignes } from "../lib/format";
+
+interface Props {
+  titre: string; // titre de la page, sans le nom du site
+  description?: string;
+  image?: string; // chemin dans img/ pour le partage
+  indexer?: boolean; // false pour panier, suivi, favoris
+}
+const { titre, description = site.slogan, image = "img/partage.jpg", indexer = true } = Astro.props;
+
+const titreComplet = titre === site.nom ? titre : `${titre} · ${site.nom}`;
+const canonique = new URL(Astro.url.pathname, Astro.site).href;
+// Tant que le domaine n'est pas basculé, l'aperçu ne doit pas être indexé.
+const indexable = indexer && import.meta.env.PUBLIC_INDEXER === "oui";
+
+const JOURS: Record<string, string> = { lundi: "Monday", mardi: "Tuesday", mercredi: "Wednesday", jeudi: "Thursday", vendredi: "Friday", samedi: "Saturday", dimanche: "Sunday" };
+const ouvertures = site.horaires.flatMap((h) => {
+  const [jour, plages = ""] = h.split(/\s*:\s*(.*)/s);
+  const dayOfWeek = JOURS[jour.trim().toLowerCase()];
+  if (!dayOfWeek) return [];
+  return [...plages.matchAll(/(\d{1,2})h(\d{2})?\s*[–-]\s*(\d{1,2})h(\d{2})?/g)].map(([, a, am, b, bm]) => ({
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek,
+    opens: `${a.padStart(2, "0")}:${am || "00"}`,
+    closes: `${b.padStart(2, "0")}:${bm || "00"}`,
+  }));
+});
+const { rue, ville } = adresseEnLignes(site.adresse);
+const commerce = {
+  "@context": "https://schema.org",
+  "@type": "Store",
+  name: site.nom,
+  description: site.slogan,
+  telephone: site.telephone,
+  email: site.email,
+  url: new URL("/", Astro.site).href,
+  image: new URL("/img/boutique-interieur.jpg", Astro.site).href,
+  logo: new URL("/img/logo.webp", Astro.site).href,
+  address: { "@type": "PostalAddress", streetAddress: rue, postalCode: ville.match(/\d{5}/)?.[0] ?? "", addressLocality: ville.replace(/\d{5}/, "").trim(), addressCountry: "FR" },
+  openingHoursSpecification: ouvertures,
+  sameAs: [site.facebook, site.instagram].filter(Boolean),
+};
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titreComplet}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonique} />
+    {!indexable && <meta name="robots" content="noindex" />}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.nom} />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:title" content={titreComplet} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonique} />
+    <meta property="og:image" content={new URL(`/${image.replace(/^\//, "")}`, Astro.site).href} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#231a14" />
+    <link rel="icon" href="/img/favicon-64.png" sizes="64x64" type="image/png" />
+    <link rel="icon" href="/img/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+    <script type="application/ld+json" set:html={JSON.stringify(commerce)} />
+    <slot name="tete" />
+  </head>
+  <body>
+    <a class="evitement" href="#contenu">Aller au contenu</a>
+    {donnees.site.apercu && (
+      <p class="apercu-bandeau etiquette">Site en préparation : pour commander, appelez le {site.telephone}.</p>
+    )}
+    <Entete />
+    <main id="contenu">
+      <slot />
+    </main>
+    <Pied />
+  </body>
+</html>
+
+<style>
+  .apercu-bandeau {
+    margin: 0;
+    padding: 8px var(--gouttiere);
+    background: var(--kraft);
+    border-bottom: var(--filet);
+    text-align: center;
+  }
+</style>

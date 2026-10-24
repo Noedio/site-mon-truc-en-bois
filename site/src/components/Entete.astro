@@ -1,0 +1,84 @@
+---
+// En-tête : bandeau adresse (brûlé), puis nom du site, navigation et panier.
+// Un seul logo, petit. Sur téléphone, la navigation devient une rangée qui défile.
+import { site } from "../lib/donnees";
+import { lienTel } from "../lib/format";
+
+const LIENS = [
+  { href: "/boutique/", libelle: "Boutique" },
+  { href: "/occasions/", libelle: "Occasions" },
+  { href: "/atelier/", libelle: "L'atelier" },
+  { href: "/avis/", libelle: "Avis" },
+  { href: "/contact/", libelle: "Contact" },
+];
+const ici = Astro.url.pathname;
+---
+<div class="adresse etiquette">
+  <div class="conteneur adresse-ligne">
+    <span class="adresse-texte">Atelier-boutique · {site.adresse}</span>
+    <a href={lienTel(site.telephone)}>{site.telephone}</a>
+  </div>
+</div>
+<header class="entete">
+  <div class="conteneur entete-ligne">
+    <a class="marque" href="/">
+      <img src="/img/logo-200.webp" alt="" width="44" height="40" />
+      <span>{site.nom}</span>
+    </a>
+    <nav class="navigation" aria-label="Navigation principale">
+      {LIENS.map((l) => (
+        <a href={l.href} aria-current={ici.startsWith(l.href) ? "page" : undefined}>{l.libelle}</a>
+      ))}
+    </nav>
+    <a class="panier machine" href="/panier/">Panier (<span data-compteur-panier>0</span>)</a>
+  </div>
+</header>
+
+<script>
+  import { nombreArticles } from "../lib/panier";
+  const maj = () => document.querySelectorAll("[data-compteur-panier]").forEach((e) => (e.textContent = String(nombreArticles())));
+  maj();
+  document.addEventListener("panier:change", maj);
+  window.addEventListener("storage", maj);
+</script>
+
+<style>
+  .adresse { background: var(--brule); color: var(--bouleau); }
+  .adresse a { color: var(--bouleau); }
+  .adresse-ligne { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 24px; padding-block: 8px; }
+
+  .entete { border-bottom: var(--filet); background: var(--bouleau); }
+  .entete-ligne { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px; padding-block: 14px; }
+
+  .marque { display: flex; align-items: center; gap: 12px; text-decoration: none; min-height: var(--cible); }
+  .marque img { width: 44px; height: auto; }
+  .marque span { font-family: var(--f-titre); font-weight: 800; font-size: 1.625rem; letter-spacing: 0.02em; text-transform: uppercase; line-height: 1; }
+
+  .navigation { display: flex; gap: 4px 28px; }
+  .navigation a { text-decoration: none; min-height: var(--cible); display: flex; align-items: center; white-space: nowrap; }
+  .navigation a[aria-current="page"] { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.35em; }
+
+  .panier { text-decoration: none; border: var(--filet); padding: 8px 14px; min-height: var(--cible); display: flex; align-items: center; white-space: nowrap; }
+  .panier:hover { background: var(--brule); color: var(--bouleau); }
+
+  @media (max-width: 760px) {
+    .adresse-texte { display: none; }
+    .adresse-ligne { justify-content: flex-end; padding-block: 6px; }
+    .entete-ligne { padding-block: 6px 0; gap: 0 12px; flex-wrap: wrap; }
+    .marque { gap: 8px; flex: 1 1 auto; min-width: 0; }
+    .marque img { width: 34px; }
+    .marque span { font-size: 1.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .panier { padding: 6px 10px; margin-bottom: 6px; }
+    .navigation {
+      order: 3;
+      flex-basis: 100%;
+      overflow-x: auto;
+      gap: 0 22px;
+      border-top: var(--filet);
+      margin-inline: calc(-1 * var(--gouttiere));
+      padding-inline: var(--gouttiere);
+      scrollbar-width: none;
+    }
+    .navigation::-webkit-scrollbar { display: none; }
+  }
+</style>

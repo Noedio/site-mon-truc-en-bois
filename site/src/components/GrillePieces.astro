@@ -1,0 +1,25 @@
+---
+// Grille à filets (brief §3) : chaque carte trace ses filets droit et bas, la grille trace le haut et la gauche.
+// Une dernière rangée incomplète reste ainsi couleur bouleau, sans case vide foncée.
+import CartePiece from "./CartePiece.astro";
+import type { Produit } from "../lib/donnees";
+
+interface Props { produits: (Produit & { numero: number })[]; prioritaires?: number; colonnes?: string }
+const { produits, prioritaires = 0, colonnes = "minmax(min(240px, 100%), 1fr)" } = Astro.props;
+---
+<div class="grille-pieces" style={`--colonnes: ${colonnes}`}>
+  {produits.map((p, i) => <CartePiece produit={p} prioritaire={i < prioritaires} />)}
+</div>
+
+<style>
+  .grille-pieces {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, var(--colonnes));
+    border-top: var(--filet);
+    border-left: var(--filet);
+  }
+  .grille-pieces > :global(*) { box-shadow: 1px 0 0 var(--brule), 0 1px 0 var(--brule); }
+  @media (max-width: 520px) {
+    .grille-pieces { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>
