@@ -1,0 +1,2066 @@
+{
+ "index-1440": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "http://localhost:4173/index.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 10372
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/boutique-interieur.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 194251
+   },
+   {
+    "url": "http://localhost:4173/img/salon-stand.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 161993
+   },
+   {
+    "url": "http://localhost:4173/img/planche-aperitif.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 100624
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/caveat/v23/Wnz6HAc5bAfYB2Q7ZjYY.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 74932
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "http://localhost:4173/img/verres-graves.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 101344
+   },
+   {
+    "url": "http://localhost:4173/img/photo-gravee-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 144811
+   },
+   {
+    "url": "http://localhost:4173/img/mug-personnalise.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 84180
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-naissance-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 94219
+   },
+   {
+    "url": "http://localhost:4173/img/bracelet-jonc.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 76196
+   },
+   {
+    "url": "http://localhost:4173/img/tableau-scrabble.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 111285
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-voiture.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 67747
+   },
+   {
+    "url": "http://localhost:4173/img/boutique-auchel.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 156479
+   }
+  ],
+  "hauteur": 6746,
+  "debordement": false,
+  "liens": [
+   "http://localhost:4173/index.html",
+   "http://localhost:4173/boutique.html",
+   "http://localhost:4173/idees-cadeaux.html",
+   "http://localhost:4173/atelier.html",
+   "http://localhost:4173/faq.html",
+   "http://localhost:4173/contact.html",
+   "http://localhost:4173/favoris.html",
+   "http://localhost:4173/panier.html",
+   "http://localhost:4173/avis.html",
+   "http://localhost:4173/boutique.html?categorie=gravure",
+   "http://localhost:4173/boutique.html?categorie=serigraphie",
+   "http://localhost:4173/boutique.html?categorie=evenements",
+   "http://localhost:4173/boutique.html?categorie=bijoux",
+   "http://localhost:4173/produit.html?id=planche-aperitif",
+   "http://localhost:4173/produit.html?id=verres-graves",
+   "http://localhost:4173/produit.html?id=photo-gravee-bois",
+   "http://localhost:4173/produit.html?id=tableau-scrabble",
+   "http://localhost:4173/produit.html?id=mug-personnalise",
+   "http://localhost:4173/produit.html?id=plaque-voiture",
+   "http://localhost:4173/produit.html?id=plaque-naissance-bois",
+   "http://localhost:4173/produit.html?id=bracelet-jonc",
+   "http://localhost:4173/boutique.html?occasion=naissance",
+   "http://localhost:4173/boutique.html?occasion=mariage",
+   "http://localhost:4173/boutique.html?occasion=anniversaire",
+   "http://localhost:4173/boutique.html?occasion=fete-meres",
+   "http://localhost:4173/boutique.html?occasion=fete-peres",
+   "http://localhost:4173/boutique.html?occasion=noel",
+   "http://localhost:4173/boutique.html?occasion=remerciement",
+   "http://localhost:4173/boutique.html?occasion=retraite",
+   "http://localhost:4173/boutique.html?occasion=pro",
+   "https://www.facebook.com/profile.php?id=100094575102607&sk=reviews",
+   "tel:0783394028",
+   "mailto:contact@montrucenbois.fr",
+   "https://www.facebook.com/profile.php?id=100094575102607",
+   "http://localhost:4173/suivi.html",
+   "http://localhost:4173/cgv.html",
+   "http://localhost:4173/mentions-legales.html"
+  ]
+ },
+ "index-390": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "http://localhost:4173/index.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 10372
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "http://localhost:4173/img/boutique-interieur.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 194251
+   },
+   {
+    "url": "http://localhost:4173/img/salon-stand.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 161993
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/planche-aperitif.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 100624
+   },
+   {
+    "url": "http://localhost:4173/img/verres-graves.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 101344
+   },
+   {
+    "url": "http://localhost:4173/img/photo-gravee-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 144811
+   },
+   {
+    "url": "http://localhost:4173/img/mug-personnalise.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 84180
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-naissance-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 94219
+   },
+   {
+    "url": "http://localhost:4173/img/bracelet-jonc.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 76196
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/caveat/v23/Wnz6HAc5bAfYB2Q7ZjYY.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 74932
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   },
+   {
+    "url": "http://localhost:4173/img/tableau-scrabble.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 111285
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-voiture.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 67747
+   },
+   {
+    "url": "http://localhost:4173/img/boutique-auchel.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 156479
+   }
+  ],
+  "hauteur": 9815,
+  "debordement": false
+ },
+ "boutique-1440": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/boutique.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 6390
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/planche-aperitif.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 100624
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-message.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 95833
+   },
+   {
+    "url": "http://localhost:4173/img/verres-graves.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 101344
+   },
+   {
+    "url": "http://localhost:4173/img/photo-gravee-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 144811
+   },
+   {
+    "url": "http://localhost:4173/img/panneau-directionnel.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 87344
+   },
+   {
+    "url": "http://localhost:4173/img/tableau-scrabble.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 111285
+   },
+   {
+    "url": "http://localhost:4173/img/decapsuleur-mural.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 129742
+   },
+   {
+    "url": "http://localhost:4173/img/accroche-porte.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 113910
+   },
+   {
+    "url": "http://localhost:4173/img/dessous-de-verre.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 119849
+   },
+   {
+    "url": "http://localhost:4173/img/ardoise-gravee.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 88753
+   },
+   {
+    "url": "http://localhost:4173/img/mug-personnalise.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 84180
+   },
+   {
+    "url": "http://localhost:4173/img/verre-imprime.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 136860
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-voiture.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 67747
+   },
+   {
+    "url": "http://localhost:4173/img/baskets-personnalisees.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 116180
+   },
+   {
+    "url": "http://localhost:4173/img/prenom-vinyle.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 100452
+   },
+   {
+    "url": "http://localhost:4173/img/tirelire.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 92465
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-naissance-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 94219
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-naissance-illustree.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 64899
+   },
+   {
+    "url": "http://localhost:4173/img/panneau-bienvenue.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 78592
+   },
+   {
+    "url": "http://localhost:4173/img/calendrier-date.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 62337
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   },
+   {
+    "url": "http://localhost:4173/img/cadre-mariage.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 70429
+   },
+   {
+    "url": "http://localhost:4173/img/coeur-anniversaire-mariage.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 114207
+   },
+   {
+    "url": "http://localhost:4173/img/urne-mariage.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 85830
+   },
+   {
+    "url": "http://localhost:4173/img/bracelet-jonc.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 76196
+   },
+   {
+    "url": "http://localhost:4173/img/bracelets-emailles.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 85238
+   },
+   {
+    "url": "http://localhost:4173/img/boite-a-bijoux.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 140916
+   },
+   {
+    "url": "http://localhost:4173/img/porte-cles-grave.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 77866
+   }
+  ],
+  "hauteur": 3797,
+  "debordement": false,
+  "liens": [
+   "http://localhost:4173/index.html",
+   "http://localhost:4173/boutique.html",
+   "http://localhost:4173/idees-cadeaux.html",
+   "http://localhost:4173/atelier.html",
+   "http://localhost:4173/faq.html",
+   "http://localhost:4173/contact.html",
+   "http://localhost:4173/favoris.html",
+   "http://localhost:4173/panier.html",
+   "http://localhost:4173/produit.html?id=planche-aperitif",
+   "http://localhost:4173/produit.html?id=plaque-message",
+   "http://localhost:4173/produit.html?id=verres-graves",
+   "http://localhost:4173/produit.html?id=photo-gravee-bois",
+   "http://localhost:4173/produit.html?id=tableau-scrabble",
+   "http://localhost:4173/produit.html?id=panneau-directionnel",
+   "http://localhost:4173/produit.html?id=decapsuleur-mural",
+   "http://localhost:4173/produit.html?id=accroche-porte",
+   "http://localhost:4173/produit.html?id=dessous-de-verre",
+   "http://localhost:4173/produit.html?id=ardoise-gravee",
+   "http://localhost:4173/produit.html?id=mug-personnalise",
+   "http://localhost:4173/produit.html?id=verre-imprime",
+   "http://localhost:4173/produit.html?id=plaque-voiture",
+   "http://localhost:4173/produit.html?id=baskets-personnalisees",
+   "http://localhost:4173/produit.html?id=prenom-vinyle",
+   "http://localhost:4173/produit.html?id=tirelire",
+   "http://localhost:4173/produit.html?id=plaque-naissance-bois",
+   "http://localhost:4173/produit.html?id=plaque-naissance-illustree",
+   "http://localhost:4173/produit.html?id=panneau-bienvenue",
+   "http://localhost:4173/produit.html?id=calendrier-date",
+   "http://localhost:4173/produit.html?id=cadre-mariage",
+   "http://localhost:4173/produit.html?id=coeur-anniversaire-mariage",
+   "http://localhost:4173/produit.html?id=urne-mariage",
+   "http://localhost:4173/produit.html?id=bracelet-jonc",
+   "http://localhost:4173/produit.html?id=bracelets-emailles",
+   "http://localhost:4173/produit.html?id=boite-a-bijoux",
+   "http://localhost:4173/produit.html?id=porte-cles-grave",
+   "tel:0783394028",
+   "mailto:contact@montrucenbois.fr",
+   "https://www.facebook.com/profile.php?id=100094575102607",
+   "http://localhost:4173/suivi.html",
+   "http://localhost:4173/avis.html",
+   "http://localhost:4173/cgv.html",
+   "http://localhost:4173/mentions-legales.html"
+  ]
+ },
+ "boutique-390": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/boutique.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 6390
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/planche-aperitif.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 100624
+   },
+   {
+    "url": "http://localhost:4173/img/verres-graves.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 101344
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-message.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 95833
+   },
+   {
+    "url": "http://localhost:4173/img/photo-gravee-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 144811
+   },
+   {
+    "url": "http://localhost:4173/img/tableau-scrabble.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 111285
+   },
+   {
+    "url": "http://localhost:4173/img/panneau-directionnel.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 87344
+   },
+   {
+    "url": "http://localhost:4173/img/decapsuleur-mural.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 129742
+   },
+   {
+    "url": "http://localhost:4173/img/accroche-porte.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 113910
+   },
+   {
+    "url": "http://localhost:4173/img/dessous-de-verre.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 119849
+   },
+   {
+    "url": "http://localhost:4173/img/ardoise-gravee.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 88753
+   },
+   {
+    "url": "http://localhost:4173/img/mug-personnalise.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 84180
+   },
+   {
+    "url": "http://localhost:4173/img/verre-imprime.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 136860
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-voiture.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 67747
+   },
+   {
+    "url": "http://localhost:4173/img/baskets-personnalisees.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 116180
+   },
+   {
+    "url": "http://localhost:4173/img/tirelire.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 92465
+   },
+   {
+    "url": "http://localhost:4173/img/prenom-vinyle.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 100452
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-naissance-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 94219
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-naissance-illustree.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 64899
+   },
+   {
+    "url": "http://localhost:4173/img/panneau-bienvenue.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 78592
+   },
+   {
+    "url": "http://localhost:4173/img/calendrier-date.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 62337
+   },
+   {
+    "url": "http://localhost:4173/img/cadre-mariage.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 70429
+   },
+   {
+    "url": "http://localhost:4173/img/coeur-anniversaire-mariage.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 114207
+   },
+   {
+    "url": "http://localhost:4173/img/urne-mariage.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 85830
+   },
+   {
+    "url": "http://localhost:4173/img/bracelet-jonc.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 76196
+   },
+   {
+    "url": "http://localhost:4173/img/bracelets-emailles.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 85238
+   },
+   {
+    "url": "http://localhost:4173/img/boite-a-bijoux.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 140916
+   },
+   {
+    "url": "http://localhost:4173/img/porte-cles-grave.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 77866
+   }
+  ],
+  "hauteur": 5802,
+  "debordement": false
+ },
+ "produit-planche-aperitif-1440": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/produit.html?id=planche-aperitif",
+    "statut": 200,
+    "type": "document",
+    "taille": 16694
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "http://localhost:4173/img/planche-aperitif.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 100624
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-message.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 95833
+   },
+   {
+    "url": "http://localhost:4173/img/verres-graves.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 101344
+   },
+   {
+    "url": "http://localhost:4173/img/photo-gravee-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 144811
+   },
+   {
+    "url": "http://localhost:4173/img/tableau-scrabble.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 111285
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwlBFgg.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 14888
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/dancingscript/v29/If2cXTr6YS-zF4S-kcSWSVi_sxjsohD9F50Ruu7B7y03Sup8.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 25940
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   }
+  ],
+  "hauteur": 2247,
+  "debordement": false,
+  "liens": [
+   "http://localhost:4173/index.html",
+   "http://localhost:4173/boutique.html",
+   "http://localhost:4173/idees-cadeaux.html",
+   "http://localhost:4173/atelier.html",
+   "http://localhost:4173/faq.html",
+   "http://localhost:4173/contact.html",
+   "http://localhost:4173/favoris.html",
+   "http://localhost:4173/panier.html",
+   "http://localhost:4173/boutique.html?categorie=gravure",
+   "http://localhost:4173/avis.html",
+   "tel:0783394028",
+   "http://localhost:4173/produit.html?id=plaque-message",
+   "http://localhost:4173/produit.html?id=verres-graves",
+   "http://localhost:4173/produit.html?id=photo-gravee-bois",
+   "http://localhost:4173/produit.html?id=tableau-scrabble",
+   "mailto:contact@montrucenbois.fr",
+   "https://www.facebook.com/profile.php?id=100094575102607",
+   "http://localhost:4173/suivi.html",
+   "http://localhost:4173/cgv.html",
+   "http://localhost:4173/mentions-legales.html"
+  ]
+ },
+ "produit-planche-aperitif-390": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/produit.html?id=planche-aperitif",
+    "statut": 200,
+    "type": "document",
+    "taille": 16694
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/planche-aperitif.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 100624
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-message.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 95833
+   },
+   {
+    "url": "http://localhost:4173/img/verres-graves.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 101344
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/dancingscript/v29/If2cXTr6YS-zF4S-kcSWSVi_sxjsohD9F50Ruu7B7y03Sup8.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 25940
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwlBFgg.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 14888
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   },
+   {
+    "url": "http://localhost:4173/img/photo-gravee-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 144811
+   },
+   {
+    "url": "http://localhost:4173/img/tableau-scrabble.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 111285
+   }
+  ],
+  "hauteur": 3682,
+  "debordement": false
+ },
+ "idees-cadeaux-1440": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/idees-cadeaux.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 3908
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/verres-graves.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 101344
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-naissance-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 94219
+   },
+   {
+    "url": "http://localhost:4173/img/planche-aperitif.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 100624
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-message.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 95833
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-voiture.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 67747
+   },
+   {
+    "url": "http://localhost:4173/img/dessous-de-verre.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 119849
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   }
+  ],
+  "hauteur": 1739,
+  "debordement": false,
+  "liens": [
+   "http://localhost:4173/index.html",
+   "http://localhost:4173/boutique.html",
+   "http://localhost:4173/idees-cadeaux.html",
+   "http://localhost:4173/atelier.html",
+   "http://localhost:4173/faq.html",
+   "http://localhost:4173/contact.html",
+   "http://localhost:4173/favoris.html",
+   "http://localhost:4173/panier.html",
+   "http://localhost:4173/boutique.html?occasion=naissance",
+   "http://localhost:4173/boutique.html?occasion=mariage",
+   "http://localhost:4173/boutique.html?occasion=anniversaire",
+   "http://localhost:4173/boutique.html?occasion=fete-meres",
+   "http://localhost:4173/boutique.html?occasion=fete-peres",
+   "http://localhost:4173/boutique.html?occasion=noel",
+   "http://localhost:4173/boutique.html?occasion=remerciement",
+   "http://localhost:4173/boutique.html?occasion=retraite",
+   "http://localhost:4173/boutique.html?occasion=pro",
+   "http://localhost:4173/boutique.html?budget=0-15",
+   "http://localhost:4173/boutique.html?budget=15-30",
+   "http://localhost:4173/boutique.html?budget=30-",
+   "tel:0783394028",
+   "mailto:contact@montrucenbois.fr",
+   "https://www.facebook.com/profile.php?id=100094575102607",
+   "http://localhost:4173/suivi.html",
+   "http://localhost:4173/avis.html",
+   "http://localhost:4173/cgv.html",
+   "http://localhost:4173/mentions-legales.html"
+  ]
+ },
+ "idees-cadeaux-390": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/idees-cadeaux.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 3908
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-naissance-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 94219
+   },
+   {
+    "url": "http://localhost:4173/img/verres-graves.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 101344
+   },
+   {
+    "url": "http://localhost:4173/img/planche-aperitif.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 100624
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-message.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 95833
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-voiture.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 67747
+   },
+   {
+    "url": "http://localhost:4173/img/dessous-de-verre.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 119849
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   }
+  ],
+  "hauteur": 3361,
+  "debordement": false
+ },
+ "atelier-1440": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/img/logo.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 139104
+   },
+   {
+    "url": "http://localhost:4173/img/boutique-interieur.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 194251
+   },
+   {
+    "url": "http://localhost:4173/atelier.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 4640
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/decor-hiboux.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 152578
+   },
+   {
+    "url": "http://localhost:4173/img/cadre-mariage.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 70429
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-naissance-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 94219
+   },
+   {
+    "url": "http://localhost:4173/img/photo-gravee-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 144811
+   },
+   {
+    "url": "http://localhost:4173/img/tableau-scrabble.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 111285
+   },
+   {
+    "url": "http://localhost:4173/img/baskets-personnalisees.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 116180
+   },
+   {
+    "url": "http://localhost:4173/img/verres-graves.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 101344
+   },
+   {
+    "url": "http://localhost:4173/img/salon-stand.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 161993
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/caveat/v23/Wnz6HAc5bAfYB2Q7ZjYY.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 74932
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   }
+  ],
+  "hauteur": 2837,
+  "debordement": false,
+  "liens": [
+   "http://localhost:4173/index.html",
+   "http://localhost:4173/boutique.html",
+   "http://localhost:4173/idees-cadeaux.html",
+   "http://localhost:4173/atelier.html",
+   "http://localhost:4173/faq.html",
+   "http://localhost:4173/contact.html",
+   "http://localhost:4173/favoris.html",
+   "http://localhost:4173/panier.html",
+   "https://www.facebook.com/profile.php?id=100094575102607",
+   "tel:0783394028",
+   "mailto:contact@montrucenbois.fr",
+   "http://localhost:4173/suivi.html",
+   "http://localhost:4173/avis.html",
+   "http://localhost:4173/cgv.html",
+   "http://localhost:4173/mentions-legales.html"
+  ]
+ },
+ "atelier-390": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/img/logo.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 139104
+   },
+   {
+    "url": "http://localhost:4173/img/boutique-interieur.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 194251
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/atelier.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 4640
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/caveat/v23/Wnz6HAc5bAfYB2Q7ZjYY.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 74932
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   },
+   {
+    "url": "http://localhost:4173/img/decor-hiboux.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 152578
+   },
+   {
+    "url": "http://localhost:4173/img/cadre-mariage.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 70429
+   },
+   {
+    "url": "http://localhost:4173/img/plaque-naissance-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 94219
+   },
+   {
+    "url": "http://localhost:4173/img/photo-gravee-bois.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 144811
+   },
+   {
+    "url": "http://localhost:4173/img/tableau-scrabble.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 111285
+   },
+   {
+    "url": "http://localhost:4173/img/baskets-personnalisees.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 116180
+   },
+   {
+    "url": "http://localhost:4173/img/verres-graves.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 101344
+   },
+   {
+    "url": "http://localhost:4173/img/salon-stand.jpg",
+    "statut": 200,
+    "type": "image",
+    "taille": 161993
+   }
+  ],
+  "hauteur": 4370,
+  "debordement": false
+ },
+ "panier-1440": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/panier.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 23222
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   }
+  ],
+  "hauteur": 934,
+  "debordement": false,
+  "liens": [
+   "http://localhost:4173/index.html",
+   "http://localhost:4173/boutique.html",
+   "http://localhost:4173/idees-cadeaux.html",
+   "http://localhost:4173/atelier.html",
+   "http://localhost:4173/faq.html",
+   "http://localhost:4173/contact.html",
+   "http://localhost:4173/favoris.html",
+   "http://localhost:4173/panier.html",
+   "tel:0783394028",
+   "mailto:contact@montrucenbois.fr",
+   "https://www.facebook.com/profile.php?id=100094575102607",
+   "http://localhost:4173/suivi.html",
+   "http://localhost:4173/avis.html",
+   "http://localhost:4173/cgv.html",
+   "http://localhost:4173/mentions-legales.html"
+  ]
+ },
+ "panier-390": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/panier.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 23222
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   }
+  ],
+  "hauteur": 1574,
+  "debordement": false
+ },
+ "contact-1440": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/contact.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 7762
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   }
+  ],
+  "hauteur": 1702,
+  "debordement": false,
+  "liens": [
+   "http://localhost:4173/index.html",
+   "http://localhost:4173/boutique.html",
+   "http://localhost:4173/idees-cadeaux.html",
+   "http://localhost:4173/atelier.html",
+   "http://localhost:4173/faq.html",
+   "http://localhost:4173/contact.html",
+   "http://localhost:4173/favoris.html",
+   "http://localhost:4173/panier.html",
+   "tel:0783394028",
+   "mailto:contact@montrucenbois.fr",
+   "https://www.facebook.com/profile.php?id=100094575102607",
+   "https://www.google.com/maps/search/?api=1&query=3+rue+Salengro+62260+Auchel",
+   "http://localhost:4173/suivi.html",
+   "http://localhost:4173/avis.html",
+   "http://localhost:4173/cgv.html",
+   "http://localhost:4173/mentions-legales.html"
+  ]
+ },
+ "contact-390": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/contact.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 7762
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   }
+  ],
+  "hauteur": 3148,
+  "debordement": false
+ },
+ "avis-1440": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/avis.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 3838
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   }
+  ],
+  "hauteur": 2133,
+  "debordement": false,
+  "liens": [
+   "http://localhost:4173/index.html",
+   "http://localhost:4173/boutique.html",
+   "http://localhost:4173/idees-cadeaux.html",
+   "http://localhost:4173/atelier.html",
+   "http://localhost:4173/faq.html",
+   "http://localhost:4173/contact.html",
+   "http://localhost:4173/favoris.html",
+   "http://localhost:4173/panier.html",
+   "https://www.facebook.com/profile.php?id=100094575102607&sk=reviews",
+   "tel:0783394028",
+   "mailto:contact@montrucenbois.fr",
+   "https://www.facebook.com/profile.php?id=100094575102607",
+   "http://localhost:4173/suivi.html",
+   "http://localhost:4173/avis.html",
+   "http://localhost:4173/cgv.html",
+   "http://localhost:4173/mentions-legales.html"
+  ]
+ },
+ "avis-390": {
+  "console": [],
+  "erreursPage": [],
+  "echecs": [],
+  "requetes": [
+   {
+    "url": "http://localhost:4173/avis.html",
+    "statut": 200,
+    "type": "document",
+    "taille": 3838
+   },
+   {
+    "url": "http://localhost:4173/css/style.css?v=20261019110342",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 41694
+   },
+   {
+    "url": "http://localhost:4173/data/donnees.js",
+    "statut": 200,
+    "type": "script",
+    "taille": 31449
+   },
+   {
+    "url": "http://localhost:4173/js/main.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 30743
+   },
+   {
+    "url": "http://localhost:4173/js/demo.js?v=20261019110342",
+    "statut": 200,
+    "type": "script",
+    "taille": 33697
+   },
+   {
+    "url": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Caveat:wght@500;600&display=swap",
+    "statut": 200,
+    "type": "stylesheet",
+    "taille": 15822
+   },
+   {
+    "url": "http://localhost:4173/img/logo-200.webp",
+    "statut": 200,
+    "type": "image",
+    "taille": 21506
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/figtree/v9/_Xms-HUzqDCFdgfMm4S9DQ.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 20156
+   },
+   {
+    "url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9K6as8bTXq_nANBjzKo3IeZx8z6up5BeSl9D4dj_x9PpZBMlGIInE.woff2",
+    "statut": 200,
+    "type": "font",
+    "taille": 76888
+   },
+   {
+    "url": "http://localhost:4173/img/favicon-32.png",
+    "statut": 200,
+    "type": "other",
+    "taille": 2593
+   }
+  ],
+  "hauteur": 4316,
+  "debordement": false
+ }
+}

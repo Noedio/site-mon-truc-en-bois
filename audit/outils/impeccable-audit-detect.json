@@ -1,0 +1,448 @@
+{
+ "genere_le": "2026-10-24",
+ "outil": "impeccable 4.7.1 — scripts/impeccable detect --json",
+ "executions": [
+  {
+   "commande": "impeccable detect --json index.html boutique.html produit.html idees-cadeaux.html atelier.html panier.html contact.html avis.html (fichiers, sans exécution du JavaScript)",
+   "code_sortie": 2,
+   "resultats": [
+    {
+     "antipattern": "tight-leading",
+     "name": "Tight line height",
+     "description": "Line height below 1.3x the font size makes multi-line text hard to read. Use 1.5 to 1.7 for body text so lines have room to breathe.",
+     "severity": "warning",
+     "category": "quality",
+     "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\index.html",
+     "line": 0,
+     "snippet": "line-height 1.25x (need >=1.3)"
+    },
+    {
+     "antipattern": "cramped-padding",
+     "name": "Cramped padding",
+     "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+     "severity": "warning",
+     "category": "quality",
+     "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\index.html",
+     "line": 0,
+     "snippet": "<section> \"section\": children flush against bg on all sides (no inset)"
+    },
+    {
+     "antipattern": "cramped-padding",
+     "name": "Cramped padding",
+     "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+     "severity": "warning",
+     "category": "quality",
+     "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\index.html",
+     "line": 0,
+     "snippet": "<section> \"section\": children flush against bg on all sides (no inset)"
+    },
+    {
+     "antipattern": "cramped-padding",
+     "name": "Cramped padding",
+     "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+     "severity": "warning",
+     "category": "quality",
+     "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\index.html",
+     "line": 0,
+     "snippet": "<section> \"section\": children flush against bg on all sides (no inset)"
+    },
+    {
+     "antipattern": "tight-leading",
+     "name": "Tight line height",
+     "description": "Line height below 1.3x the font size makes multi-line text hard to read. Use 1.5 to 1.7 for body text so lines have room to breathe.",
+     "severity": "warning",
+     "category": "quality",
+     "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\atelier.html",
+     "line": 0,
+     "snippet": "line-height 1.25x (need >=1.3)"
+    },
+    {
+     "antipattern": "cramped-padding",
+     "name": "Cramped padding",
+     "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+     "severity": "warning",
+     "category": "quality",
+     "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\atelier.html",
+     "line": 0,
+     "snippet": "<section> \"section\": children flush against bg on all sides (no inset)"
+    },
+    {
+     "antipattern": "cramped-padding",
+     "name": "Cramped padding",
+     "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the space between the rendered text and the border box is too small for the font size, and (2) a wrapper whose children's text lands flush against a visible boundary (border, outline, or non-transparent background) with nothing to inset it. Add at least 8px (ideally 12–16px) of space inside bordered, outlined, or colored containers.",
+     "severity": "warning",
+     "category": "quality",
+     "file": "C:\\Users\\yoann\\Desktop\\Projets divers\\Mon truc en bois\\contact.html",
+     "line": 0,
+     "snippet": "<div> \"carte\": children flush against border on all sides (no inset)"
+    }
+   ]
+  },
+  {
+   "commande": "impeccable detect --json <8 URL http://localhost:4173/…> (rendu Chrome, viewport par défaut 1280x800)",
+   "code_sortie": 2,
+   "resultats": [
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/index.html",
+     "line": 0,
+     "snippet": "\"occasions.\" alone on the last of 3 lines (15% of the measure)",
+     "advisory": true,
+     "selector": "p.chapeau"
+    },
+    {
+     "antipattern": "low-contrast",
+     "name": "Low contrast text",
+     "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/index.html",
+     "line": 0,
+     "snippet": "4.4:1 (need 4.5:1) — text #a8693a on #ffffff",
+     "advisory": true,
+     "selector": "span.signature"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/index.html",
+     "line": 0,
+     "snippet": "\"image.\" alone on the last of 3 lines (19% of the measure)",
+     "advisory": true,
+     "selector": "a.categorie:nth-of-type(2) > div.categorie-texte > p"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/index.html",
+     "line": 0,
+     "snippet": "\"mariage.\" alone on the last of 3 lines (24% of the measure)",
+     "advisory": true,
+     "selector": "a.categorie:nth-of-type(3) > div.categorie-texte > p"
+    },
+    {
+     "antipattern": "low-contrast",
+     "name": "Low contrast text",
+     "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+     "severity": "warning",
+     "category": "quality",
+     "file": "http://localhost:4173/index.html",
+     "line": 0,
+     "snippet": "3.9:1 (need 4.5:1) — text #a8693a on #eef3ef",
+     "selector": "article.produit-carte:nth-of-type(1) > a > div.produit-infos > span.etiquette"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/index.html",
+     "line": 0,
+     "snippet": "\"vous.\" alone on the last of 3 lines (13% of the measure)",
+     "advisory": true,
+     "selector": "div.etape:nth-of-type(4) > p"
+    },
+    {
+     "antipattern": "low-contrast",
+     "name": "Low contrast text",
+     "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+     "severity": "warning",
+     "category": "quality",
+     "file": "http://localhost:4173/index.html",
+     "line": 0,
+     "snippet": "pixel contrast 4.0:1 median 4.0:1 (need 4.5:1) on unread layer \"7 produits\"",
+     "selector": "a.categorie:nth-of-type(3) > div.categorie-texte > span.etiquette"
+    },
+    {
+     "antipattern": "low-contrast",
+     "name": "Low contrast text",
+     "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/boutique.html",
+     "line": 0,
+     "snippet": "4.4:1 (need 4.5:1) — text #a8693a on #ffffff",
+     "advisory": true,
+     "selector": "article.produit-carte:nth-of-type(1) > a > div.produit-infos > span.etiquette"
+    },
+    {
+     "antipattern": "skipped-heading",
+     "name": "Skipped heading level",
+     "description": "Heading levels should not skip (e.g. h1 then h3 with no h2). Screen readers use heading hierarchy for navigation. Skipping levels breaks the document outline.",
+     "severity": "warning",
+     "category": "quality",
+     "file": "http://localhost:4173/boutique.html",
+     "line": 0,
+     "snippet": "<h1> \"La boutique\" followed by <h3> \"Planche apéro gravée\" (missing h2)",
+     "selector": "body"
+    },
+    {
+     "antipattern": "low-contrast",
+     "name": "Low contrast text",
+     "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/produit.html?id=planche-aperitif",
+     "line": 0,
+     "snippet": "4.4:1 (need 4.5:1) — text #a8693a on #ffffff",
+     "advisory": true,
+     "selector": "div.pile > span.etiquette"
+    },
+    {
+     "antipattern": "low-contrast",
+     "name": "Low contrast text",
+     "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/atelier.html",
+     "line": 0,
+     "snippet": "4.4:1 (need 4.5:1) — text #a8693a on #ffffff",
+     "advisory": true,
+     "selector": "#equipe"
+    }
+   ]
+  },
+  {
+   "commande": "impeccable detect --json --viewport 390x844 <8 URL http://localhost:4173/…>",
+   "code_sortie": 2,
+   "resultats": [
+    {
+     "antipattern": "low-contrast",
+     "name": "Low contrast text",
+     "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/index.html",
+     "line": 0,
+     "snippet": "4.4:1 (need 4.5:1) — text #a8693a on #ffffff",
+     "advisory": true,
+     "selector": "span.signature"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/index.html",
+     "line": 0,
+     "snippet": "\"image.\" alone on the last of 3 lines (19% of the measure)",
+     "advisory": true,
+     "selector": "a.categorie:nth-of-type(2) > div.categorie-texte > p"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/index.html",
+     "line": 0,
+     "snippet": "\"boutique.\" alone on the last of 2 lines (20% of the measure)",
+     "advisory": true,
+     "selector": "section.section.section-alt:nth-of-type(4) > div.conteneur > div.titre-section > div.section-tete > p"
+    },
+    {
+     "antipattern": "low-contrast",
+     "name": "Low contrast text",
+     "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+     "severity": "warning",
+     "category": "quality",
+     "file": "http://localhost:4173/index.html",
+     "line": 0,
+     "snippet": "3.9:1 (need 4.5:1) — text #a8693a on #eef3ef",
+     "selector": "article.produit-carte:nth-of-type(1) > a > div.produit-infos > span.etiquette"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/index.html",
+     "line": 0,
+     "snippet": "\"bijoux\" alone on the last of 2 lines (12% of the measure)",
+     "advisory": true,
+     "selector": "div.pile:nth-of-type(1) > p"
+    },
+    {
+     "antipattern": "low-contrast",
+     "name": "Low contrast text",
+     "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/boutique.html",
+     "line": 0,
+     "snippet": "4.4:1 (need 4.5:1) — text #a8693a on #ffffff",
+     "advisory": true,
+     "selector": "article.produit-carte:nth-of-type(1) > a > div.produit-infos > span.etiquette"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/boutique.html",
+     "line": 0,
+     "snippet": "\"bijoux\" alone on the last of 2 lines (12% of the measure)",
+     "advisory": true,
+     "selector": "div.pile:nth-of-type(1) > p"
+    },
+    {
+     "antipattern": "skipped-heading",
+     "name": "Skipped heading level",
+     "description": "Heading levels should not skip (e.g. h1 then h3 with no h2). Screen readers use heading hierarchy for navigation. Skipping levels breaks the document outline.",
+     "severity": "warning",
+     "category": "quality",
+     "file": "http://localhost:4173/boutique.html",
+     "line": 0,
+     "snippet": "<h1> \"La boutique\" followed by <h3> \"Planche apéro gravée\" (missing h2)",
+     "selector": "body"
+    },
+    {
+     "antipattern": "low-contrast",
+     "name": "Low contrast text",
+     "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/produit.html?id=planche-aperitif",
+     "line": 0,
+     "snippet": "4.4:1 (need 4.5:1) — text #a8693a on #ffffff",
+     "advisory": true,
+     "selector": "div.pile > span.etiquette"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/produit.html?id=planche-aperitif",
+     "line": 0,
+     "snippet": "\"bijoux\" alone on the last of 2 lines (12% of the measure)",
+     "advisory": true,
+     "selector": "div.pied-grille > div.pile:nth-of-type(1) > p"
+    },
+    {
+     "antipattern": "low-contrast",
+     "name": "Low contrast text",
+     "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+     "severity": "warning",
+     "category": "quality",
+     "file": "http://localhost:4173/produit.html?id=planche-aperitif",
+     "line": 0,
+     "snippet": "pixel contrast 3.5:1 median 3.5:1 (need 4.5:1) on text shadow, img underlay \"Votre texte ici\"",
+     "selector": "#apercu-texte"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/idees-cadeaux.html",
+     "line": 0,
+     "snippet": "\"bijoux\" alone on the last of 2 lines (12% of the measure)",
+     "advisory": true,
+     "selector": "div.pile:nth-of-type(1) > p"
+    },
+    {
+     "antipattern": "low-contrast",
+     "name": "Low contrast text",
+     "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/atelier.html",
+     "line": 0,
+     "snippet": "4.4:1 (need 4.5:1) — text #a8693a on #ffffff",
+     "advisory": true,
+     "selector": "#equipe"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/atelier.html",
+     "line": 0,
+     "snippet": "\"thème.\" alone on the last of 3 lines (15% of the measure)",
+     "advisory": true,
+     "selector": "div.savoir:nth-of-type(3) > p"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/atelier.html",
+     "line": 0,
+     "snippet": "\"bijoux\" alone on the last of 2 lines (12% of the measure)",
+     "advisory": true,
+     "selector": "div.pied-grille > div.pile:nth-of-type(1) > p"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/panier.html",
+     "line": 0,
+     "snippet": "\"bijoux\" alone on the last of 2 lines (12% of the measure)",
+     "advisory": true,
+     "selector": "div.pile:nth-of-type(1) > p"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/contact.html",
+     "line": 0,
+     "snippet": "\"bijoux\" alone on the last of 2 lines (12% of the measure)",
+     "advisory": true,
+     "selector": "div.pile:nth-of-type(1) > p"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/avis.html",
+     "line": 0,
+     "snippet": "\"»\" alone on the last of 4 lines (3% of the measure)",
+     "advisory": true,
+     "selector": "figure.avis-carte:nth-of-type(8) > blockquote"
+    },
+    {
+     "antipattern": "straggler",
+     "name": "Straggler",
+     "description": "The last line of this paragraph holds one word, which leaves a hole under the block. Set text-wrap: pretty on body copy (Chrome, Safari) to pull a word down beside it. Where a browser ignores it, edit the last sentence or bind the last two words with a no-break space. Keep it if the break is intended.",
+     "severity": "advisory",
+     "category": "quality",
+     "file": "http://localhost:4173/avis.html",
+     "line": 0,
+     "snippet": "\"bijoux\" alone on the last of 2 lines (12% of the measure)",
+     "advisory": true,
+     "selector": "div.pile:nth-of-type(1) > p"
+    }
+   ]
+  }
+ ]
+}
