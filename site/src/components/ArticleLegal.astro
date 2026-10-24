@@ -1,0 +1,26 @@
+---
+// Un article numéroté des pages légales. Le numéro suit l'ordre du sommaire du gabarit.
+interface Props { numero: number; id: string; titre: string }
+const { numero, id, titre } = Astro.props;
+---
+<section class="article-legal" aria-labelledby={id}>
+  <h2 id={id}><span class="etiquette">Article {numero}</span>{titre}</h2>
+  <div class="article-corps">
+    <slot />
+  </div>
+</section>
+
+<style>
+  .article-legal { scroll-margin-top: 24px; border-top: var(--filet); padding-top: 20px; }
+  .article-legal h2 { font-size: var(--t-sous-titre); display: flex; flex-direction: column; gap: 8px; scroll-margin-top: 24px; }
+  .article-legal h2 .etiquette { font-weight: 400; text-transform: none; letter-spacing: 0.04em; line-height: 1.3; }
+  .article-corps { margin-top: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .article-corps :global(ul) { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+  .article-corps :global(dl) { margin: 0; border-top: var(--filet); }
+  .article-corps :global(dl > div) { padding: 10px 0; border-bottom: var(--filet); display: grid; grid-template-columns: minmax(0, 13em) minmax(0, 1fr); gap: 4px 20px; }
+  .article-corps :global(dt) { font-family: var(--f-machine); font-size: var(--t-machine); }
+  .article-corps :global(dd) { margin: 0; overflow-wrap: anywhere; }
+  @media (max-width: 560px) {
+    .article-corps :global(dl > div) { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>

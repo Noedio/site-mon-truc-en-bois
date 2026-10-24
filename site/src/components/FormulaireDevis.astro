@@ -1,0 +1,196 @@
+---
+// Formulaire de devis de la page Contact.
+// Supabase configuré : la demande part vers la fonction `contact` (src/lib/demande.ts).
+// Sinon, on le dit en haut du formulaire et le bouton prépare un email avec le récapitulatif.
+import { site } from "../lib/donnees";
+import { lienTel } from "../lib/format";
+import Bouton from "./Bouton.astro";
+
+const { supabaseUrl, supabaseCle } = site.commandes;
+const enLigne = Boolean(supabaseUrl && supabaseCle);
+const PROJETS = ["Gravure texte ou photo", "Sérigraphie ou impression", "Naissance, mariage, fête", "Bijoux", "Commande pro ou association", "Autre"];
+---
+<form
+  id="devis"
+  class="devis"
+  aria-labelledby="titre-devis"
+  data-supabase-url={supabaseUrl}
+  data-supabase-cle={supabaseCle}
+  data-email={site.email}
+>
+  <h2 id="titre-devis">Demande de devis</h2>
+
+  {!enLigne && (
+    <div class="devis-avis" id="devis-avis">
+      <p><strong>L'envoi en ligne n'est pas encore ouvert.</strong></p>
+      <p>Remplissez le formulaire : le bouton ouvre votre messagerie avec un email déjà rédigé pour {site.email}, il ne reste qu'à l'envoyer. Vous pouvez aussi nous appeler au <a href={lienTel(site.telephone)}>{site.telephone}</a>.</p>
+    </div>
+  )}
+
+  <div class="devis-champs">
+    <div class="champ">
+      <label for="d-nom">Nom <span aria-hidden="true">*</span></label>
+      <input id="d-nom" name="nom" type="text" required autocomplete="name" minlength="2" />
+    </div>
+    <div class="champ">
+      <label for="d-email">Email <span aria-hidden="true">*</span></label>
+      <input id="d-email" name="email" type="email" required autocomplete="email" />
+    </div>
+    <div class="champ">
+      <label for="d-tel">Téléphone</label>
+      <input id="d-tel" name="tel" type="tel" autocomplete="tel" />
+    </div>
+    <div class="champ">
+      <label for="d-projet">Type de projet</label>
+      <select id="d-projet" name="projet">
+        {PROJETS.map((p) => <option>{p}</option>)}
+      </select>
+    </div>
+    <div class="champ">
+      <label for="d-quantite">Quantité approximative</label>
+      <input id="d-quantite" name="quantite" type="number" inputmode="numeric" min="1" step="1" value="1" />
+    </div>
+    <div class="champ">
+      <label for="d-date">Date souhaitée</label>
+      <input id="d-date" name="date" type="date" aria-describedby="d-date-aide" />
+      <span class="aide" id="d-date-aide">Anniversaire, mariage, fête : la date à laquelle il vous faut la pièce.</span>
+    </div>
+    <div class="champ champ-large">
+      <label for="d-message">Votre projet <span aria-hidden="true">*</span></label>
+      <textarea id="d-message" name="message" rows="6" required minlength="5" placeholder="Le support, le texte, les dimensions, le nombre de pièces…"></textarea>
+    </div>
+    <div class="champ champ-large">
+      <span class="libelle">Logo ou photo</span>
+      <p class="aide">
+        {enLigne
+          ? "Ce formulaire ne transmet pas de fichier. Vous recevrez un email de confirmation : répondez-y en joignant votre logo ou votre photo."
+          : "Ce formulaire ne transmet pas de fichier. Joignez votre logo ou votre photo à l'email qui va s'ouvrir."}
+      </p>
+    </div>
+    {enLigne && (
+      <label class="case champ-large">
+        <input type="checkbox" name="consentement" />
+        <span>J'accepte de recevoir les nouveautés et idées cadeaux par email (désinscription en un clic).</span>
+      </label>
+    )}
+  </div>
+
+  <input class="piege" type="text" name="site_web" tabindex="-1" autocomplete="off" aria-hidden="true" />
+  <p class="aide"><span aria-hidden="true">*</span> champ obligatoire</p>
+
+  <div>
+    <Bouton type="submit">{enLigne ? "Envoyer ma demande" : "Préparer l'email"}</Bouton>
+  </div>
+
+  <div class="devis-retour" id="devis-retour" aria-live="polite"></div>
+
+  <div class="devis-repli" id="devis-repli" hidden>
+    <p><strong>Votre messagerie devrait s'ouvrir avec la demande.</strong> Si rien ne s'ouvre, copiez le texte ci-dessous et envoyez-le à <a href={`mailto:${site.email}`}>{site.email}</a>, ou appelez-nous au <a href={lienTel(site.telephone)}>{site.telephone}</a>.</p>
+    <label class="visuellement-cache" for="devis-recap">Récapitulatif de votre demande</label>
+    <textarea id="devis-recap" rows="9" readonly></textarea>
+    <div class="rangee">
+      <a class="machine lien-action" id="devis-ouvrir" href={`mailto:${site.email}`}>Ouvrir l'email à nouveau</a>
+      <button class="machine lien-action" type="button" id="devis-copier">Copier le texte</button>
+    </div>
+  </div>
+</form>
+
+<script>
+  import { envoyerDemande, lienEmail, recapitulatif, serveurPret, type Demande } from "../lib/demande";
+
+  const f = document.getElementById("devis") as HTMLFormElement | null;
+  if (f) {
+    const config = { supabaseUrl: f.dataset.supabaseUrl ?? "", supabaseCle: f.dataset.supabaseCle ?? "" };
+    const retour = document.getElementById("devis-retour")!;
+    const repli = document.getElementById("devis-repli")!;
+    const recap = document.getElementById("devis-recap") as HTMLTextAreaElement;
+    const ouvrir = document.getElementById("devis-ouvrir") as HTMLAnchorElement;
+    const copier = document.getElementById("devis-copier") as HTMLButtonElement;
+    const date = f.elements.namedItem("date") as HTMLInputElement;
+    date.min = new Date().toISOString().slice(0, 10);
+
+    const valeur = (n: string) => ((f.elements.namedItem(n) as HTMLInputElement | null)?.value ?? "").trim();
+    const lire = (): Demande => ({
+      nom: valeur("nom"),
+      email: valeur("email"),
+      tel: valeur("tel"),
+      projet: valeur("projet"),
+      quantite: Number(valeur("quantite")) > 0 ? Math.trunc(Number(valeur("quantite"))) : null,
+      date: valeur("date"),
+      message: valeur("message"),
+      consentement: Boolean((f.elements.namedItem("consentement") as HTMLInputElement | null)?.checked),
+      piege: valeur("site_web"),
+    });
+    const dire = (texte: string, alerte = false) => {
+      retour.textContent = texte;
+      retour.classList.toggle("alerte", alerte);
+    };
+
+    f.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const d = lire();
+      const bouton = f.querySelector<HTMLButtonElement>("button[type=submit]")!;
+
+      if (!serveurPret(config)) {
+        const lien = lienEmail(f.dataset.email ?? "", d);
+        recap.value = recapitulatif(d);
+        ouvrir.href = lien;
+        repli.hidden = false;
+        dire("");
+        location.href = lien;
+        return;
+      }
+
+      bouton.disabled = true;
+      dire("Envoi en cours…");
+      try {
+        await envoyerDemande(config, d);
+        f.reset();
+        dire("Merci, votre demande est bien partie. Vous allez recevoir un email de confirmation, et nous revenons vers vous avec un devis.");
+      } catch (err) {
+        dire(`${(err as Error).message} Vous pouvez aussi nous écrire à ${f.dataset.email} ou nous appeler.`, true);
+      } finally {
+        bouton.disabled = false;
+      }
+    });
+
+    copier.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(recap.value);
+        copier.textContent = "Texte copié";
+      } catch {
+        recap.select();
+        copier.textContent = "Texte sélectionné : Ctrl+C pour copier";
+      }
+    });
+  }
+</script>
+
+<style>
+  .devis { display: flex; flex-direction: column; gap: 20px; border-top: var(--filet-fort); padding-top: 24px; min-width: 0; }
+  .devis h2 { font-size: var(--t-sous-titre); }
+
+  .devis-avis { background: var(--kraft); border: var(--filet); padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; }
+
+  .devis-champs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 18px 20px; }
+  .champ { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .champ-large { grid-column: 1 / -1; }
+  .champ label, .libelle { font-family: var(--f-machine); font-size: var(--t-machine); font-weight: 700; }
+  .aide { color: var(--texte-doux); font-size: 0.95rem; }
+  textarea { resize: vertical; min-height: 9em; }
+
+  .case { display: flex; gap: 12px; align-items: flex-start; min-height: var(--cible); cursor: pointer; }
+  .case input { width: 22px; height: 22px; min-height: 0; flex: none; margin-top: 2px; accent-color: var(--brule); }
+
+  .piege { position: absolute; left: -9999px; width: 1px; height: 1px; }
+
+  .devis-retour:empty { display: none; }
+  .devis-retour { border: var(--filet); padding: 14px 16px; background: var(--papier); }
+  .devis-retour.alerte { border: 2px solid var(--gravure); }
+
+  .devis-repli { display: flex; flex-direction: column; gap: 12px; border: var(--filet); padding: 16px 18px; background: var(--papier); }
+  .devis-repli[hidden] { display: none; }
+  .devis-repli textarea { font-family: var(--f-machine); font-size: var(--t-machine); min-height: 0; }
+  .lien-action { min-height: var(--cible); display: inline-flex; align-items: center; font-weight: 700; background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 0.18em; cursor: pointer; color: var(--brule); }
+  .lien-action:hover { color: var(--gravure); }
+</style>

@@ -1,7 +1,59 @@
 ---
+// Mentions légales. Contenu repris de l'ancien mentions-legales.html ; chaque information
+// absente de site.legal (ou de site.siret) s'affiche [À COMPLÉTER].
 import Base from "../layouts/Base.astro";
-import EnTravaux from "../components/EnTravaux.astro";
+import GabaritLegal from "../components/GabaritLegal.astro";
+import ArticleLegal from "../components/ArticleLegal.astro";
+import ACompleter from "../components/ACompleter.astro";
+import { site } from "../lib/donnees";
+import { lienTel } from "../lib/format";
+import { legal, hebergeur, serveurBranche, paiementEnLigne } from "../lib/legal";
+
+const sommaire = [
+  { id: "editeur", titre: "Éditeur du site" },
+  { id: "hebergement", titre: "Hébergement" },
+  { id: "propriete", titre: "Propriété intellectuelle" },
+  { id: "donnees", titre: "Données personnelles et cookies" },
+];
 ---
-<Base titre="Mentions légales">
-  <EnTravaux titre="Mentions légales" chantier="chantier C4" contenu="L'éditeur, l'hébergeur et les données personnelles." />
+<Base titre="Mentions légales" description={`Éditeur, hébergeur et données personnelles du site ${site.nom}, ${site.adresse}.`}>
+  <GabaritLegal titre="Mentions légales" sommaire={sommaire}>
+    <ArticleLegal numero={1} id="editeur" titre="Éditeur du site">
+      <dl>
+        <div><dt>Nom commercial</dt><dd>{site.nom}</dd></div>
+        <div><dt>Exploitant</dt><dd>{legal.exploitant || <ACompleter quoi="exploitant (nom et prénom)" />}</dd></div>
+        <div><dt>Forme juridique</dt><dd>{legal.formeJuridique || <ACompleter quoi="forme juridique" />}</dd></div>
+        <div><dt>SIRET</dt><dd>{legal.siret || <ACompleter quoi="SIRET" />}</dd></div>
+        <div><dt>Immatriculation</dt><dd>{legal.immatriculation || <ACompleter quoi="inscription au RM ou au RCS" />}</dd></div>
+        <div><dt>Adresse</dt><dd>{site.adresse}</dd></div>
+        <div><dt>Téléphone</dt><dd><a href={lienTel(site.telephone)}>{site.telephone}</a></dd></div>
+        <div><dt>Email</dt><dd><a href={`mailto:${site.email}`}>{site.email}</a></dd></div>
+        <div><dt>Directeur de la publication</dt><dd>{legal.directeurPublication || <ACompleter quoi="directeur de la publication" />}</dd></div>
+      </dl>
+    </ArticleLegal>
+
+    <ArticleLegal numero={2} id="hebergement" titre="Hébergement">
+      <dl>
+        <div>
+          <dt>Site</dt>
+          <dd>{hebergeur.nom}, {hebergeur.adresse}. Téléphone : <ACompleter quoi="téléphone de l'hébergeur (Cloudflare)" /></dd>
+        </div>
+        {serveurBranche && (
+          <div><dt>Commandes et données clients</dt><dd>Supabase Inc., données hébergées dans l'Union européenne (Paris, France).</dd></div>
+        )}
+        {serveurBranche && <div><dt>Emails</dt><dd>Brevo (Sendinblue SAS), Paris, France.</dd></div>}
+        {paiementEnLigne && <div><dt>Paiements</dt><dd>Stripe Payments Europe Ltd., 1 Grand Canal Street Lower, Dublin 2, Irlande.</dd></div>}
+      </dl>
+    </ArticleLegal>
+
+    <ArticleLegal numero={3} id="propriete" titre="Propriété intellectuelle">
+      <p>L'ensemble des contenus de ce site (textes, photos, créations) est la propriété de {site.nom}, sauf mention contraire. Toute reproduction sans autorisation est interdite.</p>
+    </ArticleLegal>
+
+    <ArticleLegal numero={4} id="donnees" titre="Données personnelles et cookies">
+      <p>Ce site ne dépose aucun cookie publicitaire et ne mesure pas l'audience. Le panier, les favoris et les photos en attente d'envoi sont conservés uniquement dans votre navigateur.</p>
+      <p>Les données transmises lors d'une commande ou d'une demande de devis servent exclusivement à y répondre : voir l'article « Données personnelles » des <a href="/cgv/#donnees">conditions générales de vente</a>.</p>
+      {paiementEnLigne && <p>Le paiement en ligne est assuré par Stripe, qui peut déposer les cookies nécessaires à la sécurité du paiement sur sa propre page.</p>}
+    </ArticleLegal>
+  </GabaritLegal>
 </Base>

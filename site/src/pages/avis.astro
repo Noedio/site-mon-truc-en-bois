@@ -1,7 +1,103 @@
 ---
+// Avis clients recopiés depuis Facebook, sans étoiles : Facebook ne donne qu'une recommandation.
+// Google n'apparaît que lorsqu'il y a des avis Google (plateformesAvis.google.nombre > 0).
+// Données structurées : des Review sans note (aucune note n'existe), pas d'AggregateRating.
 import Base from "../layouts/Base.astro";
-import EnTravaux from "../components/EnTravaux.astro";
+import TetePage from "../components/TetePage.astro";
+import CarteAvis from "../components/CarteAvis.astro";
+import { avis, site } from "../lib/donnees";
+import { adresseEnLignes } from "../lib/format";
+
+const { facebook, google } = site.plateformesAvis;
+const avecGoogle = google.nombre > 0;
+
+const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+/** « Novembre 2025 » → « 2025-11 », ou "" si la date n'a pas cette forme. */
+const isoMois = (date: string) => {
+  const [mois, annee] = date.trim().toLowerCase().split(/\s+/);
+  const i = MOIS.indexOf(mois);
+  return i >= 0 && /^\d{4}$/.test(annee ?? "") ? `${annee}-${String(i + 1).padStart(2, "0")}` : "";
+};
+// Les plus récents d'abord ; à date égale, l'ordre du fichier.
+const liste = avis
+  .filter((a) => a.texte?.trim() && (a.source !== "google" || avecGoogle))
+  .map((a, i) => ({ a, i, iso: isoMois(a.date) }))
+  .sort((x, y) => y.iso.localeCompare(x.iso) || x.i - y.i)
+  .map(({ a }) => a);
+
+const SOURCES: Record<string, string> = { facebook: "Facebook", google: "Google" };
+const { rue, ville } = adresseEnLignes(site.adresse);
+const commerce = {
+  "@type": "Store",
+  name: site.nom,
+  address: { "@type": "PostalAddress", streetAddress: rue, postalCode: ville.match(/\d{5}/)?.[0] ?? "", addressLocality: ville.replace(/\d{5}/, "").trim(), addressCountry: "FR" },
+};
+const donneesAvis = {
+  "@context": "https://schema.org",
+  "@graph": liste.map((a) => ({
+    "@type": "Review",
+    itemReviewed: commerce,
+    author: { "@type": "Person", name: a.nom },
+    ...(isoMois(a.date) && { datePublished: isoMois(a.date) }),
+    reviewBody: a.texte,
+    publisher: { "@type": "Organization", name: SOURCES[a.source] ?? a.source },
+  })),
+};
 ---
-<Base titre="Avis">
-  <EnTravaux titre="Avis" chantier="chantier C4" contenu="Les avis nommés et datés, avec leur source." />
+<Base titre="Avis clients" description={`Les avis laissés par les clients de ${site.nom}, atelier-boutique de gravure à Auchel.`}>
+  <script slot="tete" type="application/ld+json" set:html={JSON.stringify(donneesAvis)} />
+
+  <TetePage titre="Les avis de nos clients" chapeau={`Recopiés tels qu'ils ont été laissés sur notre page Facebook${avecGoogle ? " et sur Google" : ""}, avec le prénom et le mois.`}>
+    <div class="scores">
+      {facebook.nombre > 0 && (
+        <a class="score" href={facebook.lien} rel="noopener">
+          <span class="score-chiffre">Recommandé à {facebook.taux} %</span>
+          <span class="machine">{facebook.nombre} avis sur Facebook</span>
+        </a>
+      )}
+      {avecGoogle && (
+        <a class="score" href={google.lien || google.lienAvis} rel="noopener">
+          <span class="score-chiffre">{google.note.toLocaleString("fr-FR")} sur 5</span>
+          <span class="machine">{google.nombre} avis sur Google</span>
+        </a>
+      )}
+    </div>
+  </TetePage>
+
+  <section class="bande" aria-label="Avis">
+    <div class="conteneur">
+      <div class="avis-grille">
+        {liste.map((a, i) => <CarteAvis avis={a} grand={i === 0} />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="bande bande-fonce" aria-labelledby="titre-laisser">
+    <div class="conteneur laisser">
+      <div class="pile" style="--pile: 10px">
+        <h2 id="titre-laisser">Laisser un avis</h2>
+        <p>Vous êtes venu chez nous ? Votre avis aide beaucoup une petite boutique comme la nôtre.</p>
+      </div>
+      <div class="rangee">
+        {facebook.lien && <a class="lien-avis machine" href={facebook.lien} rel="noopener">Laisser un avis sur Facebook</a>}
+        {avecGoogle && google.lienAvis && <a class="lien-avis machine" href={google.lienAvis} rel="noopener">Laisser un avis sur Google</a>}
+      </div>
+    </div>
+  </section>
 </Base>
+
+<style>
+  .scores { display: flex; flex-wrap: wrap; gap: 16px 48px; margin-top: 8px; }
+  .score { display: flex; flex-direction: column; gap: 2px; text-decoration: none; border-top: var(--filet-fort); padding-top: 10px; min-height: var(--cible); }
+  .score-chiffre { font-family: var(--f-titre); font-weight: 800; font-size: var(--t-prix); text-transform: uppercase; line-height: 1.1; }
+  .score:hover .machine { text-decoration: underline; }
+
+  .avis-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); gap: 40px 48px; align-items: start; }
+  /* Le plus récent sur toute la largeur : un avis long ne laisse pas de trou dans la grille. */
+  .avis-grille > :global(:first-child) { grid-column: 1 / -1; max-width: 52em; }
+
+  .laisser { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 40px; }
+  .laisser h2 { font-size: var(--t-sous-titre); }
+  .lien-avis { border: var(--filet-fort); padding: 10px 18px; min-height: var(--cible); display: inline-flex; align-items: center; text-decoration: none; font-weight: 700; }
+  .lien-avis:hover { background: var(--brule); color: var(--bouleau); }
+</style>
