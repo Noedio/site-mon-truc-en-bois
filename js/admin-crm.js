@@ -357,7 +357,7 @@
               return `<button class="ligne ligne-commande" data-crm="client" data-id="${c.id}">
                 ${avatar(c.nom || c.email)}
                 <span class="ligne-texte"><strong>${e(c.nom || "(sans nom)")}</strong><span>${[c.email, c.tel].filter(Boolean).map(e).join(" · ") || "—"}${s.derniere ? ` · dernier achat le ${date(s.derniere)}` : ""}</span></span>
-                <span class="pastilles">${c.consentement_marketing ? `<span class="pastille" style="background:#e3f1e9;color:#1f6b45">Abonné</span>` : ""}${(c.etiquettes || []).map((t) => `<span class="pastille">#${e(t)}</span>`).join("")}</span>
+                <span class="pastilles">${c.consentement_marketing ? `<span class="pastille ok">Abonné</span>` : ""}${(c.etiquettes || []).map((t) => `<span class="pastille">#${e(t)}</span>`).join("")}</span>
                 <span class="prix"><strong>${euros(s.total)}</strong><small class="aide"> ${s.n} achat${s.n > 1 ? "s" : ""}</small></span>
               </button>`;
             })

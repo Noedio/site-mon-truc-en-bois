@@ -16,9 +16,33 @@ Mot de passe oublié : sur l'écran de connexion, tapez votre email puis **Mot d
 
 Sur un appareil qui n'est pas le vôtre, pensez à **Déconnexion**, en bas du menu.
 
-Le menu regroupe *Au quotidien* (Accueil, Commandes, Caisse, Clients, Demandes, Marketing) et *Le site* (Produits, Galerie, Textes…). Sur le téléphone, les gestes de tous les jours sont dans la barre en bas de l'écran ; le reste s'ouvre avec **Plus**.
+Le menu regroupe *Au quotidien* (Accueil, Commandes, Caisse, Clients, Demandes, Marketing) et *Le site* (Questionnaire, Produits, Galerie, Textes…). Sur le téléphone, les gestes de tous les jours sont dans la barre en bas de l'écran ; le reste s'ouvre avec **Plus**.
 
-L'**Accueil** commence par ce qui vous attend aujourd'hui : nouvelles commandes, devis à traiter, commandes à encaisser et commandes prêtes. Touchez une case pour y aller.
+L'**Accueil** commence par ce qui vous attend aujourd'hui : nouvelles commandes, devis à traiter, commandes à encaisser et commandes prêtes. Touchez une case pour y aller. Tant que le questionnaire de démarrage n'est pas fini, son avancement s'affiche juste en dessous.
+
+## Le questionnaire de démarrage
+
+Le nouveau site affiche « [À COMPLÉTER : …] » partout où il manque une information que vous seuls pouvez donner : délais, dimensions, dates limites, mentions légales. Le **Questionnaire** (menu *Le site*, ou le bouton sur l'Accueil) pose ces 18 questions une par une, rangées en quatre thèmes : *Pour vendre*, *Sur les produits*, *Sur vous*, *Pour les mentions obligatoires*.
+
+1. Ouvrez **Questionnaire**. La barre en haut montre combien de questions sont répondues ; la liste à côté (sur téléphone : *Voir les 18 questions*) permet d'aller directement à l'une d'elles.
+2. Répondez dans les cases. Ce que vous tapez est gardé tout de suite sur l'appareil : vous pouvez vous arrêter et reprendre plus tard.
+3. **Valider et continuer** note la date de la réponse et passe à la question suivante. **À revoir** la remet dans les questions à faire.
+4. Quand vous avez fini (ou à chaque pause), **Publier les modifications** en haut de la page : c'est là que le site change.
+
+Chaque question dit où va la réponse (*Va dans : …*). La plupart remplissent directement le bon champ, que vous retrouvez ensuite à sa place habituelle :
+
+| Questions | Ce qu'elles remplissent |
+| --- | --- |
+| Délais de fabrication | Le délai de chaque produit. *Appliquer à la famille* le donne en une fois à toute une catégorie ; ajustez ensuite produit par produit. |
+| Dates limites des fêtes | La date de chaque occasion et la date limite pour commander (*Catégories & occasions*). |
+| Maquette, délai de réponse, paiement, livraison et emballage | *Infos boutique* → *Commandes en ligne et paiement* et *Livraison, cadeau et commandes*. |
+| Fiche technique des produits | Matière, dimensions, zone gravable et entretien de chaque produit (*Produits* → *Modifier*). La matière commune à une famille se recopie en une fois. |
+| Votre entreprise, directeur de la publication et médiateur | *Infos boutique* → *Informations légales* (CGV, mentions légales, factures). |
+| Google, Instagram, WhatsApp | *Avis clients* et *Infos boutique*. |
+
+Les autres réponses (licences, accord du client pour la tirelire, essai de gravure des polices, photos de vous et de l'atelier, textes signés, clientèle, concurrents, nom de domaine) sont gardées avec le site pour l'agence, avec leur date.
+
+**Photos sous licence** (Winnie l'Ourson, écussons de clubs, logo sur la tirelire) : pour chaque photo, choisissez *Garder*, *Retirer la photo* (le produit reste en vente sans elle, et elle disparaît aussi de la catégorie et de la galerie) ou *Masquer le produit*. Le choix s'applique dès la publication ; *Garder* remet tout comme avant.
 
 ## La règle d'or : publier
 
@@ -47,11 +71,11 @@ La page à imprimer et à garder près de la caisse : tout le reste du guide dé
 **Chaque semaine**
 
 - [ ] Mettre en ligne une ou deux photos de réalisations (**Galerie**) ou un nouveau produit, puis **Publier**.
-- [ ] Masquer les produits indisponibles (l'œil 👁 dans **Produits**).
+- [ ] Masquer les produits indisponibles (l'œil dans **Produits**).
 
 **Avant chaque fête** (fête des mères, fête des pères, rentrée, Noël)
 
-- [ ] Une annonce en haut du site avec la date limite de commande (**Textes & annonce**).
+- [ ] La date limite de commande de la fête dans **Catégories & occasions**, puis une annonce en haut du site (**Textes & annonce**).
 - [ ] Un code promo et son texte à partager sur Facebook (**Marketing**).
 - [ ] Un email aux abonnés, après s'être envoyé un essai (**Marketing**).
 
@@ -123,10 +147,12 @@ Les demandes envoyées depuis la page Contact arrivent par email et dans **Deman
 Tout se passe dans **Produits**, puis **Publier les modifications**.
 
 - **Changer un prix** : tapez le nouveau prix directement dans la liste.
-- **Mettre en avant** : le cœur ♥ place le produit dans les coups de cœur de l'accueil.
-- **Retirer du site sans le supprimer** : l'œil 👁 le masque (pratique pour une rupture ou un produit de saison).
-- **Modifier un produit** : bouton **Modifier** → nom, description, prix, photos (prises directement avec le téléphone), choix et suppléments, options de personnalisation, délai, badge « Promo » ou « Nouveau ».
-- **Nouveau produit** : **+ Ajouter un produit**, ou **Dupliquer** un produit proche et modifier la copie (elle reste masquée jusqu'à ce que vous l'affichiez).
+- **Mettre en avant** : le cœur place le produit dans les coups de cœur de l'accueil.
+- **Retirer du site sans le supprimer** : l'œil le masque (pratique pour une rupture ou un produit de saison).
+- **Modifier un produit** : bouton **Modifier** → nom, description, prix, photos (prises directement avec le téléphone), choix et suppléments, options de personnalisation, badge « Promo » ou « Nouveau ».
+- **Fiche technique** (en bas de **Modifier**) : le **N° de pièce** affiché sur le site (« N° 007 »), le **délai de fabrication** en jours après validation de la maquette, la **matière**, les **dimensions** (une par taille si le produit en a plusieurs), la **zone gravable** et l'**entretien**. Un champ laissé vide s'affiche « [À COMPLÉTER] » sur le nouveau site. La liste des produits montre le numéro et le délai de chacun.
+- **Nouveau produit** : **+ Ajouter un produit**, ou **Dupliquer** un produit proche et modifier la copie (elle reste masquée jusqu'à ce que vous l'affichiez). Il reçoit le numéro de pièce suivant ; deux produits ne peuvent pas avoir le même.
+- **Dates des occasions** : **Catégories & occasions** → pour la fête des mères, la fête des pères, Noël…, la date de l'occasion et *Commander avant le*. Laissez vide pour une occasion sans date fixe (naissance, mariage).
 - **Photos de réalisations** : **Galerie** → *Ajouter des photos*.
 
 Vérifiez avec **Prévisualiser** avant de publier si vous avez fait beaucoup de changements.

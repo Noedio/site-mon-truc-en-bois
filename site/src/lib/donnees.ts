@@ -1,6 +1,7 @@
 // Lecture du catalogue au moment du build.
 // La source reste data/donnees.js à la racine du dépôt : c'est le fichier que l'admin publie.
-// (Chantier C6 : l'admin écrira un JSON et déclenchera le build ; seul ce fichier changera.)
+// Les champs de la fiche technique, des occasions, des commandes et des mentions légales sont remplis
+// par le questionnaire de démarrage de l'admin (chantier C6) ; tant qu'ils sont vides, on affiche <ACompleter />.
 import fs from "node:fs";
 import path from "node:path";
 
@@ -24,6 +25,7 @@ export interface Produit {
   dispo?: string;
   instructions?: string;
   // Fiche technique (brief §3). Vides tant que l'atelier n'a pas répondu au questionnaire.
+  // numero : n° de pièce, figé par l'admin (rang dans le catalogue au départ, puis le suivant libre).
   numero?: number;
   delai?: number;
   matiere?: string;
@@ -39,12 +41,35 @@ export interface Occasion {
   nom: string;
   description?: string;
   image?: string;
-  // Date de l'occasion et date limite de commande : à fixer avec l'atelier.
+  // Date de l'occasion et date limite de commande, au format AAAA-MM-JJ (vides pour une occasion sans date fixe).
   date?: string;
   dateLimite?: string;
 }
 
 export interface Avis { nom: string; date: string; texte: string; source: string; note?: number; produit?: string }
+
+/** Mentions légales (Infos boutique → Informations légales, et questions 15-16 du questionnaire). */
+export interface Legal {
+  exploitant?: string;
+  formeJuridique?: string;
+  /** RM (répertoire des métiers) ou RCS, avec ville et numéro. */
+  immatriculation?: string;
+  regimeTva?: "" | "franchise" | "assujetti";
+  tauxTva?: number;
+  directeurPublication?: string;
+  mediateur?: { nom: string; url: string; adresse: string };
+  hebergeur?: "github" | "cloudflare";
+  plateformeFacturation?: boolean;
+}
+
+/**
+ * Réponses du questionnaire de démarrage qui ne correspondent à aucun champ du site
+ * (licences, accords, essai de gravure, textes signés, clientèle, concurrents, domaine…).
+ * Chaque réponse porte sa date (AAAA-MM-JJ) une fois validée par l'atelier.
+ */
+export interface Questionnaire {
+  reponses: Record<string, { date?: string; [champ: string]: unknown }>;
+}
 
 export interface Site {
   apercu: boolean;
@@ -56,17 +81,27 @@ export interface Site {
   horaires: string[];
   facebook: string;
   instagram: string;
+  whatsapp?: string;
   livraison: number;
   livraisonOfferteDes: number;
   emballage: { actif: boolean; prix: number };
+  expedition?: { transporteur?: string; zones?: string };
   plateformesAvis: {
     facebook: { lien: string; taux: number; nombre: number };
     google: { lien: string; lienAvis: string; note: number; nombre: number };
   };
-  commandes: { supabaseUrl: string; supabaseCle: string; paiement: { enLigne: boolean; apresValidation: boolean; boutique: boolean } };
+  commandes: {
+    supabaseUrl: string;
+    supabaseCle: string;
+    paiement: { enLigne: boolean; apresValidation: boolean; boutique: boolean };
+    /** Maquette envoyée pour chaque commande, ou seulement si besoin ("" : pas encore répondu). */
+    maquette?: "" | "toujours" | "si-besoin";
+    /** Délai de réponse promis après une commande ou un devis, en clair (« 48 h ») ; vide : rien de promis. */
+    delaiReponse?: string;
+  };
   siret: string;
   mentionTva: string;
-  legal?: Record<string, unknown>;
+  legal?: Legal;
 }
 
 export interface Donnees {
@@ -77,7 +112,8 @@ export interface Donnees {
   produits: Produit[];
   occasions: Occasion[];
   avis: Avis[];
-  faq: { question: string; reponse: string }[];
+  faq: { q: string; r: string }[]; // forme du fichier publié par l'admin
+  questionnaire?: Questionnaire;
 }
 
 function lire(): Donnees {

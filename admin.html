@@ -10,12 +10,16 @@
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
   <!-- Raccourci sur l'écran d'accueil du téléphone : s'ouvre en plein écran, comme une application -->
   <link rel="manifest" href="admin.webmanifest">
-  <meta name="theme-color" content="#24453a">
+  <meta name="theme-color" content="#231a14">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="MTB Admin">
+  <!-- Polices de la refonte (brief §3) : Big Shoulders (titres), Literata (texte), Courier Prime (étiquettes, chiffres) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@800&family=Courier+Prime:wght@400;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Sacramento&display=swap">
   <link rel="stylesheet" href="css/style.css?v=20261019110342">
-  <link rel="stylesheet" href="css/admin.css?v=20261019110342">
+  <link rel="stylesheet" href="css/admin.css?v=20261024120000">
 </head>
 <body class="admin">
   <!-- Écran de connexion -->
@@ -90,6 +94,7 @@
         <button role="tab" data-onglet="demandes" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="nav-libelle">Demandes</span><span class="compteur" data-compteur="demandes" hidden></span></button>
         <button role="tab" data-onglet="marketing" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3l7 4V6L7 10z"/><path d="M18 9a4 4 0 0 1 0 6"/></svg><span class="nav-libelle">Marketing</span></button>
         <p class="nav-groupe">Le site</p>
+        <button role="tab" data-onglet="questionnaire" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg><span class="nav-libelle">Questionnaire</span></button>
         <button role="tab" data-onglet="produits" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg><span class="nav-libelle">Produits</span></button>
         <button role="tab" data-onglet="categories" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span class="nav-libelle">Catégories & occasions</span></button>
         <button role="tab" data-onglet="avis" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 2.4 5 5.4.6-4 3.7 1.1 5.4L12 16l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6z"/></svg><span class="nav-libelle">Avis clients</span></button>
@@ -141,10 +146,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script src="data/donnees.js"></script>
   <script src="js/demo.js?v=20261019110342"></script>
-  <script src="js/admin-serveur.js?v=20261019110342"></script>
-  <script src="js/admin-commandes.js?v=20261019110342"></script>
-  <script src="js/admin-crm.js?v=20261019110342"></script>
-  <script src="js/admin-installation.js?v=20261019110342"></script>
-  <script src="js/admin.js?v=20261019110342"></script>
+  <script src="js/admin-serveur.js?v=20261024120000"></script>
+  <script src="js/admin-commandes.js?v=20261024120000"></script>
+  <script src="js/admin-crm.js?v=20261024120000"></script>
+  <script src="js/admin-installation.js?v=20261024120000"></script>
+  <script src="js/admin-questionnaire.js?v=20261024120000"></script>
+  <script src="js/admin.js?v=20261024120000"></script>
 </body>
 </html>

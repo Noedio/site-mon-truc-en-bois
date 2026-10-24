@@ -1,0 +1,131 @@
+{
+  "publication": "Site à jour",
+  "relu": {
+    "statut": "Site à jour",
+    "delais": 10,
+    "matiere": 10,
+    "numeros": true,
+    "maquette": "toujours",
+    "dates": [
+      "fete-meres 2027-05-20",
+      "noel 2026-12-12"
+    ],
+    "reponses": {
+      "delais": "2026-10-24",
+      "dates-limites": "2026-10-24",
+      "maquette": "2026-10-24",
+      "fiches": "commencée"
+    }
+  },
+  "mesures": [
+    {
+      "ecran": "accueil pc-1440",
+      "largeur": 1440,
+      "defilement": 1440,
+      "deborde": false,
+      "petites": [
+        "INPUT. «Restaurer une sauvegarde» 246x42"
+      ]
+    },
+    {
+      "ecran": "questionnaire pc-1440",
+      "largeur": 1440,
+      "defilement": 1440,
+      "deborde": false,
+      "petites": []
+    },
+    {
+      "ecran": "fiche produit pc-1440",
+      "largeur": 1440,
+      "defilement": 1440,
+      "deborde": false,
+      "petites": []
+    },
+    {
+      "ecran": "commandes pc-1440",
+      "largeur": 1440,
+      "defilement": 1440,
+      "deborde": false,
+      "petites": []
+    },
+    {
+      "ecran": "caisse pc-1440",
+      "largeur": 1440,
+      "defilement": 1440,
+      "deborde": false,
+      "petites": []
+    },
+    {
+      "ecran": "boutique pc-1440",
+      "largeur": 1440,
+      "defilement": 1440,
+      "deborde": false,
+      "petites": [
+        "A. «Google Search Console» 146x20",
+        "A. «goatcounter.com» 110x20"
+      ]
+    },
+    {
+      "ecran": "categories pc-1440",
+      "largeur": 1440,
+      "defilement": 1440,
+      "deborde": false,
+      "petites": []
+    },
+    {
+      "ecran": "accueil tel-390",
+      "largeur": 390,
+      "defilement": 390,
+      "deborde": false,
+      "petites": [
+        "INPUT. «Restaurer une sauvegarde» 246x42"
+      ]
+    },
+    {
+      "ecran": "questionnaire tel-390",
+      "largeur": 390,
+      "defilement": 390,
+      "deborde": false,
+      "petites": []
+    },
+    {
+      "ecran": "fiche produit tel-390",
+      "largeur": 390,
+      "defilement": 390,
+      "deborde": false,
+      "petites": []
+    },
+    {
+      "ecran": "commandes tel-390",
+      "largeur": 390,
+      "defilement": 390,
+      "deborde": false,
+      "petites": []
+    },
+    {
+      "ecran": "caisse tel-390",
+      "largeur": 390,
+      "defilement": 390,
+      "deborde": false,
+      "petites": []
+    },
+    {
+      "ecran": "boutique tel-390",
+      "largeur": 390,
+      "defilement": 390,
+      "deborde": false,
+      "petites": [
+        "A. «Google Search Console» 278x42",
+        "A. «goatcounter.com» 110x20"
+      ]
+    },
+    {
+      "ecran": "categories tel-390",
+      "largeur": 390,
+      "defilement": 390,
+      "deborde": false,
+      "petites": []
+    }
+  ],
+  "console": []
+}

@@ -130,11 +130,16 @@
     d.faq ||= [];
     d.textes ||= {};
     d.annonce ||= { actif: false, texte: "", lien: "" };
-    d.produits.forEach((p) => {
+    d.questionnaire ||= {};
+    d.questionnaire.reponses ||= {};
+    d.produits.forEach((p, i) => {
       p.images ||= p.image ? [p.image] : [];
       p.occasions ||= [];
       p.options ||= {};
       p.dispo ||= "disponible";
+      // N° de pièce : celui que le nouveau site donne par défaut (rang dans le catalogue), figé à la première publication
+      // pour qu'un produit ajouté ou déplacé ne renumérote pas les autres.
+      if (!(p.numero > 0)) p.numero = i + 1;
     });
     return d;
   }
@@ -181,6 +186,12 @@
   const vignette = (chemin) =>
     chemin ? `<span class="ligne-image"><img src="${echapper(srcImage(chemin))}" alt="" loading="lazy"></span>` : `<span class="ligne-image">Sans photo</span>`;
   const premiereImage = (p) => p.images?.[0] || p.image || "";
+  const numeroPiece = (n) => `N° ${String(n).padStart(3, "0")}`;
+  const numeroLibre = () => Math.max(0, ...D.produits.map((p) => Number(p.numero) || 0)) + 1;
+  const ICONES = {
+    coeur: `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>`,
+    oeil: `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>`,
+  };
 
   // ---------- Photos : redimensionnement puis envoi dans img/ ----------
   function redimensionner(fichier, max = 1200) {
@@ -452,10 +463,12 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
     boutique: () => vueBoutique(),
     textes: () => vueTextes(),
     galerie: () => vueGalerie(),
+    questionnaire: () => `<div id="zone-questionnaire"></div>`,
   };
   const contexte = () => ({
     D, toast, echapper, euros, marquerModifie, publier, allerA,
     github: { api, cfg, envoyerFichier, versBase64, cheminContenu, lien: lienGithub },
+    srcImage,
     mode,
     estModifie: () => modifie,
   });
@@ -464,6 +477,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
     if (onglet === "commandes") window.AdminCommandes?.monter($("#zone-commandes"), contexte());
     if (onglet === "installation") window.AdminInstallation?.monter($("#zone-installation"), contexte());
     if (["caisse", "clients", "demandes", "marketing"].includes(onglet)) window.AdminCRM?.monter(onglet, $("#zone-crm"), contexte());
+    if (onglet === "questionnaire") window.AdminQuestionnaire?.monter($("#zone-questionnaire"), contexte());
     if (onglet === "accueil") {
       actionsDuJour().catch(() => ($("#jour-actions").innerHTML = ""));
       window.AdminCRM?.statistiques($("#stats-ventes"), contexte()).catch(() => {});
@@ -592,6 +606,21 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
   });
 
   // ---------- Vue : Tableau de bord ----------
+  function blocQuestionnaire() {
+    const Q = window.AdminQuestionnaire;
+    if (!Q) return "";
+    const a = Q.avancement(D);
+    if (a.fini) return "";
+    return `
+      <section class="bloc bloc-questionnaire">
+        <div class="bloc-tete">
+          <h2>Questionnaire de démarrage</h2>
+          <button class="btn" data-aller="questionnaire">${a.repondues ? "Continuer le questionnaire" : "Commencer le questionnaire"}</button>
+        </div>
+        <p>Dix-huit questions pour compléter le nouveau site : délais, dates limites des fêtes, fiches techniques des produits, paiement, livraison et mentions légales. Chaque réponse remplit directement le bon champ.</p>
+        ${Q.barre(D)}
+      </section>`;
+  }
   function vueAccueil() {
     const visibles = D.produits.filter((p) => p.visible !== false);
     const sansPhoto = D.produits.filter((p) => !premiereImage(p));
@@ -618,6 +647,8 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
         <div class="jour-actions" id="jour-actions"><p class="aide">Chargement…</p></div>
       </section>
 
+      ${blocQuestionnaire()}
+
       <section class="bloc" id="stats-ventes" hidden></section>
 
       <details class="bloc bloc-repli" ${ouverte}>
@@ -627,7 +658,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
         </summary>
         <div class="bloc-tete">
           <p class="aide">${D.site.apercu ? "Les commandes en ligne s'ouvrent quand l'email et les prix sont vérifiés." : "Ce qui rend la boutique complète et en règle."}</p>
-          ${D.site.apercu ? `<button class="btn" data-action="ouvrir-commandes" ${pret ? "" : "disabled"} title="${pret ? "" : "Complétez d'abord l'email de la boutique et la vérification des prix"}">Ouvrir les commandes</button>` : `<span class="pastille" style="background:#e3f1e9;color:#1f6b45">Commandes ouvertes</span>`}
+          ${D.site.apercu ? `<button class="btn" data-action="ouvrir-commandes" ${pret ? "" : "disabled"} title="${pret ? "" : "Complétez d'abord l'email de la boutique et la vérification des prix"}">Ouvrir les commandes</button>` : `<span class="pastille ok">Commandes ouvertes</span>`}
         </div>
         <ul class="checklist">
           ${etape(emailOk ? "ok" : "afaire", "Adresse email de la boutique", emailOk ? echapper(D.site.email) : emailValide ? `${echapper(D.site.email)} : envoyez-y un message depuis une autre adresse et vérifiez qu'il arrive, sinon commandes et devis s'y perdraient.` : "Indiquez l'adresse où arrivent les commandes et les devis.", emailValide ? `<label class="case"><input type="checkbox" data-chemin="site.emailVerifie" data-type="case" data-rendre ${D.site.emailVerifie ? "checked" : ""}> Vérifiée</label>` : aller("boutique", "Corriger"))}
@@ -678,7 +709,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
           <h2>Produits <span class="aide">(${D.produits.length})</span></h2>
           <button class="btn" data-action="nouveau-produit">+ Ajouter un produit</button>
         </div>
-        <p class="aide">Changez un prix directement dans la liste. ♥ met le produit dans les coups de cœur de l'accueil, 👁 l'affiche ou le masque sur le site.</p>
+        <p class="aide">Changez un prix directement dans la liste. Le cœur met le produit dans les coups de cœur de l'accueil, l'œil l'affiche ou le masque sur le site. Délai, matière, dimensions : bouton Modifier, ou le Questionnaire.</p>
         <div class="barre">
           <input type="search" id="filtre-q" placeholder="Rechercher…" value="${echapper(filtre.q)}" aria-label="Rechercher un produit">
           <select id="filtre-cat" aria-label="Filtrer par catégorie">
@@ -694,12 +725,12 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
               ${vignette(premiereImage(p))}
               <div class="ligne-texte">
                 <strong>${echapper(p.nom)}<span class="pastilles">${p.badge ? `<span class="pastille">${BADGES[p.badge] || p.badge}</span>` : ""}${p.dispo && p.dispo !== "disponible" ? `<span class="pastille cache">${DISPOS[p.dispo]}</span>` : ""}${p.visible === false ? '<span class="pastille cache">Masqué</span>' : ""}</span></strong>
-                <span>${echapper(cats[p.categorie] || "Sans catégorie")}${p.images?.length > 1 ? ` · ${p.images.length} photos` : ""}</span>
+                <span><span class="numero-piece">${numeroPiece(p.numero)}</span> · ${echapper(cats[p.categorie] || "Sans catégorie")} · ${p.delai > 0 ? `${p.delai} j` : `<span class="manque">délai à compléter</span>`}${p.images?.length > 1 ? ` · ${p.images.length} photos` : ""}</span>
               </div>
               <div class="rapide">
                 <input class="prix-rapide" type="number" step="0.01" min="0" value="${Number(p.prix || 0)}" data-prix="${i}" aria-label="Prix de ${echapper(p.nom)}" title="Prix (€)"> €
-                <button class="mini" data-action="basculer-vedette" data-i="${i}" aria-pressed="${!!p.vedette}" title="Coup de cœur" aria-label="Coup de cœur">♥</button>
-                <button class="mini oeil" data-action="basculer-visible" data-i="${i}" aria-pressed="${p.visible !== false}" title="Visible sur le site" aria-label="Visible sur le site">👁</button>
+                <button class="mini" data-action="basculer-vedette" data-i="${i}" aria-pressed="${!!p.vedette}" title="Coup de cœur" aria-label="Coup de cœur">${ICONES.coeur}</button>
+                <button class="mini oeil" data-action="basculer-visible" data-i="${i}" aria-pressed="${p.visible !== false}" title="Visible sur le site" aria-label="Visible sur le site">${ICONES.oeil}</button>
               </div>
               <div class="ligne-boutons">
                 <button class="mini" data-action="modifier-produit" data-i="${i}">Modifier</button>
@@ -732,7 +763,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
   function editerProduit(index) {
     const nouveau = index < 0;
     const p = nouveau
-      ? { id: "", nom: "", categorie: D.categories[0]?.id || "", prix: 0, images: [], description: "", options: { texte: true, photo: false }, visible: true, vedette: false, occasions: [], dispo: "disponible", badge: "", prixBarre: 0, delai: 0, instructions: "" }
+      ? { id: "", nom: "", categorie: D.categories[0]?.id || "", prix: 0, images: [], description: "", options: { texte: true, photo: false }, visible: true, vedette: false, occasions: [], dispo: "disponible", badge: "", prixBarre: 0, delai: 0, instructions: "", numero: numeroLibre(), matiere: "", dimensions: "", zoneGravable: "", entretien: "" }
       : structuredClone(D.produits[index]);
     p.options ||= {};
     p.images ||= p.image ? [p.image] : [];
@@ -779,9 +810,15 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
           <div class="champ"><label for="p-prix">Prix de base (€) *</label><input type="number" id="p-prix" step="0.01" min="0" required value="${Number(p.prix || 0)}"></div>
           <div class="champ"><label for="p-prix-barre">Ancien prix barré (€)</label><input type="number" id="p-prix-barre" step="0.01" min="0" value="${Number(p.prixBarre || 0) || ""}" placeholder="Pour une promotion"><small>Laisser vide sans promotion.</small></div>
           <div class="champ"><label for="p-badge">Badge sur la photo</label><select id="p-badge">${Object.entries(BADGES).map(([k, v]) => `<option value="${k}" ${k === (p.badge || "") ? "selected" : ""}>${v}</option>`).join("")}</select></div>
-          <div class="champ"><label for="p-delai">Délai de fabrication (jours)</label><input type="number" id="p-delai" min="0" step="1" value="${Number(p.delai || 0) || ""}" placeholder="Ex. : 7"><small>Affiche une date indicative sur la fiche.</small></div>
           <div class="champ large"><label for="p-desc">Description</label><textarea id="p-desc" rows="4">${echapper(p.description)}</textarea></div>
           <div class="champ large"><label for="p-instructions">Consigne de personnalisation pour le client</label><input type="text" id="p-instructions" value="${echapper(p.instructions)}" placeholder="Ex. : Indiquez le prénom, la date de naissance, l'heure, le poids et la taille."></div>
+          <p class="sous-titre-form">Fiche technique (affichée sur la fiche du nouveau site)</p>
+          <div class="champ"><label for="p-numero">N° de pièce</label><input type="number" id="p-numero" min="1" step="1" value="${Number(p.numero) || ""}"><small>Affiché « ${numeroPiece(Number(p.numero) || numeroLibre())} » sur le site. Deux produits ne peuvent pas avoir le même.</small></div>
+          <div class="champ"><label for="p-delai">Délai de fabrication (jours)</label><input type="number" id="p-delai" min="0" step="1" value="${Number(p.delai || 0) || ""}" placeholder="Nombre de jours"><small>Compté après validation de la maquette.</small></div>
+          <div class="champ"><label for="p-matiere">Matière</label><input type="text" id="p-matiere" value="${echapper(p.matiere)}" placeholder="Essence de bois, verre, métal…"></div>
+          <div class="champ"><label for="p-dimensions">Dimensions</label><input type="text" id="p-dimensions" value="${echapper(p.dimensions)}" placeholder="Largeur × hauteur × épaisseur"><small>${p.variantes.choix.length ? `Pour chaque choix : ${echapper(p.variantes.choix.map((c) => c.nom).filter(Boolean).join(", "))}.` : "Une taille par choix si le produit en a plusieurs."}</small></div>
+          <div class="champ"><label for="p-zone">Zone gravable</label><input type="text" id="p-zone" value="${echapper(p.zoneGravable)}" placeholder="Surface où l'on peut graver"></div>
+          <div class="champ"><label for="p-entretien">Entretien</label><input type="text" id="p-entretien" value="${echapper(p.entretien)}" placeholder="Nettoyage, ce qu'il faut éviter"></div>
         </div>
         <div class="interrupteurs">
           <label class="case"><input type="checkbox" id="p-visible" ${p.visible !== false ? "checked" : ""}> Visible sur le site</label>
@@ -853,6 +890,9 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
     $("#p-annuler", f).onclick = () => f.close();
     $("#form-produit", f).onsubmit = (e) => {
       e.preventDefault();
+      const numero = parseInt($("#p-numero", f).value, 10) || 0;
+      const doublon = numero && D.produits.find((x, k) => k !== index && Number(x.numero) === numero);
+      if (doublon) return toast(`Le ${numeroPiece(numero)} est déjà celui de « ${doublon.nom} ». Choisissez un autre numéro.`, true);
       lireVariantes();
       p.nom = $("#p-nom", f).value.trim();
       p.categorie = $("#p-cat", f).value;
@@ -861,6 +901,11 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
       p.prixBarre = Number($("#p-prix-barre", f).value || 0);
       p.badge = $("#p-badge", f).value;
       p.delai = Math.max(0, parseInt($("#p-delai", f).value, 10) || 0);
+      p.numero = numero > 0 ? numero : numeroLibre();
+      p.matiere = $("#p-matiere", f).value.trim();
+      p.dimensions = $("#p-dimensions", f).value.trim();
+      p.zoneGravable = $("#p-zone", f).value.trim();
+      p.entretien = $("#p-entretien", f).value.trim();
       p.description = $("#p-desc", f).value.trim();
       p.instructions = $("#p-instructions", f).value.trim();
       p.visible = $("#p-visible", f).checked;
@@ -918,14 +963,16 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
           <h2>Occasions</h2>
           <button class="btn btn-ligne" data-action="nouvelle-occasion">+ Ajouter une occasion</button>
         </div>
-        <p class="aide">Elles alimentent la page « Idées cadeaux » et les filtres de la boutique. Cochez les occasions de chaque produit dans sa fiche.</p>
+        <p class="aide">Elles alimentent la page « Idées cadeaux » et les filtres de la boutique. Cochez les occasions de chaque produit dans sa fiche. Dates : laissez vide pour une occasion sans date fixe (naissance, mariage…).</p>
         <div class="liste">
           ${D.occasions
             .map((o, i) => {
               const n = D.produits.filter((p) => (p.occasions || []).includes(o.id)).length;
               return `
-            <div class="ligne" style="grid-template-columns:1fr auto auto">
-              <input type="text" value="${echapper(o.nom)}" data-liste="occasions" data-i="${i}" data-champ="nom" aria-label="Nom de l'occasion">
+            <div class="ligne ligne-occasion">
+              <div class="champ"><label for="occ-nom-${i}">Occasion</label><input type="text" id="occ-nom-${i}" value="${echapper(o.nom)}" data-liste="occasions" data-i="${i}" data-champ="nom"></div>
+              <div class="champ"><label for="occ-date-${i}">Date de l'occasion</label><input type="date" id="occ-date-${i}" value="${echapper(o.date || "")}" data-liste="occasions" data-i="${i}" data-champ="date"></div>
+              <div class="champ"><label for="occ-limite-${i}">Commander avant le</label><input type="date" id="occ-limite-${i}" value="${echapper(o.dateLimite || "")}" data-liste="occasions" data-i="${i}" data-champ="dateLimite"></div>
               <span class="aide">${n} produit${n > 1 ? "s" : ""}</span>
               <div class="ligne-boutons">
                 <button class="mini" data-action="occ-monter" data-i="${i}" ${i === 0 ? "disabled" : ""} aria-label="Monter">↑</button>
@@ -1062,6 +1109,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
     w.onload = () => (w.focus(), w.print());
   }
   async function creerCarteQR() {
+    await Promise.all(["800 92px 'Big Shoulders'", "400 46px Literata", "600 48px Literata"].map((f) => document.fonts?.load(f).catch(() => {})));
     const pg = D.site.plateformesAvis;
     const google = pg.google.lienAvis || pg.google.lien;
     const lien = google || pg.facebook.lien;
@@ -1074,10 +1122,10 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
     c.width = W;
     c.height = H;
     const g = c.getContext("2d");
-    g.fillStyle = "#fbf6ef";
+    g.fillStyle = "#efe6d8";
     g.fillRect(0, 0, W, H);
-    g.strokeStyle = "#a8693a";
-    g.lineWidth = 6;
+    g.strokeStyle = "#231a14";
+    g.lineWidth = 4;
     g.strokeRect(40, 40, W - 80, H - 80);
     const logo = await new Promise((ok) => {
       const i = new Image();
@@ -1086,12 +1134,12 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
       i.src = "img/logo.webp";
     });
     if (logo) g.drawImage(logo, (W - 460) / 2, 90, 460, (460 * logo.height) / logo.width);
-    g.fillStyle = "#1b1a17";
+    g.fillStyle = "#231a14";
     g.textAlign = "center";
-    g.font = "600 92px 'Bricolage Grotesque', sans-serif";
-    g.fillText("Votre avis compte !", W / 2, 640);
-    g.font = "400 46px Figtree, sans-serif";
-    g.fillStyle = "#5f5a52";
+    g.font = "800 112px 'Big Shoulders', 'Arial Narrow', sans-serif";
+    g.fillText("VOTRE AVIS COMPTE", W / 2, 640);
+    g.font = "400 46px Literata, Georgia, serif";
+    g.fillStyle = "#6b5a4a";
     g.fillText(`Scannez pour laisser un avis ${google ? "sur Google" : "sur Facebook"}`, W / 2, 720);
     const n = qr.getModuleCount();
     const taille = 640;
@@ -1100,19 +1148,19 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
     const y0 = 780;
     g.fillStyle = "#fff";
     g.fillRect(x0, y0, pas * (n + 8), pas * (n + 8));
-    g.fillStyle = "#1b1a17";
+    g.fillStyle = "#231a14";
     for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (qr.isDark(r, k)) g.fillRect(x0 + (k + 4) * pas, y0 + (r + 4) * pas, pas, pas);
-    g.fillStyle = "#24453a";
-    g.font = "600 48px Figtree, sans-serif";
-    g.fillText("Merci pour votre confiance ♥", W / 2, y0 + pas * (n + 8) + 110);
-    g.fillStyle = "#5f5a52";
-    g.font = "400 38px Figtree, sans-serif";
+    g.fillStyle = "#231a14";
+    g.font = "600 48px Literata, Georgia, serif";
+    g.fillText("Merci pour votre confiance", W / 2, y0 + pas * (n + 8) + 110);
+    g.fillStyle = "#6b5a4a";
+    g.font = "400 38px Literata, Georgia, serif";
     g.fillText(`${D.site.adresse} · ${D.site.telephone}`, W / 2, H - 110);
     const url = c.toDataURL("image/png");
     carteQR = url;
     $("#carte-qr").innerHTML = `
       <div class="pile" style="gap:.8rem;justify-items:start">
-        <img src="${url}" alt="Aperçu de la carte" style="width:min(280px,100%);border-radius:8px;box-shadow:var(--ombre)">
+        <img src="${url}" alt="Aperçu de la carte" style="width:min(280px,100%);border:1px solid var(--brule)">
         <span class="raccourcis"><button class="btn" type="button" data-action="imprimer-carte-qr">Imprimer la carte</button><a class="btn btn-ligne" href="${url}" download="carte-avis-mon-truc-en-bois.png">Télécharger (PNG)</a></span>
         <small class="aide">Le QR code mène à : ${echapper(lien)}</small>
       </div>`;
@@ -1180,6 +1228,8 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
           </select><small>À confirmer avec le comptable. Il change les factures et la caisse (espèces).</small></div>
           ${D.site.legal.regimeTva === "assujetti" ? champ("site.legal.tauxTva", "Taux de TVA (%)", { type: "nombre", aide: "Factures : montant HT, TVA et TTC (les prix du site sont TTC)." }) : ""}
           ${champ("site.mentionTva", "Mention particulière sur les factures (facultatif)", { placeholder: D.site.legal.regimeTva === "franchise" ? "TVA non applicable, art. 293 B du CGI (ajoutée automatiquement)" : "", large: true })}
+          ${champ("site.legal.immatriculation", "Immatriculation (RM ou RCS)", { placeholder: "RM, chambre de métiers, ou RCS et ville" })}
+          ${champ("site.legal.directeurPublication", "Directeur ou directrice de la publication", { placeholder: "Prénom Nom", aide: "Mentions légales. Souvent l'exploitant." })}
           ${champ("site.legal.mediateur.nom", "Médiateur de la consommation", { placeholder: "Nom du médiateur", aide: "Liste officielle : economie.gouv.fr/mediation-conso (CECMC)." })}
           ${champ("site.legal.mediateur.url", "Site du médiateur", { type: "url", placeholder: "https://…" })}
           ${champ("site.legal.mediateur.adresse", "Adresse postale du médiateur", { large: true })}
@@ -1208,6 +1258,12 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
           ${champ("site.commandes.paiement.enLigne", "Proposer le paiement par carte à la commande (Stripe)", { type: "case", large: true, aide: "Nécessite la clé Stripe (onglet Installation)." })}
           ${champ("site.commandes.paiement.apresValidation", "Proposer « payer après validation de la maquette » (lien envoyé depuis l'admin)", { type: "case", large: true })}
           ${champ("site.commandes.paiement.boutique", "Proposer « payer à la boutique au retrait »", { type: "case", large: true })}
+          <div class="champ"><label for="f-maquette">Maquette envoyée au client</label><select id="f-maquette" data-chemin="site.commandes.maquette">
+            <option value="" ${!D.site.commandes.maquette ? "selected" : ""}>À préciser</option>
+            <option value="toujours" ${D.site.commandes.maquette === "toujours" ? "selected" : ""}>Pour chaque commande</option>
+            <option value="si-besoin" ${D.site.commandes.maquette === "si-besoin" ? "selected" : ""}>Seulement quand c'est nécessaire</option>
+          </select></div>
+          ${champ("site.commandes.delaiReponse", "Délai de réponse annoncé (commandes, devis)", { placeholder: "48 h", aide: "Vide : aucun délai promis." })}
         </div>
         <details style="margin-top:1rem"><summary>Réglages techniques (remplis par l'assistant d'installation)</summary>
           <div class="grille-champs" style="margin-top:.8rem">
@@ -1221,6 +1277,8 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
         <div class="grille-champs">
           ${champ("site.livraison", "Frais de livraison (€)", { type: "nombre" })}
           ${champ("site.livraisonOfferteDes", "Livraison offerte à partir de (€)", { type: "nombre" })}
+          ${champ("site.expedition.transporteur", "Transporteur", { placeholder: "La Poste, Mondial Relay…" })}
+          ${champ("site.expedition.zones", "Zones livrées", { placeholder: "France métropolitaine…" })}
           ${champ("site.emballage.actif", "Proposer un emballage cadeau", { type: "case" })}
           ${champ("site.emballage.prix", "Prix de l'emballage cadeau (€)", { type: "nombre" })}
           ${champ("site.formulaireCommande", "Adresse Formspree (facultatif)", { type: "url", large: true, aide: "Créez un formulaire gratuit sur formspree.io et collez son adresse : les commandes arriveront directement par email. Vide = la messagerie du client s'ouvre." })}
@@ -1313,6 +1371,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
       copie.nom += " (copie)";
       copie.id = idUnique(copie.nom, D.produits);
       copie.visible = false;
+      copie.numero = numeroLibre();
       D.produits.splice(i + 1, 0, copie);
       toast("Copie créée (masquée). Modifiez-la puis rendez-la visible.");
     }
