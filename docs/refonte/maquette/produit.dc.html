@@ -1,0 +1,260 @@
+<!doctype html>
+<!--
+  Maquette de référence (refonte Mon Truc en Bois, 24/10/2026).
+  Format « Design Component » de claude.ai : <x-dc>, {{variables}} et la classe Component
+  ne tournent pas tels quels dans un navigateur. À lire comme spécification :
+  structure, textes, styles inline (tailles, couleurs, espacements) et logique du configurateur.
+  Les images pointent vers img/ à la racine du repo. Version cliquable :
+  https://claude.ai/artifact/5xrB4ayAagJdsnEZFUuZxv
+-->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Planche apéro gravée — Mon Truc en Bois</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders:opsz,wght@10..72,600;10..72,800&amp;family=Courier+Prime:wght@400;700&amp;family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&amp;family=Sacramento&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EFE6D8}
+a{color:#231A14}a:hover{color:#A4471C}
+.grain{background-color:#C8955E;background-image:repeating-linear-gradient(97deg,rgba(60,32,14,0.07) 0 2px,transparent 2px 11px,rgba(60,32,14,0.05) 11px 12px,transparent 12px 23px)}
+.burn{color:#3A2010;text-shadow:0 0 1px rgba(58,32,16,0.55)}
+input:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid #A4471C;outline-offset:2px}
+</style>
+</helmet>
+<div style="background: #EFE6D8; color: #231A14; font-family: 'Literata', Georgia, serif; font-size: 17px; line-height: 1.55">
+
+<div style="background: #231A14; color: #EFE6D8; font-family: 'Courier Prime', 'Courier New', monospace; font-size: 13px">
+<div style="max-width: 1320px; margin: 0 auto; padding: 8px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px">
+<span>Atelier-boutique · 3 rue Salengro, 62260 Auchel · ouvert du mardi au dimanche, sauf le mercredi</span>
+<a href="tel:0783394028" style="color: #EFE6D8">07 83 39 40 28</a>
+</div>
+</div>
+
+<header style="border-bottom: 1px solid #231A14">
+<div style="max-width: 1320px; margin: 0 auto; padding: 14px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px">
+<a href="accueil.dc.html" style="display: flex; align-items: center; gap: 12px; text-decoration: none">
+<img src="img/logo-200.webp" alt="" style="width: 44px; height: 44px; object-fit: contain">
+<span style="font-family: 'Big Shoulders', 'Arial Narrow', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: 0.02em; text-transform: uppercase; color: #231A14">Mon Truc en Bois</span>
+</a>
+<nav aria-label="Navigation principale" style="display: flex; flex-wrap: wrap; gap: 8px 28px; font-size: 16px">
+<a href="accueil.dc.html" style="text-decoration: none">Boutique</a>
+<a href="accueil.dc.html" style="text-decoration: none">Occasions</a>
+<a href="accueil.dc.html" style="text-decoration: none">L'atelier</a>
+<a href="accueil.dc.html" style="text-decoration: none">Avis</a>
+<a href="accueil.dc.html" style="text-decoration: none">Contact</a>
+</nav>
+<a href="#" style="font-family: 'Courier Prime', monospace; font-size: 15px; text-decoration: none; border: 1px solid #231A14; padding: 8px 14px; min-height: 44px; box-sizing: border-box; display: flex; align-items: center">Panier ({{cart}})</a>
+</div>
+</header>
+
+<main style="max-width: 1320px; margin: 0 auto; padding: 20px 24px 64px">
+<nav aria-label="Fil d'Ariane" style="font-family: 'Courier Prime', monospace; font-size: 13px; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px">
+<a href="accueil.dc.html">Boutique</a><span aria-hidden="true">/</span><a href="accueil.dc.html">Gravure bois</a><span aria-hidden="true">/</span><span>Planche apéro gravée</span>
+</nav>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(540px, 100%), 1fr)); gap: 40px 64px; align-items: start">
+
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div role="group" aria-label="Affichage" style="display: flex; gap: 0">
+<button type="button" onClick="{{showPreview}}" aria-pressed="{{previewPressed}}" style="{{tabPreview}}">Votre aperçu</button>
+<button type="button" onClick="{{showPhoto}}" aria-pressed="{{photoPressed}}" style="{{tabPhoto}}">Photo réelle</button>
+</div>
+<div style="background: #D7BF9C; border: 1px solid #231A14; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; overflow: hidden">
+<sc-if value="{{isPreview}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; align-items: center; width: 86%">
+<div class="grain" style="{{boardStyle}}">
+<p class="burn" style="{{pvStyle}}">{{shown}}</p>
+</div>
+<div class="grain" style="flex: 0 0 76px; height: 50px; margin-left: -2px; border-radius: 0 25px 25px 0; border: 2px solid #8A5A32; border-left: 0; display: flex; align-items: center; justify-content: flex-end; padding-right: 14px; box-sizing: border-box">
+<span style="width: 16px; height: 16px; border-radius: 50%; background: #D7BF9C; border: 2px solid #8A5A32"></span>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{isPhoto}}" hint-placeholder-val="{{ false }}">
+<img src="img/planche-aperitif.jpg" alt="Planche apéro gravée « J'ai essayé le sport… mais je préfère la bière », photo réelle" style="width: 100%; height: 100%; object-fit: cover; display: block">
+</sc-if>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+<img src="img/planche-aperitif.jpg" alt="Vue de face" style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #231A14; display: block">
+<div style="aspect-ratio: 1 / 1; border: 1px dashed #6B5A4A; display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px; box-sizing: border-box; font-family: 'Courier Prime', monospace; font-size: 13px; color: #6B5A4A">[Photo trois-quarts à prendre]</div>
+<div style="aspect-ratio: 1 / 1; border: 1px dashed #6B5A4A; display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px; box-sizing: border-box; font-family: 'Courier Prime', monospace; font-size: 13px; color: #6B5A4A">[Macro de la gravure à prendre]</div>
+</div>
+<p style="margin: 0; font-family: 'Courier Prime', monospace; font-size: 13px">Aperçu indicatif. La maquette exacte vous est envoyée avant gravure.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 26px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<p style="margin: 0; font-family: 'Courier Prime', monospace; font-size: 14px">N° 001 · Gravure bois</p>
+<h1 style="margin: 0; font-family: 'Big Shoulders', 'Arial Narrow', sans-serif; font-weight: 800; font-size: clamp(2.6rem, 4.6vw, 4.2rem); line-height: 0.92; text-transform: uppercase">Planche apéro gravée</h1>
+<div style="display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 20px">
+<span style="font-family: 'Big Shoulders', 'Arial Narrow', sans-serif; font-weight: 800; font-size: 48px; line-height: 1">{{prix}}</span>
+<span style="font-family: 'Courier Prime', monospace; font-size: 14px">Disponible · fabriquée à Auchel</span>
+</div>
+<p style="margin: 0; max-width: 36em">Planche en bois gravée au laser avec le message de votre choix, avec ou sans illustration.</p>
+</div>
+
+<fieldset style="margin: 0; padding: 0; border: 0">
+<legend style="padding: 0; margin-bottom: 10px; font-family: 'Courier Prime', monospace; font-size: 14px; font-weight: 700">Taille</legend>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{tailles}}" as="t" hint-placeholder-count="2">
+<button type="button" onClick="{{t.pick}}" aria-pressed="{{t.pressed}}" style="{{t.style}}">{{t.nom}}{{t.plus}}</button>
+</sc-for>
+</div>
+</fieldset>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="texte-planche" style="font-family: 'Courier Prime', monospace; font-size: 14px; font-weight: 700">Votre texte</label>
+<input id="texte-planche" type="text" maxLength="40" value="{{text}}" onChange="{{onText}}" style="font-family: 'Literata', Georgia, serif; font-size: 20px; padding: 12px 14px; min-height: 52px; box-sizing: border-box; border: 1px solid #231A14; border-radius: 0; background: #FBF7F0; color: #231A14; width: 100%">
+<span style="font-family: 'Courier Prime', monospace; font-size: 13px; color: #6B5A4A">{{count}} / 40 caractères · l'aperçu se met à jour pendant que vous écrivez</span>
+</div>
+
+<fieldset style="margin: 0; padding: 0; border: 0">
+<legend style="padding: 0; margin-bottom: 10px; font-family: 'Courier Prime', monospace; font-size: 14px; font-weight: 700">Police</legend>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px">
+<sc-for list="{{fonts}}" as="f" hint-placeholder-count="4">
+<button type="button" onClick="{{f.pick}}" aria-pressed="{{f.pressed}}" style="{{f.style}}"><span style="{{f.sampleStyle}}">Marie</span><span style="font-family: 'Courier Prime', monospace; font-size: 12px">{{f.label}}</span></button>
+</sc-for>
+</div>
+</fieldset>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<button type="button" onClick="{{add}}" style="background: {{accent}}; color: #FFFFFF; border: 0; border-radius: 0; cursor: pointer; font-family: 'Big Shoulders', 'Arial Narrow', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: 0.03em; text-transform: uppercase; padding: 14px 26px; min-height: 56px; flex: 1 1 280px">{{ctaLabel}}</button>
+<button type="button" aria-label="Ajouter aux favoris" style="background: transparent; color: #231A14; border: 1px solid #231A14; border-radius: 0; cursor: pointer; font-family: 'Courier Prime', monospace; font-size: 15px; padding: 14px 18px; min-height: 56px">Favori</button>
+</div>
+
+<dl style="margin: 0; border-top: 1px solid #231A14">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 2px 16px; padding: 12px 0; border-bottom: 1px solid #231A14"><dt style="font-family: 'Courier Prime', monospace; font-size: 14px">Retrait en boutique</dt><dd style="margin: 0">Gratuit, rue Salengro à Auchel</dd></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 2px 16px; padding: 12px 0; border-bottom: 1px solid #231A14"><dt style="font-family: 'Courier Prime', monospace; font-size: 14px">Livraison</dt><dd style="margin: 0">5,90 €, offerte dès 60 € d'achat</dd></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 2px 16px; padding: 12px 0; border-bottom: 1px solid #231A14"><dt style="font-family: 'Courier Prime', monospace; font-size: 14px">Maquette</dt><dd style="margin: 0">Envoyée par e-mail, gravure après votre accord</dd></div>
+</dl>
+
+<section aria-labelledby="fiche-titre" style="display: flex; flex-direction: column; gap: 10px">
+<h2 id="fiche-titre" style="margin: 0; font-family: 'Big Shoulders', 'Arial Narrow', sans-serif; font-weight: 800; font-size: 28px; text-transform: uppercase">Fiche technique</h2>
+<dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); border-top: 1px solid #231A14">
+<div style="padding: 12px 0; border-bottom: 1px solid #231A14"><dt style="font-family: 'Courier Prime', monospace; font-size: 13px">Matière</dt><dd style="margin: 2px 0 0">[Essence de bois]</dd></div>
+<div style="padding: 12px 0; border-bottom: 1px solid #231A14"><dt style="font-family: 'Courier Prime', monospace; font-size: 13px">Dimensions</dt><dd style="margin: 2px 0 0">{{dims}}</dd></div>
+<div style="padding: 12px 0; border-bottom: 1px solid #231A14"><dt style="font-family: 'Courier Prime', monospace; font-size: 13px">Zone gravable</dt><dd style="margin: 2px 0 0">[Largeur × hauteur], 40 caractères max</dd></div>
+<div style="padding: 12px 0; border-bottom: 1px solid #231A14"><dt style="font-family: 'Courier Prime', monospace; font-size: 13px">Délai de fabrication</dt><dd style="margin: 2px 0 0">[Nombre] jours ouvrés après validation</dd></div>
+<div style="padding: 12px 0; border-bottom: 1px solid #231A14"><dt style="font-family: 'Courier Prime', monospace; font-size: 13px">Entretien</dt><dd style="margin: 2px 0 0">[Conseil d'entretien]</dd></div>
+<div style="padding: 12px 0; border-bottom: 1px solid #231A14"><dt style="font-family: 'Courier Prime', monospace; font-size: 13px">Pour</dt><dd style="margin: 2px 0 0">Fête des pères, anniversaire, Noël</dd></div>
+</dl>
+</section>
+</div>
+</div>
+
+<section aria-labelledby="etapes-titre" style="margin-top: 72px; border-top: 2px solid #231A14; padding-top: 28px">
+<h2 id="etapes-titre" style="margin: 0 0 24px; font-family: 'Big Shoulders', 'Arial Narrow', sans-serif; font-weight: 800; font-size: 44px; line-height: 1; text-transform: uppercase">Comment se passe votre commande</h2>
+<ol style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 0; border-top: 1px solid #231A14">
+<li style="padding: 18px 20px 22px 0; border-bottom: 1px solid #231A14; display: flex; flex-direction: column; gap: 6px"><span style="font-family: 'Big Shoulders', 'Arial Narrow', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; color: {{accent}}">01</span><span style="font-weight: 600">Vous écrivez votre texte</span><span style="font-size: 15px">Et vous choisissez la taille et la police.</span></li>
+<li style="padding: 18px 20px 22px 0; border-bottom: 1px solid #231A14; display: flex; flex-direction: column; gap: 6px"><span style="font-family: 'Big Shoulders', 'Arial Narrow', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; color: {{accent}}">02</span><span style="font-weight: 600">On vous envoie la maquette</span><span style="font-size: 15px">Vous la validez ou vous demandez une retouche.</span></li>
+<li style="padding: 18px 20px 22px 0; border-bottom: 1px solid #231A14; display: flex; flex-direction: column; gap: 6px"><span style="font-family: 'Big Shoulders', 'Arial Narrow', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; color: {{accent}}">03</span><span style="font-weight: 600">On grave à l'atelier</span><span style="font-size: 15px">Christophe ou Laetitia s'en occupent, à Auchel.</span></li>
+<li style="padding: 18px 20px 22px 0; border-bottom: 1px solid #231A14; display: flex; flex-direction: column; gap: 6px"><span style="font-family: 'Big Shoulders', 'Arial Narrow', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; color: {{accent}}">04</span><span style="font-weight: 600">Retrait ou livraison</span><span style="font-size: 15px">Gratuit en boutique, ou chez vous.</span></li>
+</ol>
+</section>
+
+<section aria-labelledby="avec-titre" style="margin-top: 72px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px 32px; margin-bottom: 20px">
+<h2 id="avec-titre" style="margin: 0; font-family: 'Big Shoulders', 'Arial Narrow', sans-serif; font-weight: 800; font-size: 44px; line-height: 1; text-transform: uppercase">Pour la même occasion</h2>
+<a href="accueil.dc.html" style="font-family: 'Courier Prime', monospace; font-size: 15px">Fête des pères · 5 pièces</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 1px; background: #231A14; border: 1px solid #231A14">
+<sc-for list="{{autres}}" as="it" hint-placeholder-count="4">
+<a href="#" style="background: #EFE6D8; text-decoration: none; color: #231A14; display: flex; flex-direction: column">
+<img src="{{it.img}}" alt="{{it.nom}}" style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block">
+<div style="padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 2px; border-top: 1px solid #231A14">
+<span style="font-family: 'Courier Prime', monospace; font-size: 13px">{{it.num}}</span>
+<span style="font-weight: 600; font-size: 17px; line-height: 1.3">{{it.nom}}</span>
+<span style="font-family: 'Big Shoulders', 'Arial Narrow', sans-serif; font-weight: 800; font-size: 26px; line-height: 1.1">{{it.prix}}</span>
+</div>
+</a>
+</sc-for>
+</div>
+</section>
+</main>
+
+<footer style="background: #231A14; color: #EFE6D8">
+<div style="max-width: 1320px; margin: 0 auto; padding: 40px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px 40px; font-family: 'Courier Prime', monospace; font-size: 14px">
+<span>Mon Truc en Bois · 3 rue Salengro, 62260 Auchel</span>
+<a href="tel:0783394028" style="color: #EFE6D8">07 83 39 40 28</a>
+<a href="mailto:contact@montrucenbois.fr" style="color: #EFE6D8">contact@montrucenbois.fr</a>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#A4471C","options":["#A4471C","#2F4A3A","#34383B"]},"$preview":{"width":1440,"height":2300}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { view: 'preview', taille: 'moyenne', font: 'atelier', text: 'Papa, roi du barbecue', cart: 0, added: false };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#A4471C';
+    const s = this.state;
+    const chip = (on) => 'font-family: \'Courier Prime\', monospace; font-size: 15px; padding: 10px 14px; min-height: 44px; border-radius: 0; cursor: pointer; ' + (on ? 'background: #231A14; color: #EFE6D8; border: 1px solid #231A14;' : 'background: transparent; color: #231A14; border: 1px solid #231A14;');
+    const tab = (on) => 'font-family: \'Courier Prime\', monospace; font-size: 14px; padding: 10px 16px; min-height: 44px; border-radius: 0; cursor: pointer; border: 1px solid #231A14; ' + (on ? 'background: #231A14; color: #EFE6D8;' : 'background: transparent; color: #231A14;');
+    const tailles = [
+      { id: 'moyenne', nom: 'Moyenne', plus: '', extra: 0, dims: '[Dimensions moyenne]', w: '78%' },
+      { id: 'grande', nom: 'Grande', plus: ' · +8,00 €', extra: 8, dims: '[Dimensions grande]', w: '100%' }
+    ];
+    const fonts = [
+      { id: 'atelier', label: 'Atelier', family: "'Big Shoulders', 'Arial Narrow', sans-serif", weight: 800, upper: true, scale: 1.15 },
+      { id: 'classique', label: 'Classique', family: "'Literata', Georgia, serif", weight: 600, upper: false, scale: 0.9 },
+      { id: 'machine', label: 'Machine à écrire', family: "'Courier Prime', 'Courier New', monospace", weight: 700, upper: false, scale: 0.8 },
+      { id: 'manuscrite', label: 'Manuscrite', family: "'Sacramento', cursive", weight: 400, upper: false, scale: 1.45 }
+    ];
+    const t = tailles.find((x) => x.id === s.taille) || tailles[0];
+    const f = fonts.find((x) => x.id === s.font) || fonts[0];
+    const total = 24.9 + t.extra;
+    const prix = total.toFixed(2).replace('.', ',') + ' €';
+    const txt = s.text || '';
+    const len = Math.max(txt.length, 1);
+    const fit = len > 14 ? Math.max(0.42, 14 / len + 0.18) : 1;
+    const size = Math.round((t.id === 'grande' ? 50 : 42) * f.scale * fit);
+    const pvStyle = 'margin: 0; text-align: center; overflow-wrap: anywhere; line-height: 1.05; font-family: ' + f.family + '; font-weight: ' + f.weight + '; font-size: ' + size + 'px; text-transform: ' + (f.upper ? 'uppercase' : 'none') + ';';
+    const boardStyle = 'flex: 0 1 ' + t.w + '; aspect-ratio: 2.1 / 1; border-radius: 24px; border: 2px solid #8A5A32; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;';
+    return {
+      accent,
+      cart: s.cart,
+      isPreview: s.view === 'preview',
+      isPhoto: s.view === 'photo',
+      previewPressed: s.view === 'preview' ? 'true' : 'false',
+      photoPressed: s.view === 'photo' ? 'true' : 'false',
+      tabPreview: tab(s.view === 'preview'),
+      tabPhoto: tab(s.view === 'photo'),
+      showPreview: () => this.setState({ view: 'preview' }),
+      showPhoto: () => this.setState({ view: 'photo' }),
+      prix,
+      dims: t.dims,
+      text: s.text,
+      shown: txt.trim() ? txt : 'Votre texte',
+      count: txt.length,
+      onText: (e) => this.setState({ text: e.target.value.slice(0, 40), view: 'preview' }),
+      pvStyle,
+      boardStyle,
+      tailles: tailles.map((x) => ({ ...x, pressed: x.id === t.id ? 'true' : 'false', style: chip(x.id === t.id), pick: () => this.setState({ taille: x.id, view: 'preview' }) })),
+      fonts: fonts.map((x) => ({
+        ...x,
+        pressed: x.id === f.id ? 'true' : 'false',
+        style: chip(x.id === f.id) + ' display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;',
+        sampleStyle: 'font-family: ' + x.family + '; font-weight: ' + x.weight + '; font-size: ' + Math.round(24 * (x.id === 'manuscrite' ? 1.25 : x.id === 'machine' ? 0.85 : 1)) + 'px; line-height: 1.1; text-transform: ' + (x.upper ? 'uppercase' : 'none') + ';',
+        pick: () => this.setState({ font: x.id, view: 'preview' })
+      })),
+      ctaLabel: s.added ? 'Ajoutée au panier' : 'Ajouter au panier — ' + prix,
+      add: () => this.setState({ cart: s.cart + 1, added: true }),
+      autres: [
+        { num: 'N° 009', nom: 'Décapsuleur mural gravé', prix: '29,90 €', img: 'img/decapsuleur-mural.jpg' },
+        { num: 'N° 003', nom: 'Tableau famille façon Scrabble', prix: '34,90 €', img: 'img/tableau-scrabble.jpg' },
+        { num: 'N° 007', nom: 'Porte-clés gravé', prix: '9,90 €', img: 'img/porte-cles-grave.jpg' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
