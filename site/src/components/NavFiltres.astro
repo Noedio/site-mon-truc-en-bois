@@ -1,0 +1,50 @@
+---
+// Rangée de filtres en liens : chaque filtre est une page statique, la page en cours est marquée.
+// Aucun JavaScript : le tri se fait au build (boutique, budget, occasions).
+interface Lien { href: string; libelle: string; nombre?: number; actif?: boolean }
+interface Props { titre: string; liens: Lien[] }
+const { titre, liens } = Astro.props;
+---
+<nav class="filtres" aria-label={titre}>
+  <span class="filtres-titre etiquette" aria-hidden="true">{titre}</span>
+  <ul class="filtres-liste">
+    {liens.map((l) => (
+      <li>
+        <a class="filtre machine" href={l.href} aria-current={l.actif ? "page" : undefined}>
+          {l.nombre === undefined ? l.libelle : `${l.libelle} · ${l.nombre}`}
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+  .filtres { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); align-items: start; gap: 6px 16px; }
+  .filtres-titre { text-transform: uppercase; padding-top: 13px; }
+  .filtres-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .filtre {
+    display: flex;
+    align-items: center;
+    min-height: var(--cible);
+    padding: 10px 14px;
+    border: var(--filet);
+    text-decoration: none;
+    line-height: 1.2;
+  }
+  .filtre:hover { background: var(--bouleau-fonce); color: var(--brule); }
+  .filtre[aria-current="page"] { background: var(--brule); color: var(--bouleau); }
+  /* Sur téléphone, une seule rangée qui défile, comme la navigation de l'en-tête. */
+  @media (max-width: 640px) {
+    .filtres { grid-template-columns: minmax(0, 1fr); }
+    .filtres-titre { padding-top: 0; }
+    .filtres-liste {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      margin-inline: calc(-1 * var(--gouttiere));
+      padding-inline: var(--gouttiere);
+      scrollbar-width: none;
+    }
+    .filtres-liste::-webkit-scrollbar { display: none; }
+    .filtre { white-space: nowrap; }
+  }
+</style>

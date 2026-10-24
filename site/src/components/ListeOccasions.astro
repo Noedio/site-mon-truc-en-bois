@@ -1,0 +1,62 @@
+---
+// Liste des occasions (maquette, section « Par occasion ») : nom, date, date limite de commande,
+// nombre de pièces, lien vers la page de l'occasion. Réutilisable sur l'accueil.
+import ACompleter from "./ACompleter.astro";
+import { occasions as toutes, type Occasion } from "../lib/donnees";
+import { dateDe, dateLimiteDe, occasionsTriees, piecesDe } from "../lib/occasions";
+
+interface Props { occasions?: Occasion[]; niveau?: 2 | 3 }
+const { occasions = toutes, niveau = 2 } = Astro.props;
+const Titre = niveau === 2 ? "h2" : "h3";
+
+const lignes = occasionsTriees(occasions).map((o) => ({
+  o,
+  quand: dateDe(o),
+  limite: dateLimiteDe(o),
+  nombre: piecesDe(o).length,
+}));
+---
+<ul class="occasions">
+  {lignes.map(({ o, quand, limite, nombre }) => (
+    <li class="occasion">
+      <Titre class="occasion-nom"><a href={`/occasions/${o.id}/`}>{o.nom}</a></Titre>
+      <span class="machine">{quand.date ? <time datetime={quand.date.toISOString().slice(0, 10)}>{quand.texte}</time> : quand.texte}</span>
+      <span class="machine occasion-limite">
+        {quand.date || o.date?.trim() || limite ? (
+          limite ? <>Commander avant le {limite.texte}</> : <>Commander avant le <ACompleter quoi="date limite de commande" /></>
+        ) : (
+          <>Fabrication sous <ACompleter quoi="délai de fabrication" /></>
+        )}
+      </span>
+      <span class="machine occasion-nombre">{nombre} pièce{nombre > 1 ? "s" : ""} <span aria-hidden="true">→</span></span>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .occasions { list-style: none; margin: 0; padding: 0; border-top: var(--filet-fort); }
+  .occasion {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 0.7fr);
+    gap: 4px 24px;
+    align-items: baseline;
+    padding: 18px 0;
+    border-bottom: var(--filet);
+  }
+  .occasion-nom { font-size: 2rem; line-height: 1.05; }
+  .occasion-nom a { text-decoration: none; }
+  /* Toute la ligne est cliquable ; le lien reste le nom de l'occasion. */
+  .occasion-nom a::after { content: ""; position: absolute; inset: 0; }
+  .occasion:hover .occasion-nom a { text-decoration: underline; text-decoration-thickness: 2px; color: var(--brule); }
+  .occasion:has(a:focus-visible) { outline: 2px solid var(--gravure); outline-offset: 2px; }
+  .occasion-nom a:focus-visible { outline: none; }
+  .occasion-limite { font-weight: 700; color: var(--gravure); }
+  .occasion-nombre { text-align: right; white-space: nowrap; }
+  @media (max-width: 900px) {
+    .occasion { grid-template-columns: minmax(0, 1fr) auto; }
+    .occasion-nom { grid-column: 1 / -1; }
+    .occasion-limite { grid-column: 1; }
+    .occasion-nombre { grid-column: 2; grid-row: 2 / span 2; align-self: end; }
+  }
+</style>

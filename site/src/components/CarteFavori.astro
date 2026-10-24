@@ -1,0 +1,20 @@
+---
+// Variante de CartePiece avec le bouton cœur posé sur la photo. Le bouton reste hors du lien
+// (pas de bouton dans un lien). S'utilise dans une grille à filets comme CartePiece.
+import CartePiece from "./CartePiece.astro";
+import BoutonFavori from "./BoutonFavori.astro";
+import type { Produit } from "../lib/donnees";
+
+interface Props { produit: Produit & { numero: number }; prioritaire?: boolean; [attr: string]: unknown }
+const { produit, prioritaire = false, ...reste } = Astro.props;
+---
+<div class="carte-favori" {...reste}>
+  <CartePiece produit={produit} prioritaire={prioritaire} />
+  <BoutonFavori id={produit.id} nom={produit.nom} class="carte-favori-coeur" />
+</div>
+
+<style>
+  .carte-favori { position: relative; display: flex; flex-direction: column; margin: 0 1px 1px 0; min-width: 0; }
+  .carte-favori > :global(.carte-piece) { margin: 0; flex: 1; }
+  .carte-favori > :global(.carte-favori-coeur) { position: absolute; top: 10px; right: 10px; }
+</style>

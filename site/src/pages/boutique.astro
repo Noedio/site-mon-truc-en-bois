@@ -1,7 +1,11 @@
 ---
+// Boutique : toutes les pièces visibles, dans l'ordre du catalogue.
 import Base from "../layouts/Base.astro";
-import EnTravaux from "../components/EnTravaux.astro";
+import PageBoutique from "../components/PageBoutique.astro";
+import { produits, categories } from "../lib/donnees";
+
+const description = `Les ${produits.length} pièces de l'atelier, avec leur prix : ${categories.map((c) => c.nom.toLowerCase()).join(", ")}.`;
 ---
-<Base titre="Boutique">
-  <EnTravaux titre="Boutique" chantier="chantier C2" contenu="Toutes les pièces en grille à filets, avec numéro, catégorie et prix, filtrées par catégorie et par budget." />
+<Base titre="Boutique" description={description}>
+  <PageBoutique titre="Boutique" pieces={produits} />
 </Base>

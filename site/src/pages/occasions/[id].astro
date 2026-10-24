@@ -1,0 +1,67 @@
+---
+// Une page statique par occasion : /occasions/<id>/, pièces du prix le plus bas au plus haut.
+import Base from "../../layouts/Base.astro";
+import GrillePieces from "../../components/GrillePieces.astro";
+import NavFiltres from "../../components/NavFiltres.astro";
+import ACompleter from "../../components/ACompleter.astro";
+import { occasions, type Occasion } from "../../lib/donnees";
+import { aVerifier } from "../../lib/images";
+import { dateDe, dateLimiteDe, occasionsTriees, piecesDe } from "../../lib/occasions";
+
+export function getStaticPaths() {
+  return occasions.map((o) => ({ params: { id: o.id }, props: { occasion: o } }));
+}
+
+const { occasion: o } = Astro.props as { occasion: Occasion };
+const pieces = piecesDe(o);
+const quand = dateDe(o);
+const limite = dateLimiteDe(o);
+const datee = Boolean(quand.date || o.date?.trim() || limite);
+const autres = occasionsTriees().map((x) => ({ href: `/occasions/${x.id}/`, libelle: x.nom, nombre: piecesDe(x).length, actif: x.id === o.id }));
+const compte = `${pieces.length} pièce${pieces.length > 1 ? "s" : ""}, du prix le plus bas au plus haut`;
+---
+<Base titre={`${o.nom} · Par occasion`} description={`${o.nom} : ${compte}. Date de l'occasion : ${quand.texte.toLowerCase()}.`} image={aVerifier(o.image) ? undefined : o.image}>
+  <section class="bande" aria-labelledby="titre-occasion">
+    <div class="conteneur pile" style="--pile: 32px">
+      <div class="pile" style="--pile: 14px">
+        <a class="machine retour" href="/occasions/">Toutes les occasions</a>
+        <div class="occasion-tete">
+          <h1 id="titre-occasion">{o.nom}</h1>
+          <p class="machine">{compte}</p>
+        </div>
+        {o.description && <p class="chapeau">{o.description}</p>}
+      </div>
+
+      <dl class="occasion-dates">
+        <div>
+          <dt class="etiquette">Date</dt>
+          <dd class="machine">{quand.date ? <time datetime={quand.date.toISOString().slice(0, 10)}>{quand.texte}</time> : quand.texte}</dd>
+        </div>
+        <div>
+          <dt class="etiquette">{datee ? "Date limite de commande" : "Délai de fabrication"}</dt>
+          <dd class="machine occasion-limite">
+            {datee ? (limite ? limite.texte : <ACompleter quoi="date limite de commande" />) : <ACompleter quoi="délai de fabrication" />}
+          </dd>
+        </div>
+      </dl>
+
+      {pieces.length ? (
+        <GrillePieces produits={pieces} prioritaires={4} />
+      ) : (
+        <p class="occasion-vide">Aucune pièce n'est encore rangée dans cette occasion. <a href="/boutique/">Voir toutes les pièces</a>.</p>
+      )}
+
+      <NavFiltres titre="Autres occasions" liens={autres} />
+    </div>
+  </section>
+</Base>
+
+<style>
+  .retour { align-self: flex-start; min-height: var(--cible); display: inline-flex; align-items: center; }
+  .occasion-tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 32px; }
+  .occasion-dates { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); column-gap: 24px; border-top: var(--filet-fort); }
+  .occasion-dates div { padding: 12px 0; border-bottom: var(--filet); min-width: 0; }
+  .occasion-dates dd { margin: 2px 0 0; }
+  .occasion-limite { font-weight: 700; color: var(--gravure); }
+  .occasion-vide { border-top: var(--filet); border-bottom: var(--filet); padding: 24px 0; }
+</style>
