@@ -12,6 +12,7 @@ npm run build    # dist/ + dist/_redirects
 ```
 
 `npm run dev` et `npm run build` copient d'abord `../img` dans `public/img` (non versionné).
+`sharp` doit rester en dépendance explicite dans `package.json` : sans lui, le build Cloudflare (Linux) échoue au traitement des images.
 Le catalogue est lu au build dans `../data/donnees.js`, le fichier que publie l'admin actuel.
 
 ## Ce que fournit le socle (chantier C1)
