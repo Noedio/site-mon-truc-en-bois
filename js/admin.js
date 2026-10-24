@@ -12,7 +12,10 @@
     "//  DONNÉES DU SITE — modifiées depuis la page admin (admin.html).\n" +
     "//  On peut aussi éditer ce fichier à la main : il doit rester du JSON valide après « window.DONNEES = ».\n" +
     "// ============================================================\n";
-  const DEFAUT = { proprio: "Noedio", depot: "site-mon-truc-en-bois", branche: "site-vitrine-boutique" };
+  // Réglages posés par la page qui sert l'admin : le nouveau site (site/scripts/copier-medias.mjs) y indique
+  // la branche d'où il est construit, pour que les publications de l'agence l'alimentent.
+  const REGLAGES = window.MTB_ADMIN || {};
+  const DEFAUT = { proprio: "Noedio", depot: "site-mon-truc-en-bois", branche: REGLAGES.branche || "site-vitrine-boutique" };
   const CLE_STOCKAGE = "admin-mtb";
   const CLE_BROUILLON = window.MTB_DEMO ? "brouillon-mtb-demo" : "brouillon-mtb"; // aussi lu par le site pour la prévisualisation
   const BADGES = { "": "Aucun", nouveau: "Nouveau", promo: "Promo", best: "Best-seller", edition: "Édition limitée" };
@@ -170,7 +173,8 @@
     $("#publier").disabled = !modifie || !!publicationBloquee;
     // Le bouton n'apparaît que lorsqu'il y a quelque chose à publier (ou pendant la publication)
     $("#publier").hidden = !modifie && !texte;
-    $("#previsualiser").hidden = !modifie;
+    // Le nouveau site est construit à l'avance : il ne sait pas afficher un brouillon.
+    $("#previsualiser").hidden = !modifie || !!REGLAGES.sansPrevisualisation;
     if (publicationBloquee && !texte) s.textContent = "Publication indisponible";
   }
   let minuteurToast;

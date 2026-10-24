@@ -24,4 +24,16 @@ for (const [source, cible] of COPIES) {
   fs.rmSync(vers, { recursive: true, force: true });
   fs.cpSync(de, vers, { recursive: true });
 }
-console.log(`Copié dans public/ : ${COPIES.map(([s]) => s).join(", ")}`);
+// L'admin publie data/donnees.js sur GitHub : depuis l'aperçu, il doit écrire sur la branche dont le nouveau
+// site est construit (Cloudflare fournit CF_PAGES_BRANCH), sinon ses modifications n'apparaîtraient pas ici.
+// La branche demo est une copie : on y publie sur refonte. ADMIN_BRANCHE permet de forcer une autre branche.
+const branche = process.env.ADMIN_BRANCHE || (process.env.CF_PAGES_BRANCH && process.env.CF_PAGES_BRANCH !== "demo" ? process.env.CF_PAGES_BRANCH : "refonte");
+const reglages = { branche, sansPrevisualisation: true };
+const admin = path.join(publicDir, "admin.html");
+const html = fs.readFileSync(admin, "utf8");
+const repere = html.match(/<script src="js\/admin-serveur\.js[^"]*"><\/script>/);
+if (!repere) throw new Error("admin.html : script js/admin-serveur.js introuvable, réglages de l'admin non posés.");
+fs.writeFileSync(admin, html.replace(repere[0], `<script>window.MTB_ADMIN = ${JSON.stringify(reglages)};</script>
+  ${repere[0]}`));
+
+console.log(`Copié dans public/ : ${COPIES.map(([s]) => s).join(", ")} (admin : publication sur ${branche})`);

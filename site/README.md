@@ -86,3 +86,19 @@ git push origin refonte:demo
 
 En local : `MTB_DEMO=1 npm run build && npm run preview`.
 Le déroulé de la présentation au commerçant est dans `docs/refonte/presentation.md`.
+
+## Admin et publication pendant la refonte
+
+L'admin servi avec l'aperçu (`/admin.html`) reçoit au build `window.MTB_ADMIN` (voir `scripts/copier-medias.mjs`) :
+il publie `data/donnees.js` sur la branche d'où le site est construit (`refonte` en production Cloudflare,
+la branche elle-même pour un aperçu de branche, `refonte` pour la démo ; `ADMIN_BRANCHE` force une autre branche).
+Chaque publication est un commit sur `refonte` : Cloudflare reconstruit le site en une à deux minutes.
+Le bouton « Prévisualiser » est masqué : le site étant construit à l'avance, il ne peut pas afficher un brouillon.
+L'admin de l'ancien site (GitHub Pages) continue de publier sur `site-vitrine-boutique`.
+
+- **Avant de pousser sur `refonte`**, récupérer ce que l'admin a publié : `git pull --rebase origin refonte`.
+- **Publication par le serveur du commerçant** (une fois Supabase installé) : la branche est réglée côté serveur par
+  la variable de dépôt `BRANCHE_SITE` (défaut `site-vitrine-boutique`, voir `.github/workflows/supabase.yml`).
+  Pendant la refonte, la mettre à `refonte` avant de lancer l'installation : `gh variable set BRANCHE_SITE --body refonte`.
+- **À la bascule** : fusionner `refonte` dans `site-vitrine-boutique`, mettre la branche de production Cloudflare sur
+  `site-vitrine-boutique`, puis remettre `BRANCHE_SITE` (ou la supprimer) : admin, serveur et site visent alors la même branche.
