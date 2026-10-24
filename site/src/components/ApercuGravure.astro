@@ -1,0 +1,103 @@
+---
+// Grand aperçu de la gravure, à côté des commandes du configurateur (Configurateur.astro le met à jour).
+// Accueil : la pièce dessinée et sa vraie photo en vignette. Fiche : onglets « Votre aperçu » / « Photo réelle »,
+// ou, pour une pièce sans gabarit (mug, textile…), la photo et le texte en dessous.
+// Sur téléphone, c'est le bandeau des commandes qui montre l'aperçu : ici ne reste que la photo de la fiche.
+import PhotoPiece from "./PhotoPiece.astro";
+import { policeDe, gabaritDe, dessiner, limiterTexte, titreApercu } from "../lib/configurateur";
+import type { Produit } from "../lib/donnees";
+
+interface Props {
+  pieces: (Produit & { numero: number })[];
+  disposition: "accueil" | "fiche";
+  texte?: string;
+  police?: string;
+}
+const { pieces, disposition, texte: texteDepart = "", police: policeDepart = "atelier" } = Astro.props;
+const premiere = pieces[0];
+const police = policeDe(policeDepart);
+const gabarit = gabaritDe(premiere, premiere.variantes?.choix?.length ? 0 : null);
+const texte = limiterTexte(texteDepart, gabarit);
+const svg = dessiner({ gabarit, texte, police, prefixe: "grand", titre: titreApercu(premiere.nom.toLowerCase(), texte, police) });
+const bande = gabarit.forme === "bande";
+const fiche = disposition === "fiche";
+---
+<div class="apercu-gravure" data-apercu-gravure data-vue="apercu" data-disposition={disposition} data-bande={bande ? "" : undefined}>
+  {fiche && !bande && (
+    <div class="ag-onglets" role="group" aria-label="Affichage">
+      <button type="button" data-vue="apercu" aria-pressed="true">Votre aperçu</button>
+      <button type="button" data-vue="photo" aria-pressed="false">Photo réelle</button>
+    </div>
+  )}
+  {fiche && (
+    <div class="ag-photo">
+      <PhotoPiece chemin={premiere.image} alt={`${premiere.nom}, photo réelle`} tailles="(max-width: 899px) 100vw, 620px" prioritaire />
+    </div>
+  )}
+  <div class="ag-scene" data-scene data-forme={gabarit.forme} set:html={svg} />
+  <div class="ag-pied">
+    <p class="etiquette">Aperçu indicatif : proportions et rendu approximatifs.</p>
+    {!fiche && (
+      <div class="ag-vraie">
+        <span class="etiquette">La vraie pièce</span>
+        {pieces.map((p, i) => (
+          <a href={`/produit/${p.id}/`} data-cfg-photo={p.id} hidden={i > 0}>
+            <PhotoPiece chemin={p.image} alt={`${p.nom}, photo réelle`} tailles="72px" />
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+</div>
+
+<style>
+  .apercu-gravure { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+  .ag-onglets { display: flex; }
+  .ag-onglets button {
+    min-height: var(--cible);
+    padding: 10px 16px;
+    border: var(--filet);
+    background: transparent;
+    font-family: var(--f-machine);
+    font-size: var(--t-machine);
+    cursor: pointer;
+  }
+  .ag-onglets button + button { border-left: 0; }
+  .ag-onglets button[aria-pressed="true"] { background: var(--brule); color: var(--bouleau); }
+
+  .ag-scene {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--kraft);
+    border: var(--filet);
+    padding: 32px 24px;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+  }
+  [data-disposition="accueil"] .ag-scene { aspect-ratio: auto; min-height: 600px; }
+  .ag-scene :global(svg) { width: 88%; height: auto; max-height: 100%; }
+  .ag-scene[data-forme="ronde"] :global(svg) { width: 78%; }
+  .ag-scene[data-forme="porte-cles"] :global(svg) { width: auto; height: 400px; }
+  [data-disposition="fiche"] .ag-scene[data-forme="porte-cles"] :global(svg) { height: 72%; }
+
+  /* Pièce sans gabarit : photo, puis une bande de texte. */
+  [data-bande] .ag-scene { aspect-ratio: auto; padding: 8px 12px; border-top: 0; background: var(--papier); }
+  [data-bande] .ag-scene :global(svg) { width: 100%; }
+
+  .ag-photo :global(.photo-piece), .ag-photo :global(.photo-attente) { border: var(--filet); }
+  [data-vue="apercu"]:not([data-bande]) .ag-photo { display: none; }
+  [data-vue="photo"] .ag-scene { display: none; }
+
+  .ag-pied { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; }
+  .ag-vraie { display: flex; align-items: center; gap: 10px; }
+  .ag-vraie a { display: block; width: 72px; border: var(--filet); }
+  .ag-vraie a[hidden] { display: none; }
+
+  @media (max-width: 899px) {
+    [data-disposition="accueil"] { display: none; }
+    .ag-onglets, .ag-scene, .ag-pied { display: none !important; }
+    .apercu-gravure .ag-photo { display: block !important; }
+  }
+</style>

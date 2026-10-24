@@ -1,7 +1,215 @@
 ---
+// Accueil (chantier C3) : le configurateur au premier écran, puis le catalogue, les occasions,
+// l'atelier, les avis et les séries pour associations et entreprises.
+import { Image } from "astro:assets";
 import Base from "../layouts/Base.astro";
-import EnTravaux from "../components/EnTravaux.astro";
+import Bouton from "../components/Bouton.astro";
+import Configurateur from "../components/Configurateur.astro";
+import ApercuGravure from "../components/ApercuGravure.astro";
+import GrillePieces from "../components/GrillePieces.astro";
+import TeteSection from "../components/TeteSection.astro";
+import ACompleter from "../components/ACompleter.astro";
+import { donnees, site, produits, categories, occasions, avis, trouverProduit, produitsDe, prixDe } from "../lib/donnees";
+import { euros, numeroPiece } from "../lib/format";
+import { image, aVerifier } from "../lib/images";
+
+// Les trois pièces dessinées du configurateur, dans l'ordre de la maquette.
+const pieces = ["planche-aperitif", "plaque-message", "porte-cles-grave"].map(trouverProduit).filter((p) => p !== undefined);
+const premiere = pieces[0];
+const { prix, plusieurs } = prixDe(premiere);
+
+// Extrait du catalogue : les pièces mises en avant dont la photo peut être montrée.
+const vedettes = produits.filter((p) => p.vedette && !aVerifier(p.image)).slice(0, 8);
+const parCategorie = categories.map((c) => ({ ...c, nombre: produitsDe({ categorie: c.id }).length })).filter((c) => c.nombre);
+
+// Occasions : les entreprises et associations ont leur propre bandeau plus bas.
+const listeOccasions = occasions
+  .filter((o) => o.id !== "pro")
+  .map((o) => ({ ...o, nombre: produitsDe({ occasion: o.id }).length }))
+  .filter((o) => o.nombre);
+const sansDateLimite = listeOccasions.every((o) => !o.dateLimite);
+
+// Avis : trois avis courts, nommés et datés, sans étoiles.
+const avisCourts = avis.filter((a) => a.texte && a.texte.length <= 260).slice(0, 3);
+const facebook = site.plateformesAvis.facebook;
+
+const photoAtelier = image("img/salon-stand.jpg") ?? image("img/boutique-interieur.jpg");
+const [aProposDebut, , aProposSalons] = donnees.textes.aPropos;
+const texteDepart = "Marie & Paul\n14.06.2026";
 ---
-<Base titre="Mon Truc en Bois">
-  <EnTravaux titre="Mon Truc en Bois" chantier="chantier C3" contenu="Le configurateur en tête de page : choix de la pièce, texte, police, aperçu qui se grave, puis le catalogue, les occasions, l'atelier et les avis." />
+<Base titre={site.nom} description="Gravure laser, impression et bijoux gravés à Auchel : planches, plaques, verres, mugs. Aperçu de votre texte en direct, retrait gratuit en boutique.">
+  <section class="bande accueil-tete" aria-labelledby="titre-accueil">
+    <div class="conteneur tete-grille">
+      <Configurateur pieces={pieces} texte={texteDepart} numeroter>
+        <div class="pile" style="--pile: 20px" slot="tete">
+          <p class="etiquette" data-cfg-numero>{numeroPiece(premiere.numero)} · {premiere.nom}</p>
+          <h1 id="titre-accueil">Votre texte, gravé au laser dans notre atelier d'Auchel</h1>
+        </div>
+        <p class="chapeau" slot="apres-bandeau">Choisissez la pièce et la police : l'aperçu change pendant que vous écrivez.</p>
+        <div class="tete-achat">
+          <Bouton href={`/produit/${premiere.id}/`} genre="achat" taille="grand" data-cfg-lien>
+            <span>Personnaliser cette pièce · <span data-cfg-prix>{plusieurs ? "dès " : ""}{euros(prix)}</span></span>
+          </Bouton>
+          <p class="etiquette">
+            Retrait gratuit en boutique<br />
+            Livraison {euros(site.livraison)}, offerte dès {euros(site.livraisonOfferteDes)}
+          </p>
+        </div>
+      </Configurateur>
+      <ApercuGravure pieces={pieces} disposition="accueil" texte={texteDepart} />
+    </div>
+  </section>
+
+  <section class="bande" aria-labelledby="titre-catalogue">
+    <div class="conteneur">
+      <TeteSection
+        id="titre-catalogue"
+        titre="Le catalogue"
+        texte={`${produits.length} pièces : gravure, impression, bijoux.`}
+        lien={{ href: "/boutique/", libelle: "Toute la boutique" }}
+      />
+      <nav class="categories" aria-label="Catégories du catalogue">
+        {parCategorie.map((c) => (
+          <a class="machine" href={`/boutique/?categorie=${c.id}`}>{c.nom} · {c.nombre}</a>
+        ))}
+      </nav>
+      <GrillePieces produits={vedettes} colonnes="minmax(min(280px, 100%), 1fr)" />
+    </div>
+  </section>
+
+  <section class="bande bande-fonce" aria-labelledby="titre-occasions">
+    <div class="conteneur">
+      <TeteSection id="titre-occasions" titre="Par occasion" lien={{ href: "/occasions/", libelle: "Toutes les occasions" }} />
+      {sansDateLimite && (
+        <p class="machine occasions-limite">Dates limites de commande : <ACompleter quoi="date limite de commande pour chaque occasion (Noël, fêtes des mères et des pères…)" /></p>
+      )}
+      <ul class="occasions" role="list">
+        {listeOccasions.map((o) => (
+          <li>
+            <a href={`/occasions/${o.id}/`}>
+              <span class="occasion-nom">{o.nom}</span>
+              {o.dateLimite && <span class="machine occasion-limite">Commander avant le {o.dateLimite}</span>}
+              <span class="machine occasion-nombre">{o.nombre} pièces</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="bande" aria-labelledby="titre-atelier">
+    <div class="conteneur atelier">
+      {photoAtelier && (
+        <figure class="atelier-photo">
+          <Image
+            src={photoAtelier}
+            alt="Le stand Mon Truc en Bois en salon, avec des planches, plaques et porte-clés gravés"
+            widths={[480, 720, 960].filter((w) => w <= photoAtelier.width)}
+            sizes="(max-width: 899px) 100vw, 620px"
+            format="webp"
+            quality={78}
+          />
+          <figcaption class="etiquette">{aProposSalons}</figcaption>
+        </figure>
+      )}
+      <div class="pile" style="--pile: 24px">
+        <h2 id="titre-atelier">L'atelier</h2>
+        <p class="chapeau">{aProposDebut}</p>
+        <dl class="atelier-faits">
+          <div><dt class="etiquette">Techniques</dt><dd>Gravure laser, impression, bijoux gravés</dd></div>
+          <div><dt class="etiquette">Matières</dt><dd>Bois, verre, ardoise, céramique, textile</dd></div>
+          <div><dt class="etiquette">Séries</dt><dd>À l'unité ou en série, pour les particuliers, commerçants, associations et entreprises</dd></div>
+          <div><dt class="etiquette">Avant gravure</dt><dd><ACompleter quoi="maquette envoyée au client : à chaque commande ou sur demande ?" /></dd></div>
+        </dl>
+        <a class="machine lien-fort" href="/atelier/">Voir l'atelier et la boutique</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="bande" aria-labelledby="titre-avis">
+    <div class="conteneur">
+      <TeteSection
+        id="titre-avis"
+        titre="Ils ont commandé"
+        lien={facebook?.lien ? { href: facebook.lien, libelle: `Recommandé à ${facebook.taux} % · ${facebook.nombre} avis sur Facebook` } : undefined}
+      />
+      <div class="avis">
+        {avisCourts.map((a) => (
+          <blockquote>
+            <p>« {a.texte} »</p>
+            <footer class="etiquette">{a.nom} · {a.date.toLocaleLowerCase("fr-FR")} · {a.source === "facebook" ? "Facebook" : a.source}</footer>
+          </blockquote>
+        ))}
+      </div>
+      <a class="machine lien-fort avis-tous" href="/avis/">Tous les avis</a>
+    </div>
+  </section>
+
+  <section class="bande bande-kraft" aria-labelledby="titre-series">
+    <div class="conteneur series">
+      <div class="pile" style="--pile: 8px">
+        <h2 id="titre-series" class="series-titre">Associations, clubs, entreprises</h2>
+        <p>Nous réalisons aussi des séries gravées ou imprimées pour les commerçants, les associations et les entreprises.</p>
+      </div>
+      <Bouton href="/contact/" genre="contour">Demander un devis</Bouton>
+    </div>
+  </section>
 </Base>
+
+<style>
+  .accueil-tete > .conteneur { padding-block: 48px 64px; }
+  .tete-grille { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px 64px; align-items: start; }
+  .tete-grille > :global(.apercu-gravure) { position: sticky; top: 20px; }
+  .tete-achat { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
+  .tete-achat .etiquette { line-height: 1.5; }
+
+  .categories { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+  .categories a { display: flex; align-items: center; min-height: var(--cible); padding: 8px 14px; border: var(--filet); text-decoration: none; }
+  .categories a:hover { background: var(--brule); color: var(--bouleau); }
+
+  .occasions-limite { margin: -12px 0 20px; }
+  /* Sur le bouleau foncé, la gravure descend à 4,2:1 : on prend sa teinte foncée (AA). */
+  .occasions-limite :global(.a-completer), .occasion-limite { color: var(--gravure-fonce); }
+  .occasions { list-style: none; margin: 0; padding: 0; border-top: var(--filet-fort); }
+  .occasions a {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto;
+    gap: 4px 24px;
+    align-items: baseline;
+    padding: 16px 0;
+    border-bottom: var(--filet);
+    text-decoration: none;
+  }
+  .occasions a:hover .occasion-nom { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.12em; }
+  .occasion-nom { font-family: var(--f-titre); font-weight: 800; font-size: 2rem; line-height: 1.05; text-transform: uppercase; }
+  .occasion-limite { font-weight: 700; }
+  .occasion-nombre { grid-column: 3; text-align: right; white-space: nowrap; }
+
+  .atelier { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px 64px; align-items: center; }
+  .atelier-photo { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .atelier-photo img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border: var(--filet); }
+  .atelier-faits { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); column-gap: 24px; border-top: var(--filet); }
+  .atelier-faits div { padding: 12px 0; border-bottom: var(--filet); min-width: 0; }
+  .atelier-faits dd { margin: 2px 0 0; }
+  .lien-fort { font-weight: 700; align-self: flex-start; min-height: var(--cible); display: inline-flex; align-items: center; }
+
+  .avis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 32px 48px; }
+  .avis blockquote { margin: 0; padding-top: 18px; border-top: var(--filet-fort); display: flex; flex-direction: column; gap: 14px; }
+  .avis blockquote p { font-style: italic; font-size: 1.1875rem; line-height: 1.5; }
+  .avis-tous { margin-top: 20px; }
+
+  .series { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 40px; }
+  .bande-kraft > .series { padding-block: 40px; }
+  .series .pile { max-width: 46em; }
+  .series-titre { font-size: 2.25rem; line-height: 1.05; }
+
+  @media (max-width: 899px) {
+    .accueil-tete > .conteneur { padding-block: 20px 40px; }
+    .tete-grille, .atelier { grid-template-columns: minmax(0, 1fr); }
+    .tete-achat > :global(.bouton) { width: 100%; }
+    .occasions a { grid-template-columns: minmax(0, 1fr) auto; }
+    .occasion-limite { grid-column: 1 / -1; grid-row: 2; }
+    .occasion-nombre { grid-column: 2; grid-row: 1; }
+    .occasion-nom { font-size: 1.6rem; }
+  }
+</style>

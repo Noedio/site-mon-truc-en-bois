@@ -1,37 +1,420 @@
 ---
-// Fiche produit provisoire du socle : une page par pièce du catalogue (/produit/<id>/).
-// Le chantier C3 la remplace par la fiche complète avec le configurateur.
+// Fiche produit (chantier C3) : une page par pièce du catalogue (/produit/<id>/).
+// Configurateur quand la pièce se personnalise, variantes, quantité, photo, remarque, ajout au panier
+// (contrat LignePanier de src/lib/panier.ts), fiche technique, et données structurées Product en HTML statique.
 import Base from "../../layouts/Base.astro";
+import Bouton from "../../components/Bouton.astro";
 import PhotoPiece from "../../components/PhotoPiece.astro";
 import FicheTechnique from "../../components/FicheTechnique.astro";
-import { produits, categorieDe, prixDe } from "../../lib/donnees";
-import { euros, numeroPiece } from "../../lib/format";
+import Configurateur from "../../components/Configurateur.astro";
+import ApercuGravure from "../../components/ApercuGravure.astro";
+import GrillePieces from "../../components/GrillePieces.astro";
+import TeteSection from "../../components/TeteSection.astro";
+import ACompleter from "../../components/ACompleter.astro";
+import { produits, categorieDe, prixDe, produitsDe, occasions, site } from "../../lib/donnees";
+import { euros, numeroPiece, adresseEnLignes } from "../../lib/format";
+import { aVerifier } from "../../lib/images";
 
 export function getStaticPaths() {
   return produits.map((produit) => ({ params: { id: produit.id }, props: { produit } }));
 }
 
 const { produit } = Astro.props;
+const categorie = categorieDe(produit);
 const { prix, plusieurs } = prixDe(produit);
+const variantes = produit.variantes?.choix?.length ? produit.variantes : null;
+const avecTexte = produit.options?.texte !== false;
+const avecPhoto = !!produit.options?.photo;
+const epuise = produit.dispo === "epuise";
+const DISPO: Record<string, [string, string]> = {
+  disponible: ["Disponible", "https://schema.org/InStock"],
+  commande: ["Fabriqué sur commande", "https://schema.org/MadeToOrder"],
+  epuise: ["Épuisé pour le moment", "https://schema.org/OutOfStock"],
+};
+const [dispoTexte, dispoSchema] = DISPO[produit.dispo ?? "disponible"] ?? DISPO.disponible;
+const prixUnitaire = produit.prix + (variantes ? Number(variantes.choix[0].prix) || 0 : 0);
+const { rue, ville } = adresseEnLignes(site.adresse);
+const paiement = site.commandes.paiement;
+const modesPaiement = [paiement.apresValidation && "après validation de la maquette", paiement.boutique && "en boutique", paiement.enLigne && "en ligne"].filter(Boolean);
+
+// Même occasion : la première occasion de la pièce, sans les photos en attente de validation.
+const occasion = produit.occasions?.map((id) => occasions.find((o) => o.id === id)).find((o) => o !== undefined);
+const memeOccasion = occasion ? produitsDe({ occasion: occasion.id }).filter((p) => p.id !== produit.id && !aVerifier(p.image)) : [];
+
+// Données structurées (brief §4 : Product présent sur chaque fiche), écrites dans le HTML au build.
+const url = new URL(`/produit/${produit.id}/`, Astro.site).href;
+const photoPublique = !aVerifier(produit.image) && produit.image;
+const prixVariantes = variantes ? variantes.choix.map((c) => produit.prix + (Number(c.prix) || 0)) : [produit.prix];
+const offre = plusieurs
+  ? { "@type": "AggregateOffer", lowPrice: Math.min(...prixVariantes).toFixed(2), highPrice: Math.max(...prixVariantes).toFixed(2), offerCount: prixVariantes.length }
+  : { "@type": "Offer", price: prix.toFixed(2) };
+const schemaProduit = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name: produit.nom,
+  description: produit.description,
+  sku: produit.id,
+  ...(photoPublique ? { image: [new URL(`/${photoPublique}`, Astro.site).href] } : {}),
+  category: categorie?.nom,
+  brand: { "@type": "Brand", name: site.nom },
+  offers: {
+    ...offre,
+    priceCurrency: "EUR",
+    availability: dispoSchema,
+    itemCondition: "https://schema.org/NewCondition",
+    url,
+    seller: { "@type": "Organization", name: site.nom },
+  },
+};
+const ariane = [
+  { nom: "Accueil", href: "/" },
+  { nom: "Boutique", href: "/boutique/" },
+  ...(categorie ? [{ nom: categorie.nom, href: `/boutique/?categorie=${categorie.id}` }] : []),
+  { nom: produit.nom, href: `/produit/${produit.id}/` },
+];
+const schemaAriane = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: ariane.map((a, i) => ({ "@type": "ListItem", position: i + 1, name: a.nom, item: new URL(a.href, Astro.site).href })),
+};
+
+// Données lues par le script d'achat.
+const pourScript = {
+  id: produit.id,
+  nom: produit.nom,
+  prix: produit.prix,
+  variantes,
+  texte: avecTexte,
+  delai: produit.delai || 0,
+};
 ---
-<Base titre={produit.nom} description={produit.description} image={produit.image}>
-  <section class="bande">
-    <div class="conteneur fiche">
-      <PhotoPiece chemin={produit.image} alt={produit.nom} tailles="(max-width: 860px) 100vw, 640px" prioritaire />
-      <div class="pile" style="--pile: 20px">
-        <p class="etiquette">{numeroPiece(produit.numero)} · {categorieDe(produit)?.nom}</p>
-        <h1>{produit.nom}</h1>
-        <p class="prix prix-fiche">{plusieurs && "dès "}{euros(prix)}</p>
-        <p>{produit.description}</p>
-        <FicheTechnique produit={produit} />
-        <p class="doux machine">Configurateur et commande : chantier C3.</p>
+<Base titre={produit.nom} description={produit.description} image={photoPublique || undefined}>
+  <script type="application/ld+json" slot="tete" set:html={JSON.stringify(schemaProduit)} />
+  <script type="application/ld+json" slot="tete" set:html={JSON.stringify(schemaAriane)} />
+
+  <div class="conteneur fiche-page">
+    <nav class="ariane etiquette" aria-label="Fil d'Ariane">
+      <ol role="list">
+        {ariane.map((a, i) => (
+          <li>{i < ariane.length - 1 ? <a href={a.href}>{a.nom}</a> : <span aria-current="page">{a.nom}</span>}</li>
+        ))}
+      </ol>
+    </nav>
+
+    <div class="fiche">
+      <div class="fiche-visuel">
+        {avecTexte ? (
+          <ApercuGravure pieces={[produit]} disposition="fiche" />
+        ) : (
+          <PhotoPiece chemin={produit.image} alt={produit.nom} tailles="(max-width: 899px) 100vw, 620px" prioritaire />
+        )}
       </div>
+
+      <form class="fiche-achat" data-fiche novalidate>
+        <script type="application/json" data-fiche-donnees set:html={JSON.stringify(pourScript)} />
+        <Configurateur pieces={[produit]} personnalisable={avecTexte}>
+          <div class="pile" style="--pile: 12px" slot="tete">
+            <p class="etiquette">{numeroPiece(produit.numero)} · {categorie?.nom}</p>
+            <h1 class="fiche-titre">{produit.nom}</h1>
+            <p class="fiche-prix">
+              <span class="prix" data-fiche-prix>{euros(prixUnitaire)}</span>
+              {produit.prixBarre !== undefined && produit.prixBarre > produit.prix && <s class="doux">{euros(produit.prixBarre)}</s>}
+              <span class="machine">{dispoTexte}</span>
+            </p>
+            <p>{produit.description}</p>
+            {produit.instructions && <p class="machine">{produit.instructions}</p>}
+          </div>
+
+          {variantes && (
+            <fieldset class="cfg-groupe" slot="avant">
+              <legend class="cfg-legende">{variantes.nom || "Option"}</legend>
+              <div class="cfg-choix-ligne">
+                {variantes.choix.map((c, i) => (
+                  <label class="cfg-choix">
+                    <input type="radio" name="variante" value={i} checked={i === 0} />
+                    <span>{c.nom}{Number(c.prix) > 0 && ` · +${euros(Number(c.prix))}`}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
+          {avecPhoto && (
+            <div class="cfg-groupe">
+              <span class="cfg-legende" id="photo-titre">Votre photo ou logo (facultatif)</span>
+              <div class="photo-ligne">
+                <label class="photo-choisir">
+                  <input type="file" accept="image/*" data-photo aria-labelledby="photo-titre photo-libelle" />
+                  <span id="photo-libelle" data-photo-libelle>Choisir une photo</span>
+                </label>
+                <span class="photo-vignette" data-photo-vignette hidden></span>
+                <button type="button" class="photo-retirer machine" data-photo-retirer hidden>Retirer la photo</button>
+              </div>
+              <span class="etiquette doux">Depuis votre téléphone ou votre ordinateur. Vous pourrez aussi nous l'envoyer après la commande.</span>
+            </div>
+          )}
+
+          <div class="cfg-groupe">
+            <label class="cfg-legende" for="remarque">Précisions (facultatif)</label>
+            <textarea id="remarque" name="remarque" maxlength="500" rows="2" placeholder="Emplacement, couleur, date souhaitée…"></textarea>
+          </div>
+
+          {epuise ? (
+            <div class="pile" style="--pile: 12px">
+              <p>Cette pièce est épuisée pour le moment. Appelez-nous : nous pouvons peut-être vous en préparer une sur commande.</p>
+              <Bouton href="/contact/" genre="contour">Nous contacter</Bouton>
+            </div>
+          ) : (
+            <div class="pile" style="--pile: 14px">
+              <div class="achat">
+                <div class="quantite">
+                  <label class="cfg-legende" for="quantite">Quantité</label>
+                  <div class="quantite-champ">
+                    <button type="button" data-qte="-1" aria-label="Une pièce de moins">−</button>
+                    <input id="quantite" name="quantite" type="number" inputmode="numeric" min="1" max="99" value="1" />
+                    <button type="button" data-qte="1" aria-label="Une pièce de plus">+</button>
+                  </div>
+                </div>
+                <Bouton type="submit" genre="achat" taille="grand" class="achat-bouton">
+                  <span>Ajouter au panier · <span data-fiche-total>{euros(prixUnitaire)}</span></span>
+                </Bouton>
+                {/* Favori : le composant BoutonFavori.astro du chantier C2 viendra ici (<BoutonFavori id={produit.id} />). */}
+              </div>
+              <div class="confirmation" role="status" data-confirmation></div>
+              <p class="machine">
+                {produit.delai ? (
+                  <>Fabrication en {produit.delai} jour{produit.delai > 1 ? "s" : ""} après validation de la maquette<span data-date-prete></span>.</>
+                ) : (
+                  <>Délai de fabrication : <ACompleter quoi="délai de fabrication" /></>
+                )}
+              </p>
+            </div>
+          )}
+
+          <dl class="infos">
+            <div><dt class="etiquette">Retrait en boutique</dt><dd>Gratuit, {rue}, {ville}</dd></div>
+            <div><dt class="etiquette">Livraison</dt><dd>{euros(site.livraison)}, offerte dès {euros(site.livraisonOfferteDes)} d'achat</dd></div>
+            {modesPaiement.length > 0 && <div><dt class="etiquette">Paiement</dt><dd>{modesPaiement.join(", ou ").replace(/^./, (c) => c.toUpperCase())}</dd></div>}
+            <div><dt class="etiquette">Maquette</dt><dd><ACompleter quoi="maquette envoyée au client : à chaque commande ou sur demande ?" /></dd></div>
+          </dl>
+        </Configurateur>
+      </form>
     </div>
-  </section>
+
+    <section class="fiche-section" aria-labelledby="titre-fiche-technique">
+      <TeteSection id="titre-fiche-technique" titre="Fiche technique" texte={avecTexte ? "L'aperçu est indicatif : les vraies dimensions figureront ici dès que l'atelier les aura mesurées." : undefined} />
+      <FicheTechnique produit={produit} />
+    </section>
+
+    {avecTexte && (
+      <section class="fiche-section" aria-labelledby="titre-etapes">
+        <TeteSection id="titre-etapes" titre="Comment se passe votre commande" />
+        <ol class="etapes" role="list">
+          <li><span class="etape-n">01</span><strong>Vous écrivez votre texte</strong><span>Et vous choisissez {variantes ? `${variantes.nom.toLowerCase()} et ` : ""}la police.</span></li>
+          <li><span class="etape-n">02</span><strong>La maquette</strong><span><ACompleter quoi="comment la maquette est envoyée et validée" /></span></li>
+          <li><span class="etape-n">03</span><strong>Nous gravons à l'atelier</strong><span>Christophe ou Laetitia, à Auchel.</span></li>
+          <li><span class="etape-n">04</span><strong>Retrait ou livraison</strong><span>Gratuit en boutique, ou livré chez vous.</span></li>
+        </ol>
+      </section>
+    )}
+
+    {occasion && memeOccasion.length > 0 && (
+      <section class="fiche-section" aria-labelledby="titre-meme-occasion">
+        <TeteSection
+          id="titre-meme-occasion"
+          titre="Pour la même occasion"
+          lien={{ href: `/occasions/${occasion.id}/`, libelle: `${occasion.nom} · ${produitsDe({ occasion: occasion.id }).length} pièces` }}
+        />
+        <GrillePieces produits={memeOccasion.slice(0, 4)} colonnes="minmax(min(280px, 100%), 1fr)" />
+      </section>
+    )}
+  </div>
 </Base>
 
+<script>
+  import { ajouterAuPanier, nombreArticles } from "../../lib/panier";
+  import { preparerPhoto } from "../../lib/photo-piece";
+  import { euros } from "../../lib/format";
+
+  interface Donnees {
+    id: string;
+    nom: string;
+    prix: number;
+    variantes: { nom: string; choix: { nom: string; prix: number }[] } | null;
+    texte: boolean;
+    delai: number;
+  }
+
+  const form = document.querySelector<HTMLFormElement>("[data-fiche]")!;
+  const d: Donnees = JSON.parse(form.querySelector("[data-fiche-donnees]")!.textContent!);
+  const $ = <T extends Element = HTMLElement>(s: string) => form.querySelector<T>(s);
+  const qte = $<HTMLInputElement>("#quantite");
+  const confirmation = $("[data-confirmation]");
+  let photo = "", photoNom = "", photoCle = "";
+  let averti = false;
+
+  const varianteIndex = () => {
+    const v = $<HTMLInputElement>('[name="variante"]:checked');
+    return d.variantes && v ? Number(v.value) : null;
+  };
+  const prixUnitaire = () => {
+    const i = varianteIndex();
+    return d.prix + (i !== null ? Number(d.variantes!.choix[i].prix) || 0 : 0);
+  };
+  const quantite = () => Math.min(99, Math.max(1, parseInt(qte?.value || "1", 10) || 1));
+
+  function majPrix() {
+    $("[data-fiche-prix]")!.textContent = euros(prixUnitaire());
+    const total = $("[data-fiche-total]");
+    if (total) total.textContent = euros(prixUnitaire() * quantite());
+  }
+  form.addEventListener("input", majPrix);
+  form.addEventListener("change", majPrix);
+
+  form.querySelectorAll<HTMLButtonElement>("[data-qte]").forEach((b) =>
+    b.addEventListener("click", () => {
+      if (!qte) return;
+      qte.value = String(Math.min(99, Math.max(1, quantite() + Number(b.dataset.qte))));
+      majPrix();
+    }),
+  );
+  qte?.addEventListener("blur", () => (qte.value = String(quantite())));
+
+  // Date indicative : aujourd'hui + délai, sans compter les dimanches (logique de l'ancienne fiche).
+  const datePrete = $("[data-date-prete]");
+  if (datePrete && d.delai) {
+    const jour = new Date();
+    for (let n = 0; n < d.delai; ) {
+      jour.setDate(jour.getDate() + 1);
+      if (jour.getDay() !== 0) n++;
+    }
+    datePrete.textContent = ` : commandée aujourd'hui, prête vers le ${jour.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}`;
+  }
+
+  // Photo : réduite pour l'aperçu et le panier, version complète gardée pour la fabrication.
+  const champPhoto = $<HTMLInputElement>("[data-photo]");
+  const vignette = $("[data-photo-vignette]");
+  const retirer = $<HTMLButtonElement>("[data-photo-retirer]");
+  const libelle = $("[data-photo-libelle]");
+  const configurateur = form.querySelector("[data-configurateur]");
+  function montrerPhoto() {
+    if (vignette) {
+      vignette.hidden = !photo;
+      vignette.replaceChildren();
+      if (photo) vignette.append(Object.assign(new Image(), { src: photo, alt: `Votre photo : ${photoNom}` }));
+    }
+    if (retirer) retirer.hidden = !photo;
+    if (libelle) libelle.textContent = photo ? "Changer de photo" : "Choisir une photo";
+    configurateur?.dispatchEvent(new CustomEvent("configurateur:photo", { detail: photo }));
+  }
+  champPhoto?.addEventListener("change", async () => {
+    const fichier = champPhoto.files?.[0];
+    if (!fichier) return;
+    try {
+      const r = await preparerPhoto(fichier);
+      photo = r.apercu;
+      photoCle = r.cle;
+      photoNom = fichier.name;
+    } catch {
+      photo = photoNom = photoCle = "";
+      if (confirmation) confirmation.innerHTML = `<p>Cette image n'a pas pu être lue. Essayez une photo au format JPEG ou PNG.</p>`;
+    }
+    montrerPhoto();
+  });
+  retirer?.addEventListener("click", () => {
+    photo = photoNom = photoCle = "";
+    if (champPhoto) champPhoto.value = "";
+    montrerPhoto();
+    champPhoto?.focus();
+  });
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!qte || !confirmation) return; // pièce épuisée : pas d'achat
+    const champTexte = $<HTMLTextAreaElement>("[data-cfg-texte]");
+    const texte = (champTexte?.value ?? "").trim();
+    const remarque = ($<HTMLTextAreaElement>("#remarque")?.value ?? "").trim();
+    if (d.texte && !texte && !photo && !remarque && !averti) {
+      averti = true;
+      confirmation.innerHTML = `<p>Vous n'avez écrit aucun texte à graver. Appuyez encore sur « Ajouter au panier » pour l'ajouter quand même.</p>`;
+      champTexte?.focus();
+      return;
+    }
+    const i = varianteIndex();
+    const police = $<HTMLInputElement>('[name="police"]:checked')?.dataset.nom ?? "";
+    ajouterAuPanier({
+      id: d.id,
+      nom: d.nom,
+      prix: prixUnitaire(),
+      quantite: quantite(),
+      variante: i !== null ? `${d.variantes!.nom || "Option"} : ${d.variantes!.choix[i].nom}` : "",
+      varianteIndex: i,
+      texte: d.texte ? texte : "",
+      police: d.texte ? police : "",
+      photo,
+      photoNom,
+      photoCle,
+      remarque,
+    });
+    averti = false;
+    const n = nombreArticles();
+    confirmation.innerHTML =
+      `<p><strong>Ajouté au panier</strong> (${n} article${n > 1 ? "s" : ""}). ` +
+      `<a href="/panier/">Voir le panier</a> · <a href="/boutique/">Continuer mes achats</a></p>`;
+  });
+</script>
+
 <style>
-  .fiche { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 40px 64px; align-items: start; }
-  .fiche :global(.photo-piece), .fiche :global(.photo-attente) { border: var(--filet); }
-  .prix-fiche { font-size: 2.5rem; color: var(--gravure); }
+  .fiche-page { padding-block: 8px var(--section); }
+  .ariane ol { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-wrap: wrap; gap: 0 8px; }
+  .ariane li { display: flex; align-items: center; gap: 8px; min-height: var(--cible); }
+  .ariane li + li::before { content: "/"; }
+  .ariane a { display: inline-flex; align-items: center; min-height: var(--cible); }
+
+  .fiche { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px 64px; align-items: start; }
+  .fiche-visuel { position: sticky; top: 20px; min-width: 0; }
+  .fiche-visuel > :global(.photo-piece), .fiche-visuel > :global(.photo-attente) { border: var(--filet); }
+  .fiche-achat { min-width: 0; }
+  .fiche-titre { font-size: clamp(2.6rem, 4.6vw, 4.2rem); line-height: 0.92; }
+  .fiche-prix { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 20px; }
+  .fiche-prix .prix { font-size: 3rem; line-height: 1; color: var(--gravure); }
+
+  .photo-ligne { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+  .photo-choisir { position: relative; display: inline-flex; align-items: center; min-height: var(--cible); padding: 10px 16px; border: var(--filet); font-family: var(--f-machine); cursor: pointer; }
+  .photo-choisir:hover { background: var(--bouleau-fonce); }
+  .photo-choisir input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; min-height: 0; padding: 0; }
+  .photo-choisir:has(input:focus-visible) { outline: 2px solid var(--gravure); outline-offset: 2px; }
+  .photo-vignette { width: 64px; height: 64px; border: var(--filet); }
+  .photo-vignette :global(img) { width: 100%; height: 100%; object-fit: cover; }
+  .photo-vignette[hidden] { display: none; }
+  .photo-retirer { min-height: var(--cible); padding: 0 4px; background: none; border: 0; text-decoration: underline; text-underline-offset: 0.18em; cursor: pointer; }
+
+  .achat { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+  .quantite { display: flex; flex-direction: column; gap: 8px; }
+  .quantite-champ { display: flex; }
+  .quantite-champ button { width: 48px; min-height: 56px; border: var(--filet); background: transparent; font-family: var(--f-titre); font-weight: 800; font-size: 1.5rem; cursor: pointer; }
+  .quantite-champ button:hover { background: var(--bouleau-fonce); }
+  .quantite-champ input { width: 60px; min-height: 56px; text-align: center; border-inline: 0; padding: 0; font-family: var(--f-titre); font-weight: 800; font-size: 1.5rem; -moz-appearance: textfield; appearance: textfield; }
+  .quantite-champ input::-webkit-inner-spin-button, .quantite-champ input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .achat :global(.achat-bouton) { flex: 1 1 260px; }
+  .confirmation:empty { display: none; }
+  .confirmation { padding: 12px 14px; border: var(--filet-fort); background: var(--papier); }
+  .confirmation :global(a) { font-weight: 600; }
+
+  .infos { margin: 0; border-top: var(--filet); }
+  .infos div { display: grid; grid-template-columns: minmax(0, 170px) minmax(0, 1fr); gap: 2px 16px; padding: 12px 0; border-bottom: var(--filet); }
+  .infos dd { margin: 0; }
+
+  .fiche-section { margin-top: 72px; }
+  .etapes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); border-top: var(--filet-fort); }
+  .etapes li { display: flex; flex-direction: column; gap: 6px; padding: 18px 24px 22px 0; border-bottom: var(--filet); }
+  .etape-n { font-family: var(--f-titre); font-weight: 800; font-size: 2.5rem; line-height: 1; color: var(--gravure); }
+
+  @media (max-width: 899px) {
+    .fiche { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+    .fiche-visuel { position: static; }
+    .fiche-prix .prix { font-size: 2.5rem; }
+    .infos div { grid-template-columns: minmax(0, 1fr); }
+    .fiche-section { margin-top: 56px; }
+  }
 </style>
