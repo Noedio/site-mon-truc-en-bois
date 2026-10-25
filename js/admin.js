@@ -112,7 +112,6 @@
   // pour les commandes, la caisse et les clients ; seule la modification du site est suspendue.
   let publicationBloquee = "";
   let onglet = "accueil";
-  let filtre = { q: "", cat: "" };
   const apercusLocaux = {}; // chemin image → dataURL (photos envoyées mais pas encore en ligne)
 
   // Complète les champs ajoutés au fil des versions, pour que l'admin et le site s'y retrouvent.
@@ -193,12 +192,7 @@
   const vignette = (chemin) =>
     chemin ? `<span class="ligne-image"><img src="${echapper(srcImage(chemin))}" alt="" loading="lazy"></span>` : `<span class="ligne-image">Sans photo</span>`;
   const premiereImage = (p) => p.images?.[0] || p.image || "";
-  const numeroPiece = (n) => `N° ${String(n).padStart(3, "0")}`;
   const numeroLibre = () => Math.max(0, ...D.produits.map((p) => Number(p.numero) || 0)) + 1;
-  const ICONES = {
-    coeur: `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>`,
-    oeil: `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>`,
-  };
 
   // ---------- Photos : redimensionnement puis envoi dans img/ ----------
   function redimensionner(fichier, max = 1200) {
@@ -471,7 +465,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
     clients: () => `<div id="zone-crm"></div>`,
     demandes: () => `<div id="zone-crm"></div>`,
     marketing: () => `<div id="zone-crm"></div>`,
-    produits: () => vueProduits(),
+    produits: () => `<div id="zone-produits"></div>`,
     categories: () => vueCategories() + vueOccasions(),
     avis: () => vueAvis(),
     faq: () => vueFaq(),
@@ -493,6 +487,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
     if (onglet === "installation") window.AdminInstallation?.monter($("#zone-installation"), contexte());
     if (["caisse", "clients", "demandes", "marketing"].includes(onglet)) window.AdminCRM?.monter(onglet, $("#zone-crm"), contexte());
     if (onglet === "questionnaire") window.AdminQuestionnaire?.monter($("#zone-questionnaire"), contexte());
+    if (onglet === "produits") window.AdminProduits?.monter($("#zone-produits"), outilsProduits());
     if (onglet === "accueil") {
       actionsDuJour().catch(() => ($("#jour-actions").innerHTML = ""));
       window.AdminCRM?.statistiques($("#stats-ventes"), contexte()).catch(() => {});
@@ -560,7 +555,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
     return `<div class="champ ${large ? "large" : ""}"><label for="${id}">${libelle}</label>${entree}${aide ? `<small>${aide}</small>` : ""}</div>`;
   }
 
-  // Saisie dans les onglets : champs simples, listes éditables (avis, FAQ, occasions), prix rapide
+  // Saisie dans les onglets : champs simples, listes éditables (avis, FAQ, occasions)
   $("#contenu").addEventListener("input", (e) => {
     const el = e.target;
     if (el.dataset.chemin) {
@@ -574,24 +569,10 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
       const item = D[el.dataset.liste][el.dataset.i];
       item[el.dataset.champ] = el.dataset.type === "nombre" ? Number(el.value || 0) : el.value;
       marquerModifie();
-    } else if (el.dataset.prix !== undefined) {
-      D.produits[el.dataset.prix].prix = Number(el.value || 0);
-      marquerModifie();
-    } else if (el.id === "filtre-q") {
-      filtre.q = el.value;
-      const pos = el.selectionStart;
-      rendre();
-      const q = $("#filtre-q");
-      q.focus();
-      q.setSelectionRange(pos, pos);
     }
   });
   $("#contenu").addEventListener("change", async (e) => {
     const el = e.target;
-    if (el.id === "filtre-cat") {
-      filtre.cat = el.value;
-      rendre();
-    }
     if (el.id === "g-ajout") {
       for (const fichier of el.files) {
         try {
@@ -711,236 +692,16 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
       </section>`;
   }
 
-  // ---------- Vue : Produits ----------
-  function vueProduits() {
-    const cats = Object.fromEntries(D.categories.map((c) => [c.id, c.nom]));
-    const q = filtre.q.toLowerCase();
-    const liste = D.produits
-      .map((p, i) => ({ p, i }))
-      .filter(({ p }) => (!filtre.cat || p.categorie === filtre.cat) && (!q || p.nom.toLowerCase().includes(q)));
-    return `
-      <section class="bloc">
-        <div class="bloc-tete">
-          <h2>Produits <span class="aide">(${D.produits.length})</span></h2>
-          <button class="btn" data-action="nouveau-produit">+ Ajouter un produit</button>
-        </div>
-        <p class="aide">Changez un prix directement dans la liste. Le cœur met le produit dans les coups de cœur de l'accueil, l'œil l'affiche ou le masque sur le site. Délai, matière, dimensions : bouton Modifier, ou le Questionnaire.</p>
-        <div class="barre">
-          <input type="search" id="filtre-q" placeholder="Rechercher…" value="${echapper(filtre.q)}" aria-label="Rechercher un produit">
-          <select id="filtre-cat" aria-label="Filtrer par catégorie">
-            <option value="">Toutes les catégories</option>
-            ${D.categories.map((c) => `<option value="${echapper(c.id)}" ${filtre.cat === c.id ? "selected" : ""}>${echapper(c.nom)}</option>`).join("")}
-          </select>
-        </div>
-        <div class="liste">
-          ${liste
-            .map(
-              ({ p, i }) => `
-            <div class="ligne ligne-produit ${p.visible === false ? "masque" : ""}">
-              ${vignette(premiereImage(p))}
-              <div class="ligne-texte">
-                <strong>${echapper(p.nom)}<span class="pastilles">${p.badge ? `<span class="pastille">${BADGES[p.badge] || p.badge}</span>` : ""}${p.dispo && p.dispo !== "disponible" ? `<span class="pastille cache">${DISPOS[p.dispo]}</span>` : ""}${p.visible === false ? '<span class="pastille cache">Masqué</span>' : ""}</span></strong>
-                <span><span class="numero-piece">${numeroPiece(p.numero)}</span> · ${echapper(cats[p.categorie] || "Sans catégorie")} · ${p.delai > 0 ? `${p.delai} j` : `<span class="manque">délai à compléter</span>`}${p.images?.length > 1 ? ` · ${p.images.length} photos` : ""}</span>
-              </div>
-              <div class="rapide">
-                <input class="prix-rapide" type="number" step="0.01" min="0" value="${Number(p.prix || 0)}" data-prix="${i}" aria-label="Prix de ${echapper(p.nom)}" title="Prix (€)"> €
-                <button class="mini" data-action="basculer-vedette" data-i="${i}" aria-pressed="${!!p.vedette}" title="Coup de cœur" aria-label="Coup de cœur">${ICONES.coeur}</button>
-                <button class="mini oeil" data-action="basculer-visible" data-i="${i}" aria-pressed="${p.visible !== false}" title="Visible sur le site" aria-label="Visible sur le site">${ICONES.oeil}</button>
-              </div>
-              <div class="ligne-boutons">
-                <button class="mini" data-action="modifier-produit" data-i="${i}">Modifier</button>
-                <!-- Les gestes plus rares sont rangés dans « … » -->
-                <details class="plus-actions">
-                  <summary class="mini" aria-label="Plus d'actions pour ${echapper(p.nom)}">…</summary>
-                  <div class="plus-menu">
-                    <button data-action="monter" data-i="${i}" ${i === 0 ? "disabled" : ""}>Monter dans la liste</button>
-                    <button data-action="descendre" data-i="${i}" ${i === D.produits.length - 1 ? "disabled" : ""}>Descendre dans la liste</button>
-                    <button data-action="dupliquer-produit" data-i="${i}">Dupliquer</button>
-                    <button class="danger" data-action="supprimer-produit" data-i="${i}">Supprimer</button>
-                  </div>
-                </details>
-              </div>
-            </div>`
-            )
-            .join("") || `<p class="aide" style="padding:1rem 0">Aucun produit.</p>`}
-        </div>
-      </section>`;
-  }
+  // ---------- Vue : Produits (liste et éditeur : js/admin-produits.js) ----------
+  // Le module reçoit le contexte commun, plus l'envoi des photos, les identifiants, le n° de pièce libre et les libellés.
+  const outilsProduits = () => ({ ...contexte(), envoyerPhoto, idUnique, numeroLibre, BADGES, DISPOS });
+  const editerProduit = (index) => window.AdminProduits.editer(index, outilsProduits());
 
   function idUnique(base, liste, sauf = -1) {
     let id = slug(base);
     let n = 2;
     while (liste.some((x, i) => x.id === id && i !== sauf)) id = `${slug(base)}-${n++}`;
     return id;
-  }
-
-  // Fenêtre d'édition d'un produit (travaille sur une copie, appliquée à « Valider »)
-  function editerProduit(index) {
-    const nouveau = index < 0;
-    const p = nouveau
-      ? { id: "", nom: "", categorie: D.categories[0]?.id || "", prix: 0, images: [], description: "", options: { texte: true, photo: false }, visible: true, vedette: false, occasions: [], dispo: "disponible", badge: "", prixBarre: 0, delai: 0, instructions: "", numero: numeroLibre(), matiere: "", dimensions: "", zoneGravable: "", entretien: "" }
-      : structuredClone(D.produits[index]);
-    p.options ||= {};
-    p.images ||= p.image ? [p.image] : [];
-    p.occasions ||= [];
-    p.variantes ||= { nom: "", choix: [] };
-    const f = $("#fenetre");
-    const lignesVariantes = () =>
-      p.variantes.choix
-        .map(
-          (c, k) => `
-        <div class="variante-ligne">
-          <input type="text" data-v="nom" data-k="${k}" value="${echapper(c.nom)}" placeholder="Ex. : Grande" aria-label="Nom du choix">
-          <input type="number" step="0.01" min="0" data-v="prix" data-k="${k}" value="${Number(c.prix || 0)}" aria-label="Supplément en euros" title="Supplément (€)">
-          <button type="button" class="mini danger" data-v-suppr="${k}" aria-label="Retirer ce choix">✕</button>
-        </div>`
-        )
-        .join("");
-    const lignesPhotos = () =>
-      p.images
-        .map(
-          (src, k) => `
-        <div class="photo-edit">
-          <img src="${echapper(srcImage(src))}" alt="Photo ${k + 1}">
-          <div class="ligne-boutons">
-            <button type="button" class="mini" data-ph="gauche" data-k="${k}" ${k === 0 ? "disabled" : ""} aria-label="Avancer">←</button>
-            <button type="button" class="mini" data-ph="droite" data-k="${k}" ${k === p.images.length - 1 ? "disabled" : ""} aria-label="Reculer">→</button>
-            <button type="button" class="mini danger" data-ph="suppr" data-k="${k}" aria-label="Retirer">✕</button>
-          </div>
-        </div>`
-        )
-        .join("") + `<label class="ajout-photo">+ Ajouter<br>des photos<input type="file" accept="image/*" multiple id="p-photos" aria-label="Ajouter des photos"></label>`;
-    f.innerHTML = `
-      <form method="dialog" id="form-produit">
-        <h2 style="font-size:1.35rem">${nouveau ? "Nouveau produit" : "Modifier le produit"}</h2>
-        <div class="pile" style="gap:.5rem">
-          <span class="label" style="font-weight:600;font-size:.92rem">Photos</span>
-          <div class="photos-edit" id="p-photos-liste">${lignesPhotos()}</div>
-          <small class="aide">La première photo (encadrée) est la photo principale : montrez de préférence un produit déjà personnalisé. Format carré conseillé ; les photos sont réduites automatiquement.</small>
-        </div>
-        <div class="grille-champs">
-          <div class="champ large"><label for="p-nom">Nom du produit *</label><input type="text" id="p-nom" required value="${echapper(p.nom)}"></div>
-          <div class="champ"><label for="p-cat">Catégorie</label><select id="p-cat">${D.categories.map((c) => `<option value="${echapper(c.id)}" ${c.id === p.categorie ? "selected" : ""}>${echapper(c.nom)}</option>`).join("")}</select></div>
-          <div class="champ"><label for="p-dispo">Disponibilité</label><select id="p-dispo">${Object.entries(DISPOS).map(([k, v]) => `<option value="${k}" ${k === p.dispo ? "selected" : ""}>${v}</option>`).join("")}</select></div>
-          <div class="champ"><label for="p-prix">Prix de base (€) *</label><input type="number" id="p-prix" step="0.01" min="0" required value="${Number(p.prix || 0)}"></div>
-          <div class="champ"><label for="p-prix-barre">Ancien prix barré (€)</label><input type="number" id="p-prix-barre" step="0.01" min="0" value="${Number(p.prixBarre || 0) || ""}" placeholder="Pour une promotion"><small>Laisser vide sans promotion.</small></div>
-          <div class="champ"><label for="p-badge">Badge sur la photo</label><select id="p-badge">${Object.entries(BADGES).map(([k, v]) => `<option value="${k}" ${k === (p.badge || "") ? "selected" : ""}>${v}</option>`).join("")}</select></div>
-          <div class="champ large"><label for="p-desc">Description</label><textarea id="p-desc" rows="4">${echapper(p.description)}</textarea></div>
-          <div class="champ large"><label for="p-instructions">Consigne de personnalisation pour le client</label><input type="text" id="p-instructions" value="${echapper(p.instructions)}" placeholder="Ex. : Indiquez le prénom, la date de naissance, l'heure, le poids et la taille."></div>
-          <p class="sous-titre-form">Fiche technique (affichée sur la fiche du nouveau site)</p>
-          <div class="champ"><label for="p-numero">N° de pièce</label><input type="number" id="p-numero" min="1" step="1" value="${Number(p.numero) || ""}"><small>Affiché « ${numeroPiece(Number(p.numero) || numeroLibre())} » sur le site. Deux produits ne peuvent pas avoir le même.</small></div>
-          <div class="champ"><label for="p-delai">Délai de fabrication (jours)</label><input type="number" id="p-delai" min="0" step="1" value="${Number(p.delai || 0) || ""}" placeholder="Nombre de jours"><small>Compté après validation de la maquette.</small></div>
-          <div class="champ"><label for="p-matiere">Matière</label><input type="text" id="p-matiere" value="${echapper(p.matiere)}" placeholder="Essence de bois, verre, métal…"></div>
-          <div class="champ"><label for="p-dimensions">Dimensions</label><input type="text" id="p-dimensions" value="${echapper(p.dimensions)}" placeholder="Largeur × hauteur × épaisseur"><small>${p.variantes.choix.length ? `Pour chaque choix : ${echapper(p.variantes.choix.map((c) => c.nom).filter(Boolean).join(", "))}.` : "Une taille par choix si le produit en a plusieurs."}</small></div>
-          <div class="champ"><label for="p-zone">Zone gravable</label><input type="text" id="p-zone" value="${echapper(p.zoneGravable)}" placeholder="Surface où l'on peut graver"></div>
-          <div class="champ"><label for="p-entretien">Entretien</label><input type="text" id="p-entretien" value="${echapper(p.entretien)}" placeholder="Nettoyage, ce qu'il faut éviter"></div>
-        </div>
-        <div class="interrupteurs">
-          <label class="case"><input type="checkbox" id="p-visible" ${p.visible !== false ? "checked" : ""}> Visible sur le site</label>
-          <label class="case"><input type="checkbox" id="p-vedette" ${p.vedette ? "checked" : ""}> Coup de cœur (page d'accueil)</label>
-          <label class="case"><input type="checkbox" id="p-texte" ${p.options.texte ? "checked" : ""}> Le client peut saisir un texte</label>
-          <label class="case"><input type="checkbox" id="p-opt-photo" ${p.options.photo ? "checked" : ""}> Le client peut envoyer une photo</label>
-        </div>
-        ${D.occasions.length ? `
-        <div class="pile" style="gap:.5rem">
-          <span class="label" style="font-weight:600;font-size:.92rem">Occasions <small class="aide">(page « Idées cadeaux » et filtres)</small></span>
-          <div class="cases-occasions">${D.occasions.map((o) => `<label class="case"><input type="checkbox" data-occasion="${echapper(o.id)}" ${p.occasions.includes(o.id) ? "checked" : ""}> ${echapper(o.nom)}</label>`).join("")}</div>
-        </div>` : ""}
-        <div class="pile" style="gap:.6rem">
-          <div class="champ"><label for="p-var-nom">Choix proposés au client <small class="aide">(facultatif : taille, couleur, finition…)</small></label>
-            <input type="text" id="p-var-nom" value="${echapper(p.variantes.nom)}" placeholder="Intitulé, ex. : Taille"></div>
-          <div class="pile" id="p-variantes" style="gap:.5rem">${lignesVariantes()}</div>
-          <button type="button" class="mini" id="p-var-ajout" style="justify-self:start">+ Ajouter un choix</button>
-          <small class="aide">Le supplément s'ajoute au prix de base (0 si même prix).</small>
-        </div>
-        <details>
-          <summary>Avancé</summary>
-          <div class="champ" style="margin-top:.8rem"><label for="p-id">Identifiant (adresse de la page)</label><input type="text" id="p-id" value="${echapper(p.id)}" placeholder="créé automatiquement à partir du nom"><small>Évitez de le changer : les liens déjà partagés ne marcheraient plus.</small></div>
-        </details>
-        <div class="fenetre-pied">
-          <button type="button" class="btn btn-ligne" id="p-annuler">Annuler</button>
-          <button type="submit" class="btn">Valider</button>
-        </div>
-      </form>`;
-
-    const lireVariantes = () => {
-      f.querySelectorAll("[data-v]").forEach((el) => {
-        const c = p.variantes.choix[el.dataset.k];
-        c[el.dataset.v] = el.dataset.v === "prix" ? Number(el.value || 0) : el.value;
-      });
-    };
-    const majPhotos = () => ($("#p-photos-liste", f).innerHTML = lignesPhotos());
-    $("#p-var-ajout", f).onclick = () => {
-      lireVariantes();
-      p.variantes.choix.push({ nom: "", prix: 0 });
-      $("#p-variantes", f).innerHTML = lignesVariantes();
-    };
-    $("#p-variantes", f).onclick = (e) => {
-      const k = e.target.dataset.vSuppr;
-      if (k === undefined) return;
-      lireVariantes();
-      p.variantes.choix.splice(Number(k), 1);
-      $("#p-variantes", f).innerHTML = lignesVariantes();
-    };
-    $("#p-photos-liste", f).onclick = (e) => {
-      const b = e.target.closest("[data-ph]");
-      if (!b) return;
-      const k = Number(b.dataset.k);
-      if (b.dataset.ph === "gauche") [p.images[k - 1], p.images[k]] = [p.images[k], p.images[k - 1]];
-      if (b.dataset.ph === "droite") [p.images[k + 1], p.images[k]] = [p.images[k], p.images[k + 1]];
-      if (b.dataset.ph === "suppr") p.images.splice(k, 1);
-      majPhotos();
-    };
-    $("#p-photos-liste", f).onchange = async (e) => {
-      if (e.target.id !== "p-photos") return;
-      for (const fichier of e.target.files) {
-        try {
-          p.images.push(await envoyerPhoto(fichier, $("#p-nom", f).value || "produit"));
-          majPhotos();
-        } catch (err) {
-          toast(`Échec de l'envoi de la photo (${err.detail || err.message}).`, true);
-        }
-      }
-    };
-    $("#p-annuler", f).onclick = () => f.close();
-    $("#form-produit", f).onsubmit = (e) => {
-      e.preventDefault();
-      const numero = parseInt($("#p-numero", f).value, 10) || 0;
-      const doublon = numero && D.produits.find((x, k) => k !== index && Number(x.numero) === numero);
-      if (doublon) return toast(`Le ${numeroPiece(numero)} est déjà celui de « ${doublon.nom} ». Choisissez un autre numéro.`, true);
-      lireVariantes();
-      p.nom = $("#p-nom", f).value.trim();
-      p.categorie = $("#p-cat", f).value;
-      p.dispo = $("#p-dispo", f).value;
-      p.prix = Number($("#p-prix", f).value || 0);
-      p.prixBarre = Number($("#p-prix-barre", f).value || 0);
-      p.badge = $("#p-badge", f).value;
-      p.delai = Math.max(0, parseInt($("#p-delai", f).value, 10) || 0);
-      p.numero = numero > 0 ? numero : numeroLibre();
-      p.matiere = $("#p-matiere", f).value.trim();
-      p.dimensions = $("#p-dimensions", f).value.trim();
-      p.zoneGravable = $("#p-zone", f).value.trim();
-      p.entretien = $("#p-entretien", f).value.trim();
-      p.description = $("#p-desc", f).value.trim();
-      p.instructions = $("#p-instructions", f).value.trim();
-      p.visible = $("#p-visible", f).checked;
-      p.vedette = $("#p-vedette", f).checked;
-      p.options = { texte: $("#p-texte", f).checked, photo: $("#p-opt-photo", f).checked };
-      p.occasions = [...f.querySelectorAll("[data-occasion]:checked")].map((x) => x.dataset.occasion);
-      p.image = p.images[0] || "";
-      p.variantes.nom = $("#p-var-nom", f).value.trim();
-      p.variantes.choix = p.variantes.choix.filter((c) => c.nom.trim());
-      if (!p.variantes.choix.length) delete p.variantes;
-      p.id = idUnique($("#p-id", f).value.trim() || p.nom, D.produits, index);
-      if (nouveau) D.produits.unshift(p);
-      else D.produits[index] = p;
-      f.close();
-      marquerModifie();
-      if (onglet !== "produits") allerA("produits");
-      else rendre();
-      toast("Produit enregistré. Pensez à cliquer sur « Publier les modifications ».");
-    };
-    f.showModal();
   }
 
   // ---------- Vue : Catégories et occasions ----------
@@ -1371,7 +1132,6 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
     const i = Number(b.dataset.i);
     const a = b.dataset.action;
     if (a === "nouveau-produit") return editerProduit(-1);
-    if (a === "modifier-produit") return editerProduit(i);
     if (a === "nouvelle-categorie") return editerCategorie(-1);
     if (a === "modifier-categorie") return editerCategorie(i);
     if (a === "telecharger") return telechargerSauvegarde();
@@ -1382,23 +1142,6 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
       D.site.apercu = false;
       toast("Commandes ouvertes : cliquez sur « Publier les modifications » pour l'appliquer au site.");
     }
-    if (a === "dupliquer-produit") {
-      const copie = structuredClone(D.produits[i]);
-      copie.nom += " (copie)";
-      copie.id = idUnique(copie.nom, D.produits);
-      copie.visible = false;
-      copie.numero = numeroLibre();
-      D.produits.splice(i + 1, 0, copie);
-      toast("Copie créée (masquée). Modifiez-la puis rendez-la visible.");
-    }
-    if (a === "supprimer-produit") {
-      if (!confirm(`Supprimer « ${D.produits[i].nom} » ?`)) return;
-      D.produits.splice(i, 1);
-    }
-    if (a === "basculer-vedette") D.produits[i].vedette = !D.produits[i].vedette;
-    if (a === "basculer-visible") D.produits[i].visible = D.produits[i].visible === false;
-    if (a === "monter") echanger(D.produits, i, i - 1);
-    if (a === "descendre") echanger(D.produits, i, i + 1);
     if (a === "cat-monter") echanger(D.categories, i, i - 1);
     if (a === "cat-descendre") echanger(D.categories, i, i + 1);
     if (a === "supprimer-categorie") {
