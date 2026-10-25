@@ -1,7 +1,8 @@
 // POST /functions/v1/admin — actions réservées à la boutique (connectée à son compte Supabase) :
 //   etat           : ce qui est configuré côté serveur (Stripe, webhook, emails…)
 //   lien_paiement  : crée un lien de paiement Stripe pour une commande (et l'envoie au client si demandé)
-//   notifier       : envoie au client un email sur l'avancement de sa commande
+//   notifier       : envoie au client un email sur l'avancement de sa commande,
+//                    ou un rappel (relance : maquette à valider, paiement) dont la date est gardée dans relance_le
 //   photos         : liens temporaires pour télécharger les photos envoyées par le client
 //   creer_commande : vente en boutique, commande par téléphone ou sur un salon
 //   email_client   : message libre à un client (CRM)
@@ -11,7 +12,7 @@
 import {
   catalogue, chercherCodePromo, compterUtilisation, creerPaiementStripe, db, enregistrerClient, env, ErreurClient, euros, json, lireJson, montantRemise, servir, urlLecturePhoto,
 } from "../_shared/outils.ts";
-import { emailCampagne, emailLibre, emailLienPaiement, emailStatut, envoyerEmail, envoyerLot, expediteur, fournisseurEmail } from "../_shared/emails.ts";
+import { emailCampagne, emailLibre, emailLienPaiement, emailRelance, emailStatut, envoyerEmail, envoyerLot, expediteur, fournisseurEmail } from "../_shared/emails.ts";
 
 type LigneSaisie = { id?: string; nom?: string; prix_unitaire?: number; quantite?: number; texte?: string; remarque?: string; variante?: string };
 type RemiseSaisie = { portee?: "ligne" | "ticket"; ligne?: number; mode?: "pourcent" | "euros"; valeur?: number; libelle?: string };
@@ -25,6 +26,7 @@ type Demande = {
   essai?: boolean;
   commande_id?: string;
   envoyer?: boolean;
+  relance?: boolean;
   message?: string;
   sujet?: string;
   email?: string;
@@ -47,6 +49,7 @@ type Demande = {
     port?: number;
     notes?: string;
     date_souhaitee?: string;
+    echeance?: string; // date « prête le » fixée à la vente (AAAA-MM-JJ), sinon calculée par l'admin
   };
 };
 
@@ -97,6 +100,7 @@ function verifierContenu(base64: string) {
 }
 
 const arrondi = (n: number) => Math.round(n * 100) / 100;
+const dateValide = (v: unknown) => /^\d{4}-\d{2}-\d{2}$/.test(String(v ?? "")) && !isNaN(Date.parse(String(v)));
 const texte = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 
 // ---------- Caisse : remises cumulées et paiement en plusieurs moyens ----------
@@ -232,6 +236,7 @@ async function creerVente(v: NonNullable<Demande["vente"]>) {
       statut: ["nouvelle", "maquette_envoyee", "retouche", "confirmee", "en_fabrication", "prete", "expediee", "terminee"].includes(v.statut ?? "") ? v.statut : paye && canal !== "telephone" && v.mode_reception !== "livraison" ? "terminee" : "nouvelle",
       notes: texte(v.notes, 2000),
       cadeau: /^\d{4}-\d{2}-\d{2}$/.test(v.date_souhaitee ?? "") ? { date: v.date_souhaitee } : {},
+      ...(dateValide(v.echeance) ? { echeance: v.echeance } : {}),
     }),
   });
   return commande;
@@ -322,13 +327,20 @@ export const traiter = servir(async (req) => {
     const site = env("SITE_URL").replace(/\/$/, "");
     const url = await creerPaiementStripe(commande, `${site}/suivi.html`);
     const email = d.envoyer && !commande.client_email.endsWith(".invalid") ? await envoyerEmail({ a: commande.client_email, ...emailLienPaiement(commande, d.message) }) : null;
+    // Lien envoyé : c'est le premier rappel, la relance du paiement se calera sur cette date
+    if (email?.envoye) await db(`commandes?id=eq.${commande.id}`, { method: "PATCH", body: JSON.stringify({ relance_le: new Date().toISOString() }) });
     return json(req, { url, lien: `${site}/suivi.html?jeton=${commande.jeton_suivi}&payer=1`, email_envoye: !!email?.envoye });
   }
   if (d.action === "notifier") {
     if (commande.client_email.endsWith(".invalid")) throw new ErreurClient("Ce client n'a pas d'adresse email.");
-    const email = await envoyerEmail({ a: commande.client_email, ...emailStatut(commande, d.message) });
+    const contenu = d.relance ? emailRelance(commande, d.message) : emailStatut(commande, d.message);
+    if (!contenu) throw new ErreurClient("Rien à rappeler au client pour cette commande.");
+    const email = await envoyerEmail({ a: commande.client_email, ...contenu });
     if (!email.envoye) throw new ErreurClient(`Email non envoyé (${email.raison}).`);
-    return json(req, { email_envoye: true });
+    if (!d.relance) return json(req, { email_envoye: true });
+    const relance_le = new Date().toISOString();
+    await db(`commandes?id=eq.${commande.id}`, { method: "PATCH", body: JSON.stringify({ relance_le }) });
+    return json(req, { email_envoye: true, relance_le });
   }
   if (d.action === "photos") {
     const photos = await Promise.all(

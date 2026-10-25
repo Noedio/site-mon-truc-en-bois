@@ -724,3 +724,47 @@ Deno.test("caisse : remises de ligne, de ticket et codes cumulés dans l'ordre, 
   assertEquals((await vente({ remises: [{ portee: "ticket", mode: "euros", valeur: 80 }, { portee: "ticket", mode: "pourcent", valeur: 50 }], paiements: [{ moyen: "cheque", montant: 0 }] })).status, 201);
   assertEquals([commandes[1].remise, commandes[1].total, commandes[1].paiement_moyen], [49.8, 0, "cheque"]);
 });
+
+// ---------- Organisation de l'atelier ----------
+Deno.test("relances : maquette à valider puis paiement, date du rappel gardée ; rien à rappeler sinon", async () => {
+  reinitialiser();
+  await post(commande, demande());
+  const c = commandes[0];
+  const auth = { Authorization: "Bearer jeton-admin" };
+  const relancer = () => post(admin, { action: "notifier", commande_id: c.id, relance: true }, auth);
+
+  assertEquals((await relancer()).status, 400); // commande à maquetter : rien à rappeler
+  assertEquals(c.relance_le, undefined);
+
+  c.statut = "maquette_envoyee";
+  c.historique.push({ date: "2026-10-20T09:00:00Z", statut: "maquette_envoyee" });
+  appels = [];
+  const r = await (await relancer()).json();
+  assertEquals(r.email_envoye, true);
+  assertEquals(c.relance_le, r.relance_le);
+  assertMatch(emails()[0].subject, /votre maquette attend votre réponse/);
+  assert(emails()[0].html.includes("le 20 octobre"));
+
+  // Maquette validée, lien de paiement envoyé : l'envoi du lien compte comme premier rappel
+  c.statut = "confirmee";
+  c.relance_le = null;
+  await post(admin, { action: "lien_paiement", commande_id: c.id, envoyer: true }, auth);
+  assert(c.relance_le);
+  appels = [];
+  assertEquals((await relancer()).status, 200);
+  assertMatch(emails()[0].subject, /rappel de paiement/);
+  assert(emails()[0].html.includes("&amp;payer=1"));
+
+  c.paiement_statut = "paye";
+  assertEquals((await relancer()).status, 400); // déjà payée
+});
+
+Deno.test("caisse : date « prête le » fixée à la vente, ignorée si invalide", async () => {
+  reinitialiser();
+  const auth = { Authorization: "Bearer jeton-admin" };
+  const vente = (echeance: string) => post(admin, { action: "creer_commande", vente: { lignes: [{ id: "mug-personnalise", quantite: 1 }], canal: "telephone", echeance } }, auth);
+  assertEquals((await vente("2026-11-06")).status, 201);
+  assertEquals((await vente("demain")).status, 201);
+  assertEquals((await vente("2026-13-45")).status, 201);
+  assertEquals(commandes.map((c) => c.echeance), ["2026-11-06", undefined, undefined]);
+});

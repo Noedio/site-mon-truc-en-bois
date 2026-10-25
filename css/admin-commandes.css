@@ -1,1 +1,207 @@
 /* Commandes, liste « à faire » et accueil de l'admin (admin-commandes). Chargé après admin.css : réutiliser ses jetons et ses briques. */
+
+/* Texte lu par les lecteurs d'écran seulement */
+.cmd-cache { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.cmd-tard { color: var(--gravure); font-weight: 600; }
+
+/* ---------- Page Commandes : bascule « À faire » / « Toutes les commandes » ---------- */
+.cmd-barre { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem 1rem; flex-wrap: wrap; }
+.cmd-vues { display: inline-flex; border: var(--filet); }
+.cmd-vues button {
+  min-height: var(--cible); padding: 0 1rem; border: 0; background: var(--papier); color: var(--brule); cursor: pointer;
+  font: 600 0.95rem var(--f-texte); display: inline-flex; align-items: center; gap: 0.45rem;
+}
+.cmd-vues button + button { border-left: var(--filet); }
+.cmd-vues button:hover { background: var(--bouleau-fonce); }
+.cmd-vues button[aria-pressed="true"] { background: var(--brule); color: var(--bouleau); }
+.cmd-vues small { font: 400 0.8rem var(--f-mono); }
+.bloc.cmd-afaire, .bloc.cmd-liste { gap: 1rem; }
+
+/* ---------- Plan de charge : pièces à finir par jour ---------- */
+.charge { display: grid; gap: 0.5rem; }
+.charge-tete { display: flex; align-items: baseline; gap: 0.4rem 0.9rem; flex-wrap: wrap; }
+.charge-tete h3 { font-size: 1.2rem; }
+.charge-jours { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border: var(--filet); }
+.charge-jours li { display: grid; grid-template-rows: auto auto 26px; gap: 0.15rem; padding: 0.45rem 0.6rem 0.5rem; min-width: 0; }
+.charge-jours li + li { border-left: var(--filet-doux); }
+.charge-jour { font: 400 0.78rem/1.2 var(--f-mono); color: var(--texte-doux); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.charge-jours strong { font: 800 1.55rem/1 var(--f-titre); font-variant-numeric: tabular-nums; }
+.charge-barre { display: flex; align-items: flex-end; border-bottom: 1px solid var(--brule); }
+.charge-barre span { display: block; width: 100%; background: var(--brule); }
+.charge-auj { background: var(--papier); }
+.charge-auj .charge-jour { color: var(--brule); font-weight: 700; }
+.charge-retard strong { color: var(--gravure); }
+.charge-retard .charge-barre span { background: var(--gravure); }
+.charge-retard .charge-jour { color: var(--gravure); font-weight: 700; }
+.charge-passe strong, .charge-ferie strong { color: var(--texte-doux); }
+.charge-ferie strong { font: 400 0.85rem/1.8 var(--f-mono); }
+.charge-vide { padding-block: 0.2rem; }
+
+/* ---------- Liste « À faire » : une ligne par action, rangées par échéance ---------- */
+.af-groupe { display: grid; gap: 0.35rem; }
+.af-tete { display: flex; align-items: baseline; gap: 0.3rem 0.9rem; flex-wrap: wrap; }
+.af-tete h3 { font-size: 1.2rem; }
+.af-compte { font: 400 0.85rem var(--f-mono); color: var(--texte-doux); }
+.af-g-retard .af-tete h3, .af-g-retard .af-compte { color: var(--gravure); }
+details.af-groupe > summary { list-style: none; cursor: pointer; min-height: var(--cible); display: flex; font-weight: inherit; }
+details.af-groupe > summary::-webkit-details-marker { display: none; }
+details.af-groupe > summary h3::before { content: "▸ "; color: var(--texte-doux); }
+details.af-groupe[open] > summary h3::before { content: "▾ "; }
+.af-liste { list-style: none; margin: 0; padding: 0; border-top: var(--filet); }
+.af-ligne { display: grid; grid-template-columns: 9rem minmax(0, 1fr) auto; gap: 0.2rem 0.9rem; align-items: center; border-bottom: var(--filet-doux); padding-block: 0.15rem; }
+.af-quand { font: 400 0.85rem var(--f-mono); color: var(--texte-doux); white-space: nowrap; }
+.af-retard .af-quand { color: var(--gravure); font-weight: 700; }
+.af-aujourdhui .af-quand { color: var(--brule); font-weight: 700; }
+.af-quoi {
+  display: grid; gap: 0.1rem; min-height: var(--cible); padding: 0.35rem 0; border: 0; background: none; text-align: left;
+  font: inherit; color: var(--brule); cursor: pointer; min-width: 0;
+}
+.af-quoi strong { font-weight: 600; }
+.af-quoi > span { font-size: 0.86rem; color: var(--texte-doux); line-height: 1.35; }
+.af-quoi:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+.af-quoi b { color: var(--gravure); font-weight: 600; }
+.af-num { font: 400 0.8rem var(--f-mono); }
+.af-gestes { display: flex; gap: 0.35rem; justify-content: flex-end; flex-wrap: wrap; }
+.af-gestes .mini { white-space: nowrap; }
+.mini.af-principal { background: var(--brule); color: var(--bouleau); border-color: var(--brule); font-weight: 600; }
+.mini.af-principal:hover { background: var(--ardoise); }
+.af-fixer { display: grid; gap: 0.15rem; font: 700 0.78rem var(--f-mono); color: var(--gravure); padding-block: 0.3rem; }
+.af-fixer input { width: 100%; padding: 0.3em 0.4em; font: 400 0.85rem var(--f-mono); }
+.af-vide { color: var(--texte-doux); padding: 0.4rem 0; }
+.af-pied { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem 1rem; flex-wrap: wrap; border-top: var(--filet); padding-top: 0.8rem; }
+
+/* Accueil : la même liste, dans un cadre */
+.jour-afaire { display: grid; gap: 1rem; border: var(--filet); background: var(--bouleau); padding: clamp(16px, 2.5vw, 24px); }
+.jour-afaire > * { min-width: 0; }
+
+@media (max-width: 640px) {
+  /* Date et gestes sur la première ligne, l'action sur toute la largeur en dessous */
+  .af-ligne { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "quand gestes" "quoi quoi"; padding-top: 0.45rem; align-items: center; }
+  .af-quand { grid-area: quand; font-size: 0.8rem; }
+  .af-quoi { grid-area: quoi; padding-top: 0.15rem; min-height: 0; padding-bottom: 0.5rem; }
+  .af-gestes { grid-area: gestes; }
+  .af-fixer input { width: 10rem; }
+  .bloc.cmd-afaire, .bloc.cmd-liste, .jour-afaire { padding: 14px 12px; }
+  .cmd-filtre > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .charge-jours li { padding-inline: 0.35rem; }
+  .charge-jour { font-size: 0.72rem; white-space: normal; } /* « lun. » au-dessus de « 26 » */
+  .charge-jours li { grid-template-rows: 2.2em auto 26px; }
+  .charge-jours strong { font-size: 1.3rem; }
+  .cmd-barre .raccourcis .btn-ligne { display: none; } /* « Actualiser » : la liste se recharge seule */
+}
+
+/* ---------- Toutes les commandes : tableau dense ---------- */
+.cmd-outils { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.cmd-outils input[type="search"] { flex: 1 1 260px; min-width: 0; width: auto; }
+.cmd-filtre { display: inline-flex; align-items: center; gap: 0.45rem; font: 400 0.85rem var(--f-mono); color: var(--texte-doux); }
+.cmd-filtre select { width: auto; font-family: var(--f-texte); }
+.cmd-table { width: 100%; border-collapse: collapse; font-size: 0.93rem; }
+.cmd-table th { font: 400 0.78rem var(--f-mono); color: var(--texte-doux); text-align: left; padding: 0.35rem 0.5rem; border-bottom: var(--filet); white-space: nowrap; }
+.cmd-table td { padding: 0.5rem; border-bottom: var(--filet-doux); vertical-align: top; }
+.cmd-table th:first-child, .cmd-table td:first-child { padding-left: 0.2rem; }
+.cmd-table tbody tr { cursor: pointer; }
+.cmd-table tbody tr:hover { background: var(--papier); }
+.cmd-table .n { text-align: right; white-space: nowrap; }
+.cmd-nom { border: 0; background: none; padding: 0; font: 600 0.98rem var(--f-texte); color: var(--brule); text-align: left; cursor: pointer; }
+.cmd-nom:hover { text-decoration: underline; text-underline-offset: 3px; }
+.cmd-client small, .cmd-echeance small { display: block; font: 400 0.78rem/1.4 var(--f-mono); color: var(--texte-doux); }
+.cmd-echeance small.cmd-tard { color: var(--gravure); }
+.cmd-pieces { color: var(--texte-doux); max-width: 16rem; }
+.cmd-statut, .cmd-echeance, .cmd-paiement { white-space: nowrap; }
+.cmd-statut.s-nouvelle, .cmd-statut.s-retouche { color: var(--gravure); font-weight: 600; }
+.cmd-statut.s-terminee, .cmd-statut.s-annulee { color: var(--texte-doux); }
+.cmd-total { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 760px) {
+  .cmd-table, .cmd-table tbody { display: block; }
+  .cmd-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .cmd-table .cmd-statut { white-space: normal; }
+  .cmd-table tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; column-gap: 0.8rem; row-gap: 0.15rem; padding: 0.6rem 0.1rem; border-bottom: var(--filet-doux); }
+  .cmd-table td { padding: 0; border: 0; }
+  .cmd-table td:first-child { padding-left: 0; }
+  .cmd-client { grid-column: 1 / 3; grid-row: 1; }
+  .cmd-total { grid-column: 3; grid-row: 1; }
+  .cmd-statut { grid-column: 1; grid-row: 2; font-size: 0.88rem; }
+  .cmd-echeance { grid-column: 2; grid-row: 2; font-size: 0.88rem; text-align: right; }
+  .cmd-paiement { grid-column: 3; grid-row: 2; font-size: 0.88rem; text-align: right; }
+  .cmd-pieces { grid-column: 1 / -1; grid-row: 3; font-size: 0.85rem; max-width: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+
+/* ---------- Fiche d'une commande : tiroir à droite (plein écran au téléphone) ---------- */
+.fenetre.tiroir-commande { inset: 0 0 0 auto; margin: 0; width: min(680px, 100%); height: 100dvh; max-height: 100dvh; border-width: 0 0 0 1px; }
+.fenetre.tiroir-commande form.cmd-fiche { display: flex; flex-direction: column; gap: 0.9rem; min-height: 100%; padding: 0 clamp(16px, 3vw, 28px); }
+.cmd-tete { position: sticky; top: 0; z-index: 3; background: var(--bouleau); display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 0 1rem; padding: 0.9rem 0 0.2rem; border-bottom: var(--filet); }
+.cmd-tete-texte { display: grid; gap: 0.25rem; min-width: 0; }
+.cmd-tete h2 { font-size: 1.7rem; overflow-wrap: anywhere; }
+.cmd-contact { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0 1.1rem; font-size: 0.92rem; margin: 0; }
+.cmd-contact a, .cmd-contact span { display: inline-flex; align-items: center; min-height: var(--cible); overflow-wrap: anywhere; }
+.cmd-tete-droite { display: flex; align-items: center; gap: 0.6rem; flex: none; }
+.cmd-montant { font: 800 1.5rem/1 var(--f-titre); font-variant-numeric: tabular-nums; }
+
+/* Fil d'avancement : six segments sur une ligne ; au téléphone, l'étape en cours est nommée au-dessus */
+.fil { display: grid; gap: 0.35rem; }
+.fil-court { display: none; font: 400 0.85rem var(--f-mono); color: var(--texte-doux); }
+.fil-court strong { color: var(--brule); }
+.fil-etapes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
+.fil-etapes li { border-top: 5px solid var(--kraft); padding-top: 0.35rem; font-size: 0.8rem; line-height: 1.2; color: var(--texte-doux); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fil-etapes li.faite { border-top-color: var(--brule); }
+.fil-etapes li.en-cours { border-top-color: var(--brule); color: var(--brule); font-weight: 700; }
+.fil-etapes li.en-cours.retouche { border-top-color: var(--gravure); color: var(--gravure); }
+.cmd-annulee { padding: 0.5rem 0.8rem; border: var(--filet-doux); color: var(--texte-doux); }
+@media (max-width: 560px) {
+  .fil-court { display: block; }
+  .fil-etapes li { font-size: 0; padding-top: 0; }
+}
+
+/* Prochaine étape : quoi, pour quand, et le geste qui le fait */
+.cmd-etape { display: grid; gap: 0.7rem; background: var(--papier); border: var(--filet); padding: 0.9rem 1rem 1rem; }
+.cmd-etape-tete { display: grid; gap: 0.2rem; }
+.cmd-etape-tete h3 { font-size: 1.45rem; }
+.cmd-etape-tete p { font-size: 0.92rem; }
+.cmd-prete { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.8rem; padding-block: 0.5rem; border-block: var(--filet-doux); }
+.cmd-prete label { font-weight: 600; }
+.cmd-prete input { width: auto; font-family: var(--f-mono); }
+.cmd-prete > span { flex: 1 1 100%; font-size: 0.86rem; }
+.cmd-lien-texte { border: 0; background: none; padding: 0; font: inherit; color: var(--brule); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.cmd-gestes { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.cmd-payer { display: inline-flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+.cmd-payer select { width: auto; }
+.cmd-prevenir { display: flex; flex-wrap: wrap; align-items: center; gap: 0 1.2rem; }
+.cmd-prevenir details { flex: 1 1 220px; }
+.cmd-prevenir details summary { font-weight: 400; color: var(--brule); text-decoration: underline; text-underline-offset: 3px; }
+.cmd-prevenir textarea { width: 100%; margin-top: 0.3rem; }
+#cmd-lien:empty { display: none; }
+
+/* Sections repliables : le résumé reste lisible fermé */
+.cmd-section { border-top: var(--filet); }
+.cmd-section > summary { list-style: none; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.1rem 1rem; min-height: var(--cible); padding: 0.55rem 0; cursor: pointer; font-weight: inherit; }
+.cmd-section > summary::-webkit-details-marker { display: none; }
+.cmd-section > summary h3 { font-size: 1.15rem; }
+.cmd-section > summary h3::before { content: "▸ "; color: var(--texte-doux); }
+.cmd-section[open] > summary h3::before { content: "▾ "; }
+.cmd-resume { font-size: 0.86rem; color: var(--texte-doux); min-width: 0; overflow-wrap: anywhere; }
+.cmd-corps { display: grid; gap: 0.7rem; padding-bottom: 1rem; }
+.cmd-piece { display: grid; gap: 0.35rem; padding-bottom: 0.7rem; border-bottom: var(--filet-doux); }
+.cmd-piece:last-of-type { border-bottom: 0; }
+.cmd-piece-tete { display: flex; gap: 0.5rem; align-items: baseline; }
+.cmd-piece-tete .n { margin-left: auto; font-family: var(--f-mono); }
+.cmd-texte { display: grid; gap: 0.15rem; background: var(--bouleau-fonce); padding: 0.5rem 0.75rem; margin: 0; }
+.cmd-grave { font-size: 1.15rem; overflow-wrap: anywhere; }
+.cmd-photo { display: flex; align-items: center; gap: 0.8rem; }
+.cmd-photo img { width: 96px; height: 96px; object-fit: cover; border: var(--filet); display: block; }
+.cmd-faits { margin: 0; display: grid; }
+.cmd-faits > div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.3rem 0; border-bottom: var(--filet-doux); }
+.cmd-faits dt { color: var(--texte-doux); }
+.cmd-faits dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.cmd-historique { list-style: none; margin: 0; padding: 0; display: grid; }
+.cmd-historique li { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 0.6rem; padding: 0.25rem 0; border-bottom: var(--filet-doux); font-size: 0.9rem; }
+.cmd-historique span { font: 400 0.8rem/1.6 var(--f-mono); color: var(--texte-doux); }
+.fenetre.tiroir-commande .cmd-pied { margin-top: auto; margin-bottom: 0; padding-bottom: calc(0.8rem + env(safe-area-inset-bottom, 0px)); flex-wrap: wrap; }
+.cmd-pied .btn[type="submit"] { margin-left: auto; }
+
+@media (max-width: 640px) {
+  .fenetre.tiroir-commande { border-width: 0; }
+  .cmd-tete h2 { font-size: 1.45rem; }
+  .cmd-etape { padding: 0.8rem; }
+  .cmd-pied .btn { padding: 0.6em 0.8em; font-size: 0.95rem; }
+}

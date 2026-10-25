@@ -62,7 +62,7 @@ const json = JSON.stringify({
     </section>
 
     <section class="bande" data-zone="commande" hidden aria-labelledby="t-commande">
-      <div class="conteneur pile" style="--pile: 28px">
+      <div class="conteneur pile" style="--pile: 22px">
         <div class="pile" style="--pile: 8px">
           <p class="etiquette" data-numero></p>
           <h2 id="t-commande" class="titre-commande" tabindex="-1" data-titre></h2>
@@ -70,8 +70,9 @@ const json = JSON.stringify({
         </div>
         <div class="messages" data-messages></div>
 
-        <div data-bloc-frise>
+        <div class="bloc-frise" data-bloc-frise>
           <FriseEtapes id="frise-commande" libelle="Avancement de la commande" />
+          <p class="etape-courante" data-etape-courante></p>
         </div>
         <p class="annulee" data-annulee hidden>Cette commande a été annulée. Une question ? Appelez-nous au <a href={lienTel(site.telephone)}>{site.telephone}</a>.</p>
         <p class="colis" data-colis hidden></p>
@@ -172,9 +173,17 @@ const json = JSON.stringify({
       if (etat === "en-cours") li.setAttribute("aria-current", "step");
       else li.removeAttribute("aria-current");
       $("[data-etat-lu]", li).textContent = ` (${ETATS_LUS[etat]})`;
-      if (li.dataset.etape === "remise") $("[data-titre-etape]", li).textContent = remise;
+      if (li.dataset.etape === "remise") {
+        $("[data-titre-etape]", li).textContent = remise;
+        $("[data-court-etape]", li).textContent = remise === "Expédiée" ? "Expédiée" : "Prête";
+      }
       $("[data-date-etape]", li).textContent = dates[i] ? dateCourte(dates[i]) : "";
     });
+    // Sous le fil : où en est la commande, en une phrase (le titre de la page nomme déjà l'étape)
+    $("[data-etape-courante]").replaceChildren(
+      el("span", { class: "etiquette" }, terminee ? "Commande terminée" : `Étape ${actuelle + 1} sur ${ETAPES.length}`),
+      ` ${c.statut === "retouche" ? "Nous reprenons la maquette avec vos remarques." : ETAPES[actuelle].texte}`,
+    );
     const colis = $("[data-colis]");
     colis.hidden = !c.suivi_colis;
     colis.replaceChildren("Numéro de suivi du colis : ", el("strong", {}, c.suivi_colis ?? ""));
@@ -286,6 +295,9 @@ const json = JSON.stringify({
   .messages .message { padding: 12px 16px; border: var(--filet); max-width: 46rem; }
 
   .titre-commande { font-size: var(--t-titre); }
+  .bloc-frise { display: flex; flex-direction: column; gap: 12px; max-width: 60rem; }
+  .etape-courante { margin: 0; }
+  .etape-courante .etiquette { margin-right: 0.4em; }
   .titre-commande:focus { outline: none; }
   .annulee, .colis { padding: 12px 16px; border: var(--filet); max-width: 46rem; }
 

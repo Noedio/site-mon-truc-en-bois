@@ -53,12 +53,14 @@
 
   // ---------- Base de démonstration (localStorage) ----------
   let base = null;
+  // Version des données d'exemple : quand elle change, la démo repart de zéro pour montrer les nouveaux exemples
+  const EXEMPLES = 2;
   function charger() {
     try {
       base = JSON.parse(localStorage.getItem(CLE_BASE) || "null");
     } catch {}
-    if (!base) {
-      base = { tables: { commandes: [], clients: [], demandes: [], codes_promo: [], campagnes: [], admins: [{ user_id: ADMIN_ID }] }, seq: { commandes: 0, factures: 0 }, emails: [], sessions: {}, coupons: {}, contenu: null, sha: "0".repeat(40) };
+    if (!base || base.exemples !== EXEMPLES) {
+      base = { exemples: EXEMPLES, tables: { commandes: [], clients: [], demandes: [], codes_promo: [], campagnes: [], admins: [{ user_id: ADMIN_ID }] }, seq: { commandes: 0, factures: 0 }, emails: [], sessions: {}, coupons: {}, contenu: null, sha: "0".repeat(40) };
       remplirExemples();
       sauver();
     }
@@ -160,7 +162,7 @@
           id: uuid(), numero: `MTB-${annee()}-${pad(base.seq.commandes)}`, jeton_suivi: uuid(), cree_le: t, statut: "nouvelle",
           client_tel: "", adresse: "", message: "", cadeau: {}, port: 0, emballage: 0, remise: 0, code_promo: "", paiement_mode: "apres_validation",
           paiement_statut: "en_attente", paye_le: null, stripe_session_id: null, stripe_url: null, facture_numero: null, suivi_colis: "", notes: "",
-          client_id: null, canal: "site", paiement_moyen: "", remises: [], paiements: [], ...ligne,
+          client_id: null, canal: "site", paiement_moyen: "", remises: [], paiements: [], echeance: null, relance_le: null, ...ligne,
         };
         ligne.historique = [{ date: ligne.cree_le, statut: ligne.statut }];
       } else if (ligne.statut !== ancienne.statut) ligne.historique = [...(ancienne.historique || []), { date: t, statut: ligne.statut }];
@@ -445,18 +447,42 @@
     const club = client({ nom: "Club de foot d'Auchel", email: "contact@club-auchel.exemple", tel: "03 21 00 00 00", etiquettes: ["club", "pro"], source: "site", cree_le: ilYa(150), notes: "Commande chaque année les médailles du tournoi de juin." });
     const julien = client({ nom: "Julien Martin", tel: "07 11 22 33 44", source: "boutique", cree_le: ilYa(45) });
     const sophie = client({ nom: "Sophie Dubois", email: "sophie.dubois@exemple.fr", source: "newsletter", consentement_marketing: true, consentement_le: ilYa(20), cree_le: ilYa(20) });
-    const commande = (c) => {
+    // Date AAAA-MM-JJ à n jours ouvrés d'aujourd'hui (lundi au vendredi ; les fériés sont ignorés ici)
+    const ouvre = (n) => {
+      const d = new Date();
+      d.setHours(12, 0, 0, 0);
+      for (let reste = Math.abs(n); reste > 0; ) {
+        d.setDate(d.getDate() + Math.sign(n));
+        if (d.getDay() % 6) reste--;
+      }
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    };
+    // etapes : [[statut, date], …] pour un historique réaliste ; le dernier statut est celui de la commande
+    const commande = ({ etapes, ...c }) => {
       const lignes = c.lignes;
       const sous_total = Math.round(lignes.reduce((t, l) => t + l.total, 0) * 100) / 100;
       const total = Math.round((sous_total + (c.port || 0) - (c.remise || 0)) * 100) / 100;
-      base.tables.commandes.push(avantEcriture("commandes", { sous_total, total, ...c }, null));
+      const ligne = avantEcriture("commandes", { sous_total, total, ...c, ...(etapes ? { statut: etapes.at(-1)[0], cree_le: etapes[0][1] } : {}) }, null);
+      if (etapes) ligne.historique = etapes.map(([statut, date]) => ({ date, statut }));
+      base.tables.commandes.push(ligne);
     };
     commande({ client_id: julien.id, client_nom: julien.nom, client_email: "sans-email@boutique.invalid", client_tel: julien.tel, canal: "boutique", mode_reception: "retrait", lignes: [P("porte-cles-grave", 2, { texte: "Julien" })], paiement_mode: "boutique", paiement_statut: "paye", paiement_moyen: "carte", statut: "terminee", cree_le: ilYa(140) });
     commande({ client_id: club.id, client_nom: club.nom, client_email: club.email, client_tel: club.tel, canal: "telephone", mode_reception: "retrait", lignes: [P("plaque-message", 6, { texte: "Tournoi des jeunes 2026" })], paiement_mode: "boutique", paiement_statut: "paye", paiement_moyen: "virement", statut: "terminee", cree_le: ilYa(120) });
     commande({ client_nom: "Client en boutique", client_email: "sans-email@boutique.invalid", canal: "salon", mode_reception: "retrait", lignes: [P("dessous-de-verre", 4), P("decapsuleur-mural")], paiement_mode: "boutique", paiement_statut: "paye", paiement_moyen: "especes", statut: "terminee", cree_le: ilYa(75) });
     commande({ client_id: marie.id, client_nom: marie.nom, client_email: marie.email, client_tel: marie.tel, canal: "site", mode_reception: "livraison", adresse: marie.adresse, port: 5.9, lignes: [P("cadre-mariage", 1, { texte: "Marie & Thomas — 14 juin 2026", police: "Manuscrite" })], paiement_mode: "en_ligne", paiement_statut: "paye", statut: "expediee", suivi_colis: "6A12345678901", cree_le: ilYa(40) });
     commande({ client_id: julien.id, client_nom: julien.nom, client_email: "sans-email@boutique.invalid", client_tel: julien.tel, canal: "boutique", mode_reception: "retrait", lignes: [P("mug-personnalise", 1, { texte: "Meilleur papa" })], paiement_mode: "boutique", paiement_statut: "paye", paiement_moyen: "carte", statut: "terminee", cree_le: ilYa(12) });
-    commande({ client_id: sophie.id, client_nom: sophie.nom, client_email: sophie.email, canal: "site", mode_reception: "retrait", lignes: [P("plaque-naissance-bois", 1, { texte: "Léa — 3 octobre 2026", police: "Arrondie" })], paiement_mode: "en_ligne", paiement_statut: "paye", statut: "en_fabrication", cree_le: ilYa(4) });
+    // Commandes en cours, à des étapes et des dates variées : liste « À faire » et plan de charge de l'admin.
+    // Les produits n'ont pas encore de délai : les dates « prête le » sont fixées à la main (echeance), sauf une.
+    commande({ client_id: club.id, client_nom: club.nom, client_email: club.email, client_tel: club.tel, canal: "telephone", mode_reception: "retrait", lignes: [P("porte-cles-grave", 12, { texte: "AS Auchel · Tournoi 2026" })], paiement_mode: "apres_validation", etapes: [["nouvelle", ilYa(8)], ["maquette_envoyee", ilYa(6)]] });
+    commande({ client_nom: "Laura Fontaine", client_email: "laura.fontaine@exemple.fr", client_tel: "06 23 45 67 89", canal: "site", mode_reception: "retrait", lignes: [P("accroche-porte", 3, { texte: "Lou, Léo, Zoé", police: "Classique" })], paiement_mode: "apres_validation", stripe_url: `${PAGES.paiement}?session=exemple`, relance_le: ilYa(5), echeance: ouvre(3), etapes: [["nouvelle", ilYa(9)], ["maquette_envoyee", ilYa(8)], ["confirmee", ilYa(6)], ["en_fabrication", ilYa(5)]] });
+    commande({ client_nom: "Nadia Benali", client_email: "nadia.benali@exemple.fr", client_tel: "06 45 67 89 01", canal: "site", mode_reception: "retrait", lignes: [P("plaque-message", 1, { texte: "Bienvenue chez Nadia et Karim", police: "Classique" })], paiement_mode: "apres_validation", etapes: [["nouvelle", ilYa(5, 3)]] });
+    commande({ client_id: sophie.id, client_nom: sophie.nom, client_email: sophie.email, canal: "site", mode_reception: "retrait", lignes: [P("plaque-naissance-bois", 1, { texte: "Léa — 3 octobre 2026", police: "Arrondie" })], paiement_mode: "en_ligne", paiement_statut: "paye", echeance: ouvre(2), etapes: [["nouvelle", ilYa(4)], ["maquette_envoyee", ilYa(3)], ["confirmee", ilYa(2)], ["en_fabrication", ilYa(1)]] });
+    commande({ client_nom: "Camille Roux", client_email: "camille.roux@exemple.fr", canal: "site", mode_reception: "livraison", adresse: "5 place de la Mairie, 62700 Bruay-la-Buissière", port: 5.9, lignes: [P("verres-graves", 2, { texte: "Camille & Hugo", police: "Manuscrite" })], paiement_mode: "apres_validation", notes: "Retouche : prénoms plus gros (réponse du client par email).", etapes: [["nouvelle", ilYa(4, 1)], ["maquette_envoyee", ilYa(3)], ["retouche", ilYa(1)]] });
+    commande({ client_nom: "Inès Moreau", client_email: "ines.moreau@exemple.fr", client_tel: "07 12 34 56 78", canal: "telephone", mode_reception: "retrait", lignes: [P("tableau-scrabble", 1, { texte: "MOREAU" })], paiement_mode: "boutique", echeance: ouvre(-1), etapes: [["nouvelle", ilYa(7)], ["maquette_envoyee", ilYa(6)], ["confirmee", ilYa(5)], ["en_fabrication", ilYa(3)]] });
+    commande({ client_nom: "Thomas Petit", client_email: "thomas.petit@exemple.fr", client_tel: "06 87 65 43 21", canal: "site", mode_reception: "retrait", lignes: [P("planche-aperitif", 1, { texte: "Chez Thomas", police: "Atelier" }), P("dessous-de-verre", 4)], paiement_mode: "apres_validation", echeance: ouvre(3), etapes: [["nouvelle", ilYa(5)], ["maquette_envoyee", ilYa(4)], ["confirmee", ilYa(2)]] });
+    commande({ client_nom: "Gérard Lemaire", client_email: "sans-email@boutique.invalid", client_tel: "06 98 76 54 32", canal: "telephone", mode_reception: "retrait", lignes: [P("panneau-directionnel", 1, { texte: "La Cabane" })], paiement_mode: "boutique", etapes: [["nouvelle", ilYa(10)], ["confirmee", ilYa(9)], ["en_fabrication", ilYa(4)], ["prete", ilYa(1)]] });
+    commande({ client_nom: "Hugo Lambert", client_email: "hugo.lambert@exemple.fr", client_tel: "06 55 44 33 22", canal: "site", mode_reception: "livraison", adresse: "18 rue Pasteur, 59000 Lille", port: 5.9, lignes: [P("bracelet-jonc", 2, { texte: "H & L" })], paiement_mode: "en_ligne", paiement_statut: "paye", echeance: ouvre(1), etapes: [["nouvelle", ilYa(6)], ["maquette_envoyee", ilYa(5)], ["confirmee", ilYa(4)], ["en_fabrication", ilYa(2)]] });
+    commande({ client_nom: "Élodie Garnier", client_email: "elodie.garnier@exemple.fr", canal: "site", mode_reception: "retrait", lignes: [P("cadre-mariage", 1, { texte: "Élodie & Maxime", police: "Manuscrite" })], cadeau: { emballage: true, message: "", date: dans(10) }, paiement_mode: "en_ligne", paiement_statut: "paye", etapes: [["nouvelle", ilYa(3)], ["maquette_envoyee", ilYa(2)], ["confirmee", ilYa(0, 2)]] });
     commande({ client_id: marie.id, client_nom: marie.nom, client_email: marie.email, client_tel: marie.tel, canal: "site", mode_reception: "retrait", lignes: [P("planche-aperitif", 1, { texte: "Famille Lefebvre", police: "Classique" })], cadeau: { emballage: false, message: "", date: dans(12) }, paiement_mode: "apres_validation", paiement_statut: "en_attente", statut: "nouvelle", message: "Est-il possible d'ajouter un petit cœur après le nom ?", cree_le: ilYa(0, 5) });
     const demande = (d) => base.tables.demandes.push(avantEcriture("demandes", d, null));
     demande({ type: "devis", nom: club.nom, email: club.email, tel: club.tel, sujet: "Médailles gravées", message: "Bonjour, nous aurions besoin de 40 médailles gravées pour le tournoi de juin, avec le logo du club au dos. Quel délai et quel prix ?", quantite: 40, client_id: club.id, cree_le: ilYa(1) });
