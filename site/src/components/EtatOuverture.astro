@@ -1,0 +1,43 @@
+---
+// « Ouvert · ferme à 18h », « Fermé · ouvre mardi à 9h » : calculé dans le navigateur, à l'heure de Paris
+// (src/lib/horaires.ts). Vide au chargement et sans JavaScript : rien de faux n'est affiché.
+// L'élément ne passe jamais à la ligne : le remplir ne déplace rien dans la page.
+import { site } from "../lib/donnees";
+
+interface Props { class?: string }
+const { class: classe } = Astro.props;
+---
+<span class:list={["etat-ouverture", classe]} data-etat-ouverture data-horaires={JSON.stringify(site.horaires)}></span>
+
+<script>
+  import { etatOuverture, lireSemaine, maintenantAParis } from "../lib/horaires";
+
+  const elements = [...document.querySelectorAll<HTMLElement>("[data-etat-ouverture]")];
+  const semaine = elements.length ? lireSemaine(JSON.parse(elements[0].dataset.horaires || "[]")) : null;
+
+  const afficher = () => {
+    const { jour, minutes } = maintenantAParis();
+    const etat = semaine && jour >= 0 ? etatOuverture(semaine, jour, minutes) : null;
+    elements.forEach((e) => {
+      e.replaceChildren();
+      e.dataset.ouvert = etat ? String(etat.ouvert) : "";
+      if (!etat) return;
+      const [premier, ...suite] = etat.texte.split(" · ");
+      e.append(Object.assign(document.createElement("strong"), { textContent: premier }), suite.length ? ` · ${suite.join(" · ")}` : "");
+    });
+  };
+  if (semaine) {
+    afficher();
+    // Mise à jour au début de chaque minute, et au retour sur l'onglet.
+    setTimeout(() => {
+      afficher();
+      setInterval(afficher, 60_000);
+    }, 60_000 - (Date.now() % 60_000));
+    document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && afficher());
+  }
+</script>
+
+<style>
+  .etat-ouverture { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .etat-ouverture :global(strong) { font-weight: 700; }
+</style>

@@ -3,6 +3,7 @@
 import Base from "../layouts/Base.astro";
 import TetePage from "../components/TetePage.astro";
 import FormulaireDevis from "../components/FormulaireDevis.astro";
+import EtatOuverture from "../components/EtatOuverture.astro";
 import { site } from "../lib/donnees";
 import { adresseEnLignes, lienTel } from "../lib/format";
 
@@ -17,7 +18,10 @@ const horaires = site.horaires.map((h) => {
   <TetePage
     titre="Contact et devis"
     chapeau="Une question, un projet sur mesure, une commande en quantité pour une entreprise, une association, un club ou un mariage ? Écrivez-nous : le devis est gratuit."
-  />
+  >
+    {/* Au téléphone, le formulaire est loin sous les coordonnées : un lien y mène directement. */}
+    <a class="machine aller-devis" href="#devis">Aller au formulaire de devis</a>
+  </TetePage>
 
   <section class="bande">
     <div class="conteneur contact">
@@ -54,7 +58,10 @@ const horaires = site.horaires.map((h) => {
         </dl>
 
         <div class="horaires">
-          <h2 id="titre-horaires">Horaires</h2>
+          <div class="horaires-tete">
+            <h2 id="titre-horaires">Horaires</h2>
+            <EtatOuverture class="machine" />
+          </div>
           <table aria-labelledby="titre-horaires">
             <tbody>
               {horaires.map(({ jour, plages }) => (
@@ -86,13 +93,16 @@ const horaires = site.horaires.map((h) => {
   .lien-fort:hover { text-decoration: underline; }
   .lien { min-height: var(--cible); display: flex; align-items: center; font-weight: 700; }
 
-  .horaires h2 { font-size: var(--t-sous-titre); margin-bottom: 12px; }
+  .horaires-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 12px; min-width: 0; }
+  .horaires h2 { font-size: var(--t-sous-titre); flex: none; }
   .horaires table { width: 100%; border-collapse: collapse; border-top: var(--filet); font-family: var(--f-machine); font-size: var(--t-machine); font-variant-numeric: tabular-nums; }
   .horaires th, .horaires td { padding: 9px 0; border-bottom: var(--filet); text-align: left; vertical-align: top; }
   .horaires th { font-weight: 700; padding-right: 16px; white-space: nowrap; }
   .horaires .ferme { color: var(--texte-doux); }
 
+  .aller-devis { display: none; }
   @media (max-width: 900px) {
     .contact { grid-template-columns: minmax(0, 1fr); }
+    .aller-devis { display: inline-flex; align-items: center; align-self: flex-start; min-height: var(--cible); font-weight: 700; }
   }
 </style>

@@ -1,8 +1,10 @@
 ---
 // En-tête : bandeau adresse (brûlé), puis nom du site, navigation et panier.
 // Un seul logo, petit. Sur téléphone, la navigation devient une rangée qui défile.
+// Le bandeau dit aussi si l'atelier est ouvert en ce moment (EtatOuverture, rempli par le navigateur).
 import { site } from "../lib/donnees";
 import { lienTel } from "../lib/format";
+import EtatOuverture from "./EtatOuverture.astro";
 
 const LIENS = [
   { href: "/boutique/", libelle: "Boutique" },
@@ -17,7 +19,10 @@ const ici = Astro.url.pathname;
 <div class="adresse etiquette">
   <div class="conteneur adresse-ligne">
     <span class="adresse-texte">Atelier-boutique · {site.adresse}</span>
-    <a href={lienTel(site.telephone)}>{site.telephone}</a>
+    <span class="adresse-droite">
+      <EtatOuverture />
+      <a href={lienTel(site.telephone)}>{site.telephone}</a>
+    </span>
   </div>
 </div>
 <div class="entete">
@@ -58,7 +63,10 @@ const ici = Astro.url.pathname;
   .adresse { background: var(--brule); color: var(--bouleau); }
   .adresse a { color: var(--bouleau); }
   .adresse a:hover { color: var(--kraft); }
-  .adresse-ligne { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 24px; padding-block: 8px; }
+  /* Une seule ligne, quel que soit l'état affiché : la hauteur du bandeau ne bouge pas quand il se remplit. */
+  .adresse-ligne { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: var(--cible); }
+  .adresse-texte { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .adresse-droite { display: flex; align-items: center; gap: 24px; min-width: 0; flex: none; max-width: 100%; }
 
   .entete { border-bottom: var(--filet); background: var(--bouleau); }
   .entete-ligne { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px; padding-block: 14px; }
@@ -81,7 +89,7 @@ const ici = Astro.url.pathname;
 
   @media (max-width: 760px) {
     .adresse-texte { display: none; }
-    .adresse-ligne { justify-content: flex-end; padding-block: 0; }
+    .adresse-droite { flex: 1; justify-content: space-between; gap: 12px; }
     /* Grille fixe : le nom se raccourcit au lieu de pousser le panier à la ligne,
        pour que la hauteur ne change pas quand la police arrive (pas de décalage de page). */
     .entete-ligne { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding-block: 6px 0; gap: 0 8px; }
