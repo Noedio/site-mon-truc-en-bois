@@ -235,6 +235,45 @@ export function emailLienPaiement(c: any, message = "") {
   };
 }
 
+/** Ce que l'on peut rappeler au client : la maquette à valider, ou le paiement d'une maquette validée. */
+export function sujetRelance(c: any): "maquette" | "paiement" | null {
+  if (c.statut === "maquette_envoyee") return "maquette";
+  const apresValidation = ["confirmee", "en_fabrication", "prete", "expediee", "terminee"].includes(c.statut);
+  // Un rappel de paiement n'a de sens que si le client peut payer : lien déjà envoyé, ou paiement en ligne choisi à la commande
+  if (c.paiement_statut === "en_attente" && apresValidation && (c.paiement_mode === "en_ligne" || c.stripe_url)) return "paiement";
+  return null;
+}
+
+/** Rappel envoyé par la boutique depuis l'admin (liste « À faire »). */
+export function emailRelance(c: any, message = "") {
+  const sujet = sujetRelance(c);
+  const bonjour = `<p>Bonjour ${echapper(c.client_nom.split(" ")[0])},</p>`;
+  const mot = message ? `<p style="background:#efe6d8;border:1px solid #d7bf9c;padding:12px 14px">${echapper(message).replace(/\n/g, "<br>")}</p>` : "";
+  if (sujet === "maquette") {
+    const envoi = [...(c.historique ?? [])].reverse().find((h: any) => h.statut === "maquette_envoyee")?.date;
+    const le = envoi ? ` le ${new Date(envoi).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}` : "";
+    return {
+      sujet: `Commande ${c.numero} : votre maquette attend votre réponse`,
+      html: gabarit("Votre maquette attend votre réponse", `${bonjour}
+      <p>Nous vous avons envoyé${le} la maquette de votre commande <strong>${c.numero}</strong>. Nous lançons la gravure dès que vous l'avez validée.</p>
+      <p>Répondez simplement à cet email : « c'est bon pour moi », ou ce qu'il faut changer.</p>
+      ${mot}
+      ${bouton(lienSuivi(c), "Voir ma commande")}`),
+    };
+  }
+  if (sujet === "paiement") {
+    return {
+      sujet: `Commande ${c.numero} : rappel de paiement`,
+      html: gabarit("Votre commande attend son règlement", `${bonjour}
+      <p>Votre commande <strong>${c.numero}</strong> (${euros(c.total)}) n'est pas encore réglée. Vous pouvez la payer par carte bancaire en suivant ce lien.</p>
+      ${mot}
+      ${bouton(lienPayer(c), `Payer ${euros(c.total)}`)}
+      <p style="color:#6b5a4a;font-size:14px">Déjà réglé ? Ne tenez pas compte de ce message, et merci !</p>`),
+    };
+  }
+  return null;
+}
+
 // ---------- Demandes (devis, contact, newsletter) et messages libres ----------
 const TYPES: Record<string, string> = { devis: "Demande de devis", contact: "Message", newsletter: "Inscription à la newsletter" };
 export function emailDemandeBoutique(d: any) {
