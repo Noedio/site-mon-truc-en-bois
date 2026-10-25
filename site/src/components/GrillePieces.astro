@@ -1,14 +1,16 @@
 ---
 // Grille à filets (brief §3) : chaque carte trace ses filets droit et bas, la grille trace le haut et la gauche.
 // Une dernière rangée incomplète reste ainsi couleur bouleau, sans case vide foncée.
-import CartePiece from "./CartePiece.astro";
-import type { Produit } from "../lib/donnees";
+// Chaque carte porte son bouton cœur (CarteFavori) : on garde une pièce sans ouvrir sa fiche.
+// data-prix et data-numero servent au tri de la boutique (FiltresBoutique).
+import CarteFavori from "./CarteFavori.astro";
+import { prixDe, type Produit } from "../lib/donnees";
 
 interface Props { produits: (Produit & { numero: number })[]; prioritaires?: number; colonnes?: string }
 const { produits, prioritaires = 0, colonnes = "minmax(min(240px, 100%), 1fr)" } = Astro.props;
 ---
-<div class="grille-pieces" style={`--colonnes: ${colonnes}`}>
-  {produits.map((p, i) => <CartePiece produit={p} prioritaire={i < prioritaires} />)}
+<div class="grille-pieces" style={`--colonnes: ${colonnes}`} data-grille-pieces>
+  {produits.map((p, i) => <CarteFavori produit={p} prioritaire={i < prioritaires} data-prix={prixDe(p).prix} data-numero={p.numero} />)}
 </div>
 
 <style>

@@ -1,0 +1,178 @@
+---
+// Filtres de la boutique sur une seule ligne : onglets de catégorie, menu des budgets, tri, nombre de pièces.
+// Catégories et budgets sont des pages statiques (liens) : ils marchent sans JavaScript.
+// Le menu des budgets est un <details> natif ; le tri réordonne la grille dans le navigateur
+// (data-prix, data-numero posés par GrillePieces) et n'apparaît pas sans JavaScript.
+// Au téléphone, les onglets défilent sur une ligne au lieu de s'empiler en rangées de pastilles.
+interface Lien { href: string; libelle: string; nombre: number; actif?: boolean }
+interface Props { categories: Lien[]; budgets: Lien[]; compte: string; triParPrix?: boolean }
+const { categories, budgets, compte, triParPrix = false } = Astro.props;
+const budgetActif = budgets.find((b) => b.actif);
+---
+<div class="filtres-boutique">
+  <nav class="onglets" aria-label="Catégories">
+    <ul role="list">
+      {categories.map((c) => (
+        <li>
+          <a class="onglet" href={c.href} aria-current={c.actif ? "page" : undefined}>
+            {c.libelle} <span class="onglet-nombre">{c.nombre}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+
+  <div class="outils">
+    <details class="menu" data-menu-budget>
+      <summary class="outil machine">{budgetActif ? budgetActif.libelle : "Budget"}</summary>
+      <nav class="menu-liste" aria-label="Budget">
+        <ul role="list">
+          {budgets.map((b) => (
+            <li><a class="machine" href={b.href} aria-current={b.actif ? "page" : undefined}>{b.libelle} <span class="onglet-nombre">{b.nombre}</span></a></li>
+          ))}
+          {budgetActif && <li><a class="machine" href="/boutique/">Tous les prix</a></li>}
+        </ul>
+      </nav>
+    </details>
+
+    <label class="tri machine">
+      <span class="visuellement-cache">Trier les pièces</span>
+      <select class="outil" data-tri data-defaut={triParPrix ? "prix" : "catalogue"}>
+        <option value="catalogue" selected={!triParPrix}>Par n° de pièce</option>
+        <option value="prix" selected={triParPrix}>Prix croissant</option>
+        <option value="prix-desc">Prix décroissant</option>
+      </select>
+    </label>
+
+    <p class="compte machine" aria-live="polite">{compte}</p>
+  </div>
+</div>
+
+<script>
+  // Tri : réordonne les cartes de la grille ; le choix est gardé le temps de la visite.
+  const CLE = "tri-boutique-mtb";
+  const select = document.querySelector<HTMLSelectElement>("[data-tri]");
+  const grille = document.querySelector<HTMLElement>("[data-grille-pieces]");
+  if (select && grille) {
+    const cartes = [...grille.children] as HTMLElement[];
+    const nombre = (c: HTMLElement, cle: string) => Number(c.dataset[cle]) || 0;
+    const trier = (ordre: string) => {
+      const triees = [...cartes].sort((a, b) =>
+        ordre === "prix" ? nombre(a, "prix") - nombre(b, "prix") || nombre(a, "numero") - nombre(b, "numero")
+        : ordre === "prix-desc" ? nombre(b, "prix") - nombre(a, "prix") || nombre(a, "numero") - nombre(b, "numero")
+        : nombre(a, "numero") - nombre(b, "numero"),
+      );
+      grille.append(...triees);
+    };
+    let garde = "";
+    try {
+      garde = sessionStorage.getItem(CLE) ?? "";
+    } catch {}
+    if (garde && garde !== select.value && [...select.options].some((o) => o.value === garde)) {
+      select.value = garde;
+      trier(garde);
+    }
+    select.addEventListener("change", () => {
+      trier(select.value);
+      try {
+        sessionStorage.setItem(CLE, select.value);
+      } catch {}
+    });
+  }
+
+  // Menu des budgets : se ferme au clic à côté et avec Échap.
+  const menu = document.querySelector<HTMLDetailsElement>("[data-menu-budget]");
+  if (menu) {
+    document.addEventListener("click", (e) => menu.open && !menu.contains(e.target as Node) && (menu.open = false));
+    menu.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && menu.open) {
+        menu.open = false;
+        menu.querySelector("summary")?.focus();
+      }
+    });
+  }
+</script>
+
+<style>
+  .filtres-boutique { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; border-bottom: var(--filet); }
+
+  .onglets { min-width: 0; flex: 1 1 auto; }
+  .onglets ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 0 4px; overflow-x: auto; scrollbar-width: none; }
+  .onglets ul::-webkit-scrollbar { display: none; }
+  .onglet {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--cible);
+    padding: 0 9px;
+    margin-bottom: -1px;
+    font-size: 1rem;
+    border-bottom: 3px solid transparent;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .onglets li:first-child .onglet { padding-left: 0; }
+  .onglet:hover { border-bottom-color: var(--kraft); color: var(--brule); }
+  .onglet[aria-current="page"] { border-bottom-color: var(--brule); font-weight: 600; }
+  .onglet-nombre { font-family: var(--f-machine); font-size: var(--t-etiquette); color: var(--texte-doux); font-weight: 400; }
+
+  .outils { display: flex; align-items: center; gap: 8px 12px; padding-block: 6px; flex: none; }
+  .outil {
+    display: flex;
+    align-items: center;
+    min-height: var(--cible);
+    width: auto;
+    padding: 6px 32px 6px 12px;
+    border: var(--filet);
+    background: var(--papier);
+    font-family: var(--f-machine);
+    font-size: var(--t-etiquette);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  /* Même chevron pour le menu des budgets et le tri */
+  summary.outil { list-style: none; position: relative; }
+  summary.outil::-webkit-details-marker { display: none; }
+  summary.outil::after, .tri::after {
+    content: "";
+    position: absolute;
+    right: 13px;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+  }
+  select.outil { appearance: none; -webkit-appearance: none; }
+  .tri { position: relative; display: block; }
+
+  .menu { position: relative; }
+  .menu[open] summary.outil { background: var(--brule); color: var(--bouleau); }
+  .menu-liste { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; min-width: 220px; background: var(--bouleau); border: var(--filet-fort); }
+  .menu-liste ul { list-style: none; margin: 0; padding: 4px 0; }
+  .menu-liste a { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: var(--cible); padding: 0 14px; text-decoration: none; }
+  .menu-liste a:hover { background: var(--bouleau-fonce); color: var(--brule); }
+  .menu-liste a[aria-current="page"] { font-weight: 700; text-decoration: underline; text-underline-offset: 0.2em; }
+
+  .compte { color: var(--texte-doux); white-space: nowrap; padding-left: 4px; font-size: var(--t-etiquette); }
+
+  @media (scripting: none) {
+    .tri { display: none; }
+  }
+  /* Sous 16 px, Safari agrandit la page quand on touche la liste. */
+  @media (pointer: coarse) {
+    select.outil { font-size: 1rem; padding-right: 28px; }
+  }
+
+  /* Au téléphone : les onglets défilent sur toute la largeur, les outils passent dessous. */
+  @media (max-width: 760px) {
+    .filtres-boutique { gap: 0; border-bottom: 0; }
+    .onglets { flex-basis: 100%; border-bottom: var(--filet); margin-inline: calc(-1 * var(--gouttiere)); }
+    .onglets ul { padding-inline: var(--gouttiere); }
+    .outils { flex: 1 1 100%; flex-wrap: wrap; padding-block: 10px 0; }
+    .compte { display: none; } /* repris à côté du titre (PageBoutique) */
+    .menu-liste { min-width: min(260px, calc(100vw - 2 * var(--gouttiere))); }
+  }
+</style>

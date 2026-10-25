@@ -1,19 +1,30 @@
 ---
 // Tête des pages éditoriales et légales : étiquette, titre de page, chapeau.
 // Le contenu glissé dans le composant s'affiche sous le chapeau (liens, chiffres).
+// Sur grand écran, le chapeau se range à droite du titre au lieu de s'empiler dessous.
 interface Props { titre: string; etiquette?: string; chapeau?: string }
 const { titre, etiquette, chapeau } = Astro.props;
 ---
 <section class="bande tete-page">
-  <div class="conteneur pile" style="--pile: 20px">
-    {etiquette && <p class="etiquette">{etiquette}</p>}
-    <h1>{titre}</h1>
-    {chapeau && <p class="chapeau">{chapeau}</p>}
-    <slot />
+  <div class="conteneur tete-page-grille">
+    <div class="pile" style="--pile: 14px">
+      {etiquette && <p class="etiquette">{etiquette}</p>}
+      <h1>{titre}</h1>
+    </div>
+    <div class="pile tete-page-suite" style="--pile: 16px">
+      {chapeau && <p class="chapeau">{chapeau}</p>}
+      <slot />
+    </div>
   </div>
 </section>
 
 <style>
-  .tete-page h1 { max-width: 14ch; }
+  .tete-page > .conteneur { padding-block: clamp(28px, 4vw, 48px); }
+  .tete-page-grille { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 20px 64px; align-items: end; }
+  .tete-page h1 { max-width: 14ch; font-size: clamp(2.6rem, 5vw, 4.5rem); }
   .tete-page .chapeau { max-width: 38em; }
+  .tete-page-suite:empty { display: none; }
+  @media (max-width: 899px) {
+    .tete-page-grille { grid-template-columns: minmax(0, 1fr); }
+  }
 </style>

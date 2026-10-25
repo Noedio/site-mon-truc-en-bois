@@ -164,9 +164,11 @@ import { maquetteCourte, questionMaquette } from "../lib/promesses";
   .tete-achat { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
   .tete-achat .etiquette { line-height: 1.5; }
 
-  .categories { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
-  .categories a { display: flex; align-items: center; min-height: var(--cible); padding: 8px 14px; border: var(--filet); text-decoration: none; }
-  .categories a:hover { background: var(--brule); color: var(--bouleau); }
+  /* Catégories : une ligne de liens sous un filet ; au téléphone elle défile au lieu de s'empiler. */
+  .categories { display: flex; gap: 0 28px; margin: -8px 0 24px; border-bottom: var(--filet); overflow-x: auto; scrollbar-width: none; }
+  .categories::-webkit-scrollbar { display: none; }
+  .categories a { display: flex; align-items: center; min-height: var(--cible); white-space: nowrap; text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+  .categories a:hover { border-bottom-color: var(--brule); color: var(--brule); }
 
   .occasions-limite { margin: -12px 0 20px; }
   /* Sur le bouleau foncé, la gravure descend à 4,2:1 : on prend sa teinte foncée (AA). */
@@ -212,5 +214,12 @@ import { maquetteCourte, questionMaquette } from "../lib/promesses";
     .occasion-limite { grid-column: 1 / -1; grid-row: 2; }
     .occasion-nombre { grid-column: 2; grid-row: 1; }
     .occasion-nom { font-size: 1.6rem; }
+  }
+  @media (max-width: 640px) {
+    .categories { margin-inline: calc(-1 * var(--gouttiere)); padding-inline: var(--gouttiere); }
+    /* Avis : côte à côte, on fait défiler du doigt plutôt que trois blocs empilés. */
+    .avis { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 82%; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; margin-inline: calc(-1 * var(--gouttiere)); padding-inline: var(--gouttiere); scroll-padding-inline: var(--gouttiere); scrollbar-width: thin; }
+    .avis blockquote { scroll-snap-align: start; }
+    .avis blockquote p { font-size: 1.0625rem; }
   }
 </style>

@@ -8,6 +8,7 @@ import Base from "../layouts/Base.astro";
 import ACompleter from "../components/ACompleter.astro";
 import TeteSection from "../components/TeteSection.astro";
 import Bouton from "../components/Bouton.astro";
+import EtatOuverture from "../components/EtatOuverture.astro";
 import { donnees, categories, site } from "../lib/donnees";
 import { adresseEnLignes } from "../lib/format";
 import { image } from "../lib/images";
@@ -36,6 +37,10 @@ import { phraseMaquette } from "../lib/promesses";
         <p class="etiquette">{equipe} · {ville}</p>
         <h1>L'atelier-boutique de la rue Salengro</h1>
         {presentation && <p class="chapeau">{presentation}</p>}
+        <blockquote class="mot" aria-label={`Le mot de ${equipe}`}>
+          <p><ACompleter quoi="mot de Christophe et Laetitia" /></p>
+          <footer class="etiquette">{equipe}</footer>
+        </blockquote>
       </div>
       <figure class="photo">
         {boutique && (
@@ -64,20 +69,21 @@ import { phraseMaquette } from "../lib/promesses";
     </div>
   </section>
 
-  <section class="bande" aria-labelledby="titre-mot">
-    <div class="conteneur mot">
-      <h2 id="titre-mot" class="visuellement-cache">Le mot de {equipe}</h2>
-      <blockquote>
-        <p><ACompleter quoi="mot de Christophe et Laetitia" /></p>
-        <footer class="etiquette">{equipe}</footer>
-      </blockquote>
-    </div>
-  </section>
-
   <section class="bande" aria-labelledby="titre-photos">
     <div class="conteneur">
-      <TeteSection id="titre-photos" titre="Dans l'atelier" />
+      <TeteSection
+        id="titre-photos"
+        titre="À l'atelier et sur les salons"
+        texte={salons ? salons.replace(/\s*!$/, ".") : undefined}
+        lien={site.facebook ? { href: site.facebook, libelle: "Notre page Facebook" } : undefined}
+      />
       <div class="photos">
+        <figure class="photo">
+          {stand && (
+            <Image src={stand} alt="Le stand Mon Truc en Bois en salon, avec planches, plaques et porte-clés gravés" widths={largeurs(stand.width)} sizes="(max-width: 640px) 50vw, 320px" format="webp" quality={78} />
+          )}
+          <figcaption class="etiquette">Le stand, aux salons et marchés de la région.</figcaption>
+        </figure>
         {PHOTOS.map((p) => (
           <figure class="photo-a-venir">
             <div class="cadre"><ACompleter quoi={p} /></div>
@@ -87,27 +93,12 @@ import { phraseMaquette } from "../lib/promesses";
     </div>
   </section>
 
-  <section class="bande" aria-labelledby="titre-salons">
-    <div class="conteneur salons">
-      <figure class="photo">
-        {stand && (
-          <Image src={stand} alt="Le stand Mon Truc en Bois en salon, avec planches, plaques et porte-clés gravés" widths={largeurs(stand.width)} sizes="(max-width: 900px) 100vw, 640px" format="webp" quality={78} />
-        )}
-        <figcaption class="etiquette">Le stand, aux salons et marchés de la région.</figcaption>
-      </figure>
-      <div class="pile" style="--pile: 20px">
-        <h2 id="titre-salons">Sur les salons et marchés</h2>
-        {salons && <p class="chapeau">{salons.replace(/\s*!$/, ".")}</p>}
-        {site.facebook && <a class="machine lien" href={site.facebook} rel="noopener">Notre page Facebook</a>}
-      </div>
-    </div>
-  </section>
-
   <section class="bande bande-kraft" aria-labelledby="titre-visite">
     <div class="conteneur visite">
       <div class="pile" style="--pile: 8px">
         <h2 id="titre-visite">Venir à la boutique</h2>
         <p>{rue}, {ville}. Horaires, téléphone et email sur la page contact.</p>
+        <EtatOuverture class="machine visite-etat" />
       </div>
       <div class="rangee">
         <Bouton href="/contact/#devis">Demander un devis</Bouton>
@@ -132,21 +123,23 @@ import { phraseMaquette } from "../lib/promesses";
   .familles { margin: 40px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); column-gap: 32px; }
   .familles dt { font-family: var(--f-titre); font-weight: 800; font-size: 1.5rem; text-transform: uppercase; line-height: 1.05; }
 
-  .mot blockquote { margin: 0; max-width: 46em; border-top: var(--filet-fort); padding-top: 20px; display: flex; flex-direction: column; gap: 14px; font-size: 1.375rem; font-style: italic; }
+  /* Le mot de l'équipe, sous la présentation (il reste à écrire). */
+  .mot { margin: 4px 0 0; max-width: 40em; border-top: var(--filet-fort); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; font-size: 1.2rem; font-style: italic; }
   .mot footer { font-style: normal; }
 
-  .photos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 24px; }
+  /* Photo du stand et photos à venir, sur une rangée (deux colonnes au téléphone). */
+  .photos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; align-items: start; }
   .photo-a-venir { margin: 0; }
-  .cadre { aspect-ratio: 4 / 3; border: 1px dashed var(--brule); background: var(--papier); display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center; }
-
-  .salons { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px 64px; align-items: center; }
-  .lien { font-weight: 700; min-height: var(--cible); display: inline-flex; align-items: center; align-self: flex-start; }
+  .cadre { aspect-ratio: 4 / 3; border: 1px dashed var(--brule); background: var(--papier); display: flex; align-items: center; justify-content: center; padding: 14px; text-align: center; font-size: var(--t-etiquette); }
 
   .visite { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 40px; }
   .visite h2 { font-size: var(--t-sous-titre); }
+  .visite :global(.visite-etat) { display: block; min-height: 1.55em; }
 
+  @media (max-width: 1000px) {
+    .photos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  }
   @media (max-width: 900px) {
-    .ouverture, .salons { grid-template-columns: minmax(0, 1fr); }
-    .cadre { aspect-ratio: 16 / 9; }
+    .ouverture { grid-template-columns: minmax(0, 1fr); }
   }
 </style>
