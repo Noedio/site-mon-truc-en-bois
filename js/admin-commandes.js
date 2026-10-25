@@ -91,6 +91,18 @@
   const resumePieces = (c) =>
     `${c.lignes[0]?.nom || ""}${c.lignes[0]?.quantite > 1 ? ` × ${c.lignes[0].quantite}` : ""}${c.lignes.length > 1 ? ` et ${c.lignes.length - 1} autre${c.lignes.length > 2 ? "s" : ""}` : ""}`;
   const telephone = (c) => String(c.client_tel || "").replace(/[^\d+]/g, "");
+  // Remises et paiements détaillés (caisse, colonnes remises et paiements) ; anciennes commandes : le montant global seul
+  function remisesDe(c) {
+    if (Array.isArray(c.remises) && c.remises.length)
+      return c.remises.map((r) => ({ libelle: `${r.libelle || "Remise"}${r.mode === "pourcent" ? ` (${String(r.valeur).replace(".", ",")} %)` : ""}`, montant: Number(r.montant) || 0 }));
+    return Number(c.remise) ? [{ libelle: `Remise${c.code_promo ? ` (code ${c.code_promo})` : ""}`, montant: Number(c.remise) }] : [];
+  }
+  const nomMoyen = (m) => MOYENS[m] || m || "moyen non précisé";
+  // « carte bancaire 20,00 € et espèces 14,90 € (reçu 20,00 €, rendu 5,10 €) »
+  const detailPaiements = (c) =>
+    (Array.isArray(c.paiements) ? c.paiements : [])
+      .map((p) => `${nomMoyen(p.moyen)} ${ctx.euros(p.montant)}${Number(p.recu) > Number(p.montant) ? ` (reçu ${ctx.euros(p.recu)}, rendu ${ctx.euros(Number(p.recu) - Number(p.montant))})` : ""}`)
+      .join(" et ");
   const trouver = (id) => commandes.find((c) => c.id === id);
 
   /**
@@ -679,11 +691,12 @@
           <div class="cmd-corps">
             <dl class="cmd-faits">
               ${Number(c.remise) || Number(c.port) || Number(c.emballage) ? ligneMontant("Sous-total", ctx.euros(c.sous_total)) : ""}
-              ${Number(c.remise) ? ligneMontant(`Remise${c.code_promo ? ` (code ${e(c.code_promo)})` : ""}`, `− ${ctx.euros(c.remise)}`) : ""}
+              ${remisesDe(c).map((r) => ligneMontant(e(r.libelle), `− ${ctx.euros(r.montant)}`)).join("")}
               ${Number(c.port) ? ligneMontant("Livraison", ctx.euros(c.port)) : ""}
               ${Number(c.emballage) ? ligneMontant("Emballage cadeau", ctx.euros(c.emballage)) : ""}
               ${ligneMontant("Total", `<strong>${ctx.euros(c.total)}</strong>`)}
               ${ligneMontant("Mode", MODES[c.paiement_mode])}
+              ${c.paiements?.length ? ligneMontant("Réglé", e(detailPaiements(c))) : ""}
               ${c.facture_numero ? ligneMontant("Facture", e(c.facture_numero)) : ""}
             </dl>
             <div class="raccourcis">
@@ -842,7 +855,7 @@
       <table><thead><tr><th>Désignation</th><th class="n">Qté</th><th class="n">Prix unitaire</th><th class="n">Total</th></tr></thead><tbody>${lignes}
         ${Number(c.port) ? `<tr><td>Livraison</td><td class="n">1</td><td class="n">${ctx.euros(c.port)}</td><td class="n">${ctx.euros(c.port)}</td></tr>` : ""}
         ${Number(c.emballage) ? `<tr><td>Emballage cadeau</td><td class="n">1</td><td class="n">${ctx.euros(c.emballage)}</td><td class="n">${ctx.euros(c.emballage)}</td></tr>` : ""}
-        ${Number(c.remise) ? `<tr><td>Remise${c.code_promo ? ` (code ${e(c.code_promo)})` : ""}</td><td class="n"></td><td class="n"></td><td class="n">−${ctx.euros(c.remise)}</td></tr>` : ""}
+        ${remisesDe(c).map((r) => `<tr><td>${e(r.libelle)}</td><td class="n"></td><td class="n"></td><td class="n">−${ctx.euros(r.montant)}</td></tr>`).join("")}
       </tbody><tfoot>${(() => {
         // Assujetti à la TVA : détail HT / TVA / TTC (les prix du site sont TTC)
         if (S.legal?.regimeTva !== "assujetti") return `<tr class="total"><td colspan="3" class="n">Total</td><td class="n">${ctx.euros(c.total)}</td></tr>`;
@@ -850,7 +863,7 @@
         const ht = Math.round((Number(c.total) / (1 + taux / 100)) * 100) / 100;
         return `<tr><td colspan="3" class="n">Total HT</td><td class="n">${ctx.euros(ht)}</td></tr><tr><td colspan="3" class="n">TVA ${String(taux).replace(".", ",")} %</td><td class="n">${ctx.euros(Number(c.total) - ht)}</td></tr><tr class="total"><td colspan="3" class="n">Total TTC</td><td class="n">${ctx.euros(c.total)}</td></tr>`;
       })()}</tfoot></table>
-      ${facture ? `<p>Réglée le ${date(c.paye_le)}${c.paiement_moyen ? ` par ${MOYENS[c.paiement_moyen] || e(c.paiement_moyen)}` : c.paiement_mode === "en_ligne" || c.stripe_session_id ? " par carte bancaire (paiement en ligne)" : ""}.</p>` : `<p>${c.cadeau?.date ? `Date souhaitée : ${new Date(c.cadeau.date).toLocaleDateString("fr-FR")}<br>` : ""}${c.cadeau?.message ? `Message carte : « ${e(c.cadeau.message)} »<br>` : ""}${c.message ? `Message client : ${e(c.message)}` : ""}</p>`}
+      ${facture ? `<p>Réglée le ${date(c.paye_le)}${c.paiements?.length ? ` : ${e(detailPaiements(c))}` : c.paiement_moyen ? ` par ${MOYENS[c.paiement_moyen] || e(c.paiement_moyen)}` : c.paiement_mode === "en_ligne" || c.stripe_session_id ? " par carte bancaire (paiement en ligne)" : ""}.</p>` : `<p>${c.cadeau?.date ? `Date souhaitée : ${new Date(c.cadeau.date).toLocaleDateString("fr-FR")}<br>` : ""}${c.cadeau?.message ? `Message carte : « ${e(c.cadeau.message)} »<br>` : ""}${c.message ? `Message client : ${e(c.message)}` : ""}</p>`}
       <p class="mention">${[S.legal?.regimeTva === "franchise" ? "TVA non applicable, article 293 B du CGI." : "", S.legal?.formeJuridique ? `${e(S.legal.exploitant || S.nom)}, ${e(S.legal.formeJuridique)}${S.siret ? ` · SIRET ${e(S.siret)}` : ""}.` : "", e(S.mentionTva || "")].filter(Boolean).join("<br>")}</p>
       <button onclick="print()">Imprimer</button>
       <script>setTimeout(() => print(), 400)<\/script></body></html>`);
