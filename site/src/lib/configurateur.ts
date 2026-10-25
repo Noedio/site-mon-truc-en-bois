@@ -132,7 +132,8 @@ function tranche(): Gabarit {
   return {
     forme: "tranche", matiere: "bois", libelle: "tranche de bois",
     largeur: l, hauteur: h, contour: courbeFermee(cadrer(pts, l, h, 5)),
-    zone: { x: 46, y: 40, l: 158, h: 156 },
+    // Sur la vraie plaque, le texte couvre presque toute la largeur.
+    zone: { x: 34, y: 38, l: 182, h: 160 },
     maxCaracteres: 100, maxLignes: 5,
   };
 }
