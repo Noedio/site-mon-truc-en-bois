@@ -244,6 +244,7 @@ export function emailDemandeBoutique(d: any) {
       <p><strong>${echapper(d.nom)}</strong><br>${echapper(d.email)}${d.tel ? ` · ${echapper(d.tel)}` : ""}</p>
       ${d.sujet ? `<p>Sujet : <strong>${echapper(d.sujet)}</strong>${d.quantite ? ` · quantité : ${d.quantite}` : ""}</p>` : ""}
       ${d.message ? `<p style="background:#efe6d8;border:1px solid #d7bf9c;padding:12px 14px">${echapper(d.message).replace(/\n/g, "<br>")}</p>` : ""}
+      ${d.fichiers?.length ? `<p>${d.fichiers.length} fichier${d.fichiers.length > 1 ? "s" : ""} joint${d.fichiers.length > 1 ? "s" : ""}, à ouvrir dans l'admin : ${d.fichiers.map((f: any) => echapper(f.nom)).join(", ")}</p>` : ""}
       ${bouton(`${site()}/admin.html#demandes`, "Ouvrir dans l'admin")}`, { pourClient: false }),
   };
 }

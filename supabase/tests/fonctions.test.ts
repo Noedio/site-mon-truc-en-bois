@@ -367,6 +367,41 @@ Deno.test("contact : devis, newsletter, désinscription, robot ignoré", async (
   assertEquals((await post(contact, { type: "contact", nom: "A", email: "pas-un-email", message: "bonjour" })).status, 400);
 });
 
+Deno.test("devis avec fichiers : adresses d'envoi signées, fichiers enregistrés, formats et tailles vérifiés", async () => {
+  reinitialiser();
+  const devis = (fichiers: unknown) => post(contact, { type: "devis", nom: "Club de foot", email: "club@test.fr", message: "Logo du club à graver", fichiers });
+  const r = await devis([
+    { nom: "logo club.png", type: "image/png", taille: 120_000 },
+    { nom: "plan.pdf", type: "application/pdf", taille: 2_000_000 },
+  ]);
+  assertEquals(r.status, 201);
+  const { envois } = await r.json();
+  const [d] = tables.demandes;
+  assertEquals(d.fichiers.length, 2);
+  assertEquals(d.fichiers[0].nom, "logo club.png");
+  assertEquals(d.fichiers[1].type, "application/pdf");
+  assertEquals(d.fichiers[1].taille, 2_000_000);
+  assertEquals(d.fichiers[0].chemin, `devis/${d.id}/1-logo-club.png`);
+  assertEquals(envois.map((e: any) => e.fichier), [0, 1]);
+  assertMatch(envois[1].url, new RegExp(`^${SUPA}/storage/v1/object/upload/sign/photos-clients/devis/${d.id}/2-plan\\.pdf\\?token=envoi$`));
+  assertMatch(emails()[0].html, /2 fichiers joints, à ouvrir dans l'admin : logo club\.png, plan\.pdf/);
+  // Sans fichier : tableau vide
+  await post(contact, { type: "devis", nom: "Marie", email: "marie@test.fr", message: "Une planche gravée" });
+  assertEquals(tables.demandes[1].fichiers, []);
+  // Refus : trop de fichiers, format, taille ; rien n'est enregistré
+  const six = Array.from({ length: 6 }, (_, i) => ({ nom: `p${i}.jpg`, type: "image/jpeg", taille: 1000 }));
+  assertEquals((await devis(six)).status, 400);
+  assertEquals((await devis([{ nom: "virus.exe", type: "application/x-msdownload", taille: 1000 }])).status, 400);
+  const lourd = await devis([{ nom: "gros.jpg", type: "image/jpeg", taille: 16 * 1024 * 1024 }]);
+  assertEquals(lourd.status, 400);
+  assertMatch((await lourd.json()).erreur, /gros\.jpg.*15 Mo/);
+  assertEquals(tables.demandes.length, 2);
+  // Stockage en panne : pas de demande enregistrée, le client peut réessayer sans doublon
+  stockageEnPanne = true;
+  assertEquals((await devis([{ nom: "logo.png", type: "image/png", taille: 1000 }])).status, 500);
+  assertEquals(tables.demandes.length, 2);
+});
+
 Deno.test("admin : état du serveur, vente en boutique payée, message libre au client", async () => {
   reinitialiser();
   const auth = { Authorization: "Bearer jeton-admin" };

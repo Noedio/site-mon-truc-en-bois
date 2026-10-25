@@ -740,6 +740,7 @@ function emailDemandeBoutique(d) {
       <p><strong>${echapper(d.nom)}</strong><br>${echapper(d.email)}${d.tel ? ` \xB7 ${echapper(d.tel)}` : ""}</p>
       ${d.sujet ? `<p>Sujet : <strong>${echapper(d.sujet)}</strong>${d.quantite ? ` \xB7 quantit\xE9 : ${d.quantite}` : ""}</p>` : ""}
       ${d.message ? `<p style="background:#efe6d8;border:1px solid #d7bf9c;padding:12px 14px">${echapper(d.message).replace(/\n/g, "<br>")}</p>` : ""}
+      ${d.fichiers?.length ? `<p>${d.fichiers.length} fichier${d.fichiers.length > 1 ? "s" : ""} joint${d.fichiers.length > 1 ? "s" : ""}, \xE0 ouvrir dans l'admin : ${d.fichiers.map((f) => echapper(f.nom)).join(", ")}</p>` : ""}
       ${bouton(`${site()}/admin.html#demandes`, "Ouvrir dans l'admin")}`, {
       pourClient: false
     })
@@ -921,6 +922,16 @@ var traiter2 = servir(async (req) => {
 if (false) Deno.serve(traiter2);
 
 // supabase/functions/contact/index.ts
+var FICHIERS_MAX = 5;
+var FICHIER_TAILLE_MAX = 15 * 1024 * 1024;
+var FICHIER_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "application/pdf"
+];
 var texte2 = (v, max) => String(v ?? "").trim().slice(0, max);
 var traiter3 = servir(async (req) => {
   const d = await lireJson(req, 2e4);
@@ -961,6 +972,26 @@ var traiter3 = servir(async (req) => {
   const message = texte2(d.message, 4e3);
   if (type !== "newsletter" && nom.length < 2) throw new ErreurClient("Indiquez votre nom.");
   if (type !== "newsletter" && message.length < 5) throw new ErreurClient("D\xE9crivez votre demande en quelques mots.");
+  const annonces = type === "newsletter" || !Array.isArray(d.fichiers) ? [] : d.fichiers;
+  if (annonces.length > FICHIERS_MAX) throw new ErreurClient(`${FICHIERS_MAX} fichiers au plus par demande.`);
+  const id = crypto.randomUUID();
+  const fichiers = annonces.map((f, i) => {
+    const nomLisible = texte2(f?.nom, 120) || `fichier-${i + 1}`;
+    const taille = Math.trunc(Number(f?.taille));
+    if (!FICHIER_TYPES.includes(String(f?.type))) throw new ErreurClient(`\xAB ${nomLisible} \xBB : format non accept\xE9. Envoyez des photos (JPEG, PNG, WebP, HEIC) ou un PDF.`);
+    if (!(taille > 0)) throw new ErreurClient(`\xAB ${nomLisible} \xBB est vide.`);
+    if (taille > FICHIER_TAILLE_MAX) throw new ErreurClient(`\xAB ${nomLisible} \xBB d\xE9passe 15 Mo.`);
+    return {
+      chemin: `devis/${id}/${i + 1}-${nomFichier(nomLisible)}`,
+      nom: nomLisible,
+      type: String(f.type),
+      taille
+    };
+  });
+  const envois = await Promise.all(fichiers.map(async (f, i) => ({
+    fichier: i,
+    url: await urlEnvoiPhoto(f.chemin)
+  })));
   const fiche = await enregistrerClient({
     nom: nomSaisi,
     email,
@@ -971,6 +1002,7 @@ var traiter3 = servir(async (req) => {
   const [demande] = await db("demandes", {
     method: "POST",
     body: JSON.stringify({
+      id,
       type,
       nom: nomSaisi || fiche?.nom || nom,
       email,
@@ -979,7 +1011,8 @@ var traiter3 = servir(async (req) => {
       message,
       quantite: Number.isFinite(Number(d.quantite)) && Number(d.quantite) > 0 ? Math.trunc(Number(d.quantite)) : null,
       client_id: fiche?.id ?? null,
-      statut: type === "newsletter" ? "archivee" : "nouvelle"
+      statut: type === "newsletter" ? "archivee" : "nouvelle",
+      fichiers
     })
   });
   const boutique = env("BOUTIQUE_EMAIL") || (await catalogue()).site?.email;
@@ -996,7 +1029,8 @@ var traiter3 = servir(async (req) => {
     })
   ]);
   return json(req, {
-    recu: true
+    recu: true,
+    envois
   }, 201);
 });
 if (false) Deno.serve(traiter3);
