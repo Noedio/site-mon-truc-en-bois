@@ -1,5 +1,6 @@
 ---
 // Carte d'une pièce dans une grille à filets : photo bord à bord, n° de pièce, catégorie, nom, prix.
+// Dans une carte étroite (deux colonnes au téléphone), la catégorie se coupe au lieu de passer sur trois lignes.
 import PhotoPiece from "./PhotoPiece.astro";
 import { categorieDe, prixDe, type Produit } from "../lib/donnees";
 import { euros, numeroPiece } from "../lib/format";
@@ -13,7 +14,7 @@ const { prix, plusieurs } = prixDe(produit);
   <div class="carte-texte">
     <div class="carte-ligne etiquette">
       <span>{numeroPiece(produit.numero)}</span>
-      <span>{categorieDe(produit)?.nom}</span>
+      <span class="carte-categorie">{categorieDe(produit)?.nom}</span>
     </div>
     <span class="carte-nom">{produit.nom}</span>
     <span class="prix">{plusieurs && <span class="des">dès </span>}{euros(prix)}</span>
@@ -25,7 +26,14 @@ const { prix, plusieurs } = prixDe(produit);
   .carte-piece:hover .carte-nom { text-decoration: underline; text-underline-offset: 0.18em; }
   .carte-piece:hover { color: var(--brule); }
   .carte-texte { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 4px; border-top: var(--filet); flex: 1; }
-  .carte-ligne { display: flex; justify-content: space-between; gap: 8px; }
+  .carte-ligne { display: flex; justify-content: space-between; gap: 8px; min-width: 0; }
+  .carte-ligne span { white-space: nowrap; }
+  .carte-categorie { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .carte-nom { font-weight: 600; font-size: 1.125rem; line-height: 1.3; }
   .des { font-family: var(--f-machine); font-weight: 400; font-size: var(--t-machine); text-transform: none; }
+  @media (max-width: 520px) {
+    .carte-texte { padding: 10px 12px 14px; gap: 2px; }
+    .carte-nom { font-size: 1rem; }
+    .carte-piece .prix { font-size: 1.5rem; }
+  }
 </style>

@@ -87,14 +87,16 @@ const donneesAvis = {
 </Base>
 
 <style>
-  .scores { display: flex; flex-wrap: wrap; gap: 16px 48px; margin-top: 8px; }
+  .scores { display: flex; flex-wrap: wrap; gap: 16px 48px; }
   .score { display: flex; flex-direction: column; gap: 2px; text-decoration: none; border-top: var(--filet-fort); padding-top: 10px; min-height: var(--cible); }
   .score-chiffre { font-family: var(--f-titre); font-weight: 800; font-size: var(--t-prix); text-transform: uppercase; line-height: 1.1; }
   .score:hover .machine { text-decoration: underline; }
 
-  .avis-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); gap: 40px 48px; align-items: start; }
-  /* Le plus récent sur toute la largeur : un avis long ne laisse pas de trou dans la grille. */
-  .avis-grille > :global(:first-child) { grid-column: 1 / -1; max-width: 52em; }
+  /* En colonnes de journal : un avis court ne laisse pas de trou sous lui, comme dans une grille à rangées. */
+  .avis-grille { columns: 3 320px; column-gap: 48px; }
+  .avis-grille > :global(.carte-avis) { break-inside: avoid; margin-bottom: 32px; }
+  /* Le plus récent sur toute la largeur. */
+  .avis-grille > :global(.carte-avis:first-child) { column-span: all; max-width: 52em; margin-bottom: 40px; }
 
   .laisser { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 40px; }
   .laisser h2 { font-size: var(--t-sous-titre); }

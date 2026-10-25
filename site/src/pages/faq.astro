@@ -81,12 +81,13 @@ const faqPage = {
 <style>
   .tel { white-space: nowrap; }
   .faq { border-top: var(--filet-fort); }
-  .faq-ligne { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 12px 64px; padding-block: 28px; border-bottom: var(--filet); }
-  .faq-ligne h2 { font-size: var(--t-sous-titre); line-height: 1.05; }
+  .faq-ligne { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 8px 64px; padding-block: 22px; border-bottom: var(--filet); }
+  .faq-ligne h2 { font-size: clamp(1.35rem, 2vw, 1.75rem); line-height: 1.05; }
   .faq-reponse { display: flex; flex-direction: column; gap: 12px; max-width: 40em; }
   .faq-reponse ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
   .faq-lien { font-weight: 700; min-height: var(--cible); display: inline-flex; align-items: center; align-self: flex-start; }
   @media (max-width: 760px) {
-    .faq-ligne { grid-template-columns: minmax(0, 1fr); padding-block: 22px; }
+    .faq-ligne { grid-template-columns: minmax(0, 1fr); padding-block: 18px; }
+    .faq-reponse { gap: 8px; }
   }
 </style>

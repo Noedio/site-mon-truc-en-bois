@@ -88,6 +88,8 @@ const pourScript = {
   variantes,
   texte: avecTexte,
   delai: produit.delai || 0,
+  // Après l'ajout au panier : continuer dans la catégorie de la pièce plutôt que sur toute la boutique.
+  suite: categorie ? { href: `/boutique/${categorie.id}/`, libelle: `Continuer dans ${categorie.nom}` } : { href: "/boutique/", libelle: "Continuer mes achats" },
 };
 ---
 <Base titre={produit.nom} description={produit.description} image={photoPublique || undefined}>
@@ -103,7 +105,7 @@ const pourScript = {
       </ol>
     </nav>
 
-    <div class="fiche">
+    <div class="fiche" id="personnaliser">
       <div class="fiche-visuel">
         {avecTexte ? (
           <ApercuGravure pieces={[produit]} disposition="fiche" />
@@ -183,6 +185,7 @@ const pourScript = {
                 <BoutonFavori id={produit.id} nom={produit.nom} />
               </div>
               <div class="confirmation" role="status" data-confirmation></div>
+              <button type="button" class="partager machine" data-partager data-titre={produit.nom}>Partager cette pièce</button>
               <p class="machine">
                 {produit.delai ? (
                   <>Fabrication en {produit.delai} jour{produit.delai > 1 ? "s" : ""} après validation de la maquette<span data-date-prete></span>.</>
@@ -245,6 +248,7 @@ const pourScript = {
     variantes: { nom: string; choix: { nom: string; prix: number }[] } | null;
     texte: boolean;
     delai: number;
+    suite: { href: string; libelle: string };
   }
 
   const form = document.querySelector<HTMLFormElement>("[data-fiche]")!;
@@ -362,7 +366,28 @@ const pourScript = {
     const n = nombreArticles();
     confirmation.innerHTML =
       `<p><strong>Ajouté au panier</strong> (${n} article${n > 1 ? "s" : ""}). ` +
-      `<a href="/panier/">Voir le panier</a> · <a href="/boutique/">Continuer mes achats</a></p>`;
+      `<a href="/panier/">Voir le panier</a> · <a href="${d.suite.href}">${d.suite.libelle}</a></p>`;
+  });
+
+  // Partage : menu du téléphone s'il existe, sinon le lien est copié.
+  const partager = document.querySelector<HTMLButtonElement>("[data-partager]");
+  partager?.addEventListener("click", async () => {
+    const lien = location.origin + location.pathname;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: partager.dataset.titre, url: lien });
+      } catch {
+        // Partage annulé : rien à dire.
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(lien);
+      partager.textContent = "Lien copié";
+    } catch {
+      partager.textContent = lien;
+    }
+    setTimeout(() => (partager.textContent = "Partager cette pièce"), 4000);
   });
 </script>
 
@@ -399,9 +424,13 @@ const pourScript = {
   .quantite-champ input { width: 60px; min-height: 56px; text-align: center; border-inline: 0; padding: 0; font-family: var(--f-titre); font-weight: 800; font-size: 1.5rem; -moz-appearance: textfield; appearance: textfield; }
   .quantite-champ input::-webkit-inner-spin-button, .quantite-champ input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   .achat :global(.achat-bouton) { flex: 1 1 260px; }
+  .achat :global(.bouton-favori) { width: 56px; height: 56px; } /* même hauteur que le bouton d'achat */
   .confirmation:empty { display: none; }
   .confirmation { padding: 12px 14px; border: var(--filet-fort); background: var(--papier); }
   .confirmation :global(a) { font-weight: 600; }
+  .partager { align-self: flex-start; min-height: var(--cible); padding: 0; background: none; border: 0; text-decoration: underline; text-underline-offset: 0.18em; cursor: pointer; overflow-wrap: anywhere; text-align: left; }
+  .partager:hover { color: var(--gravure); }
+  .fiche { scroll-margin-top: 12px; }
 
   .infos { margin: 0; border-top: var(--filet); }
   .infos div { display: grid; grid-template-columns: minmax(0, 170px) minmax(0, 1fr); gap: 2px 16px; padding: 12px 0; border-bottom: var(--filet); }

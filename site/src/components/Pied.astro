@@ -2,8 +2,14 @@
 // Pied de page brûlé : adresse, horaires, contact, liens de commande.
 import { site } from "../lib/donnees";
 import { adresseEnLignes, lienTel } from "../lib/format";
+import EtatOuverture from "./EtatOuverture.astro";
 
 const { rue, ville } = adresseEnLignes(site.adresse);
+// « Mardi : 9h – 11h30 / 13h30 – 18h » → jour et plages, en deux colonnes qui ne se coupent pas.
+const horaires = site.horaires.map((h) => {
+  const [jour, ...plages] = h.split(":");
+  return { jour: jour.trim(), plages: plages.join(":").trim() };
+});
 ---
 <footer class="pied">
   <div class="conteneur pied-grille">
@@ -11,9 +17,14 @@ const { rue, ville } = adresseEnLignes(site.adresse);
       <span class="pied-nom">{site.nom}</span>
       <span>{rue}<br />{ville}</span>
     </div>
-    <div class="pile machine" style="--pile: 4px">
+    <div class="pile machine pied-horaires" style="--pile: 4px">
       <span class="pied-titre">Horaires</span>
-      {site.horaires.map((h) => <span>{h}</span>)}
+      <EtatOuverture class="pied-etat" />
+      <dl>
+        {horaires.map(({ jour, plages }) => (
+          <div><dt>{jour}</dt><dd>{plages}</dd></div>
+        ))}
+      </dl>
     </div>
     <div class="pile" style="--pile: 6px">
       <span class="pied-titre machine">Contact</span>
@@ -39,6 +50,12 @@ const { rue, ville } = adresseEnLignes(site.adresse);
   .pied a { color: var(--bouleau); min-height: var(--cible); display: inline-flex; align-items: center; }
   .pied a:hover { color: var(--kraft); }
   .pied-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 32px 48px; padding-block: 56px 40px; }
+  @media (min-width: 1100px) { .pied-grille { grid-template-columns: 1fr 1.35fr 1fr 1fr; } }
+  .pied-horaires dl { margin: 0; display: grid; grid-template-columns: max-content max-content; gap: 2px 16px; font-size: var(--t-etiquette); line-height: 1.6; }
+  .pied-horaires dl div { display: contents; }
+  .pied-horaires dd { margin: 0; white-space: nowrap; }
+  /* Ligne réservée : l'état arrive après le chargement sans pousser les horaires. */
+  .pied :global(.pied-etat) { display: block; min-height: 1.6em; font-size: var(--t-etiquette); }
   .pied-nom { font-family: var(--f-titre); font-weight: 800; font-size: 1.875rem; text-transform: uppercase; line-height: 1; }
   .pied-titre { font-weight: 700; margin-bottom: 4px; font-size: var(--t-machine); }
   .pied :focus-visible { outline-color: var(--kraft); }

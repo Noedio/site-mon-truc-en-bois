@@ -19,7 +19,7 @@ import { produits } from "../lib/donnees";
       </div>
 
       <div class="grille-favoris" data-favoris-grille hidden>
-        {produits.map((p) => <CarteFavori produit={p} data-favori-carte={p.id} hidden />)}
+        {produits.map((p) => <CarteFavori produit={p} action data-favori-carte={p.id} hidden />)}
       </div>
 
       <div class="favoris-vide pile" style="--pile: 20px" data-favoris-vide hidden>

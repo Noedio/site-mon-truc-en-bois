@@ -1,9 +1,13 @@
 ---
 // Formulaire de devis de la page Contact.
-// Supabase configuré : la demande part vers la fonction `contact` (src/lib/demande.ts).
+// Supabase configuré : la demande part vers la fonction `contact` (src/lib/demande.ts), avec ses fichiers
+// (photos, logo, plan en PDF) déposés ensuite aux adresses d'envoi données par le serveur.
 // Sinon, on le dit en haut du formulaire et le bouton prépare un email avec le récapitulatif.
+// Avec JavaScript, les erreurs s'affichent sous les champs (pas de bulles du navigateur) ;
+// sans JavaScript, le formulaire s'envoie par la messagerie du visiteur (action mailto).
 import { site } from "../lib/donnees";
 import { lienTel } from "../lib/format";
+import { ACCEPT_FICHIERS, FICHIERS_MAX } from "../lib/demande";
 import Bouton from "./Bouton.astro";
 
 const { supabaseUrl, supabaseCle } = site.commandes;
@@ -11,13 +15,14 @@ const enLigne = Boolean(supabaseUrl && supabaseCle);
 const PROJETS = ["Gravure texte ou photo", "Sérigraphie ou impression", "Naissance, mariage, fête", "Bijoux", "Commande pro ou association", "Autre"];
 ---
 <noscript>
-  <p class="devis-avis">Pour demander un devis, écrivez-nous à {site.email} ou appelez le {site.telephone}.</p>
+  <p class="devis-avis">Le bouton du formulaire ouvre votre messagerie avec votre demande. Vous pouvez aussi nous écrire à {site.email} (avec vos photos en pièce jointe) ou appeler le {site.telephone}.</p>
 </noscript>
 <form
   id="devis"
   class="devis"
   method="post"
-  action="#devis"
+  action={`mailto:${site.email}?subject=${encodeURIComponent("Demande de devis")}`}
+  enctype="text/plain"
   aria-labelledby="titre-devis"
   data-supabase-url={supabaseUrl}
   data-supabase-cle={supabaseCle}
@@ -35,11 +40,13 @@ const PROJETS = ["Gravure texte ou photo", "Sérigraphie ou impression", "Naissa
   <div class="devis-champs">
     <div class="champ">
       <label for="d-nom">Nom <span aria-hidden="true">*</span></label>
-      <input id="d-nom" name="nom" type="text" required autocomplete="name" minlength="2" />
+      <input id="d-nom" name="nom" type="text" required autocomplete="name" minlength="2" aria-describedby="d-nom-erreur" />
+      <span class="erreur" id="d-nom-erreur"></span>
     </div>
     <div class="champ">
       <label for="d-email">Email <span aria-hidden="true">*</span></label>
-      <input id="d-email" name="email" type="email" required autocomplete="email" />
+      <input id="d-email" name="email" type="email" required autocomplete="email" aria-describedby="d-email-erreur" />
+      <span class="erreur" id="d-email-erreur"></span>
     </div>
     <div class="champ">
       <label for="d-tel">Téléphone</label>
@@ -53,25 +60,48 @@ const PROJETS = ["Gravure texte ou photo", "Sérigraphie ou impression", "Naissa
     </div>
     <div class="champ">
       <label for="d-quantite">Quantité approximative</label>
-      <input id="d-quantite" name="quantite" type="number" inputmode="numeric" min="1" step="1" value="1" />
+      <input id="d-quantite" name="quantite" type="number" inputmode="numeric" min="1" step="1" value="1" aria-describedby="d-quantite-erreur" />
+      <span class="erreur" id="d-quantite-erreur"></span>
     </div>
     <div class="champ">
       <label for="d-date">Date souhaitée</label>
-      <input id="d-date" name="date" type="date" aria-describedby="d-date-aide" />
+      <input id="d-date" name="date" type="date" aria-describedby="d-date-aide d-date-erreur" />
       <span class="aide" id="d-date-aide">Anniversaire, mariage, fête : la date à laquelle il vous faut la pièce.</span>
+      <span class="erreur" id="d-date-erreur"></span>
     </div>
     <div class="champ champ-large">
       <label for="d-message">Votre projet <span aria-hidden="true">*</span></label>
-      <textarea id="d-message" name="message" rows="6" required minlength="5" placeholder="Le support, le texte, les dimensions, le nombre de pièces…"></textarea>
+      <textarea id="d-message" name="message" rows="5" required minlength="5" placeholder="Le support, le texte, les dimensions, le nombre de pièces…" aria-describedby="d-message-erreur"></textarea>
+      <span class="erreur" id="d-message-erreur"></span>
     </div>
-    <div class="champ champ-large">
-      <span class="libelle">Logo ou photo</span>
-      <p class="aide">
-        {enLigne
-          ? "Ce formulaire ne transmet pas de fichier. Vous recevrez un email de confirmation : répondez-y en joignant votre logo ou votre photo."
-          : "Ce formulaire ne transmet pas de fichier. Joignez votre logo ou votre photo à l'email qui va s'ouvrir."}
-      </p>
-    </div>
+
+    {enLigne ? (
+      <div class="champ champ-large fichiers" data-fichiers>
+        <span class="libelle" id="d-fichiers-titre">Photos, logo ou plan (facultatif)</span>
+        <div class="depot" data-depot>
+          <div class="depot-boutons">
+            <label class="depot-bouton depot-photo">
+              <input type="file" accept="image/*" capture="environment" data-fichiers-champ aria-describedby="d-fichiers-aide" />
+              <span>Prendre une photo</span>
+            </label>
+            <label class="depot-bouton">
+              <input type="file" multiple accept={ACCEPT_FICHIERS} data-fichiers-champ aria-describedby="d-fichiers-aide" />
+              <span>Ajouter des fichiers</span>
+            </label>
+          </div>
+          <p class="aide" id="d-fichiers-aide"><span class="depot-glisser">Ou glissez-les dans ce cadre. </span>{FICHIERS_MAX} fichiers au plus, 15 Mo chacun&nbsp;: photos (JPEG, PNG, WebP, HEIC) ou PDF.</p>
+        </div>
+        <span class="erreur" id="d-fichiers-erreur" aria-live="polite"></span>
+        <ul class="fichiers-liste" data-fichiers-liste aria-label="Fichiers ajoutés" hidden></ul>
+        <p class="aide fichiers-sans-js">Sans JavaScript, joignez vos photos à l'email qui va s'ouvrir.</p>
+      </div>
+    ) : (
+      <div class="champ champ-large">
+        <span class="libelle">Logo ou photo</span>
+        <p class="aide">Ce formulaire ne transmet pas de fichier. Joignez votre logo ou votre photo à l'email qui va s'ouvrir.</p>
+      </div>
+    )}
+
     {enLigne && (
       <label class="case champ-large">
         <input type="checkbox" name="consentement" />
@@ -81,10 +111,10 @@ const PROJETS = ["Gravure texte ou photo", "Sérigraphie ou impression", "Naissa
   </div>
 
   <input class="piege" type="text" name="site_web" tabindex="-1" autocomplete="off" aria-hidden="true" />
-  <p class="aide"><span aria-hidden="true">*</span> champ obligatoire</p>
 
-  <div>
+  <div class="devis-envoi">
     <Bouton type="submit">{enLigne ? "Envoyer ma demande" : "Préparer l'email"}</Bouton>
+    <p class="aide"><span aria-hidden="true">*</span> champ obligatoire</p>
   </div>
 
   <div class="devis-retour" id="devis-retour" aria-live="polite"></div>
@@ -101,20 +131,118 @@ const PROJETS = ["Gravure texte ou photo", "Sérigraphie ou impression", "Naissa
 </form>
 
 <script>
-  import { envoyerDemande, lienEmail, recapitulatif, serveurPret, type Demande } from "../lib/demande";
+  import {
+    deposerFichiers, envoyerDemande, FICHIERS_MAX, lienEmail, recapitulatif, serveurPret, tailleLisible, typeFichier, verifierFichier, type Demande,
+  } from "../lib/demande";
 
   const f = document.getElementById("devis") as HTMLFormElement | null;
   if (f) {
+    f.noValidate = true; // nos messages remplacent les bulles du navigateur
     const config = { supabaseUrl: f.dataset.supabaseUrl ?? "", supabaseCle: f.dataset.supabaseCle ?? "" };
     const retour = document.getElementById("devis-retour")!;
     const repli = document.getElementById("devis-repli")!;
     const recap = document.getElementById("devis-recap") as HTMLTextAreaElement;
     const ouvrir = document.getElementById("devis-ouvrir") as HTMLAnchorElement;
     const copier = document.getElementById("devis-copier") as HTMLButtonElement;
-    const date = f.elements.namedItem("date") as HTMLInputElement;
-    date.min = new Date().toISOString().slice(0, 10);
+    const champ = <T extends HTMLElement = HTMLInputElement>(n: string) => f.elements.namedItem(n) as T | null;
+    const date = champ("date")!;
+    const aujourdhui = new Date().toLocaleDateString("sv-SE"); // AAAA-MM-JJ, jour local
+    date.min = aujourdhui;
 
-    const valeur = (n: string) => ((f.elements.namedItem(n) as HTMLInputElement | null)?.value ?? "").trim();
+    // ---------- Vérification des champs, messages sous chaque champ ----------
+    const REGLES: Record<string, (v: string) => string> = {
+      nom: (v) => (v.length >= 2 ? "" : "Indiquez votre nom (2 lettres au moins)."),
+      email: (v) => (!v ? "Indiquez votre email : c'est là que nous envoyons le devis." : /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v) ? "" : "Cet email semble incomplet : il doit ressembler à nom@exemple.fr."),
+      message: (v) => (v.length >= 5 ? "" : "Décrivez votre projet en quelques mots."),
+      quantite: (v) => (!v || (Number(v) >= 1 && Number.isFinite(Number(v))) ? "" : "Indiquez une quantité de 1 ou plus."),
+      date: (v) => (!v || v >= aujourdhui ? "" : "Choisissez une date à partir d'aujourd'hui."),
+    };
+    const verifier = (nom: string) => {
+      const c = champ<HTMLInputElement | HTMLTextAreaElement>(nom)!;
+      const message = REGLES[nom](c.value.trim());
+      document.getElementById(`d-${nom}-erreur`)!.textContent = message;
+      c.toggleAttribute("aria-invalid", Boolean(message));
+      // Tous les champs corrigés : le rappel général sous le bouton n'a plus lieu d'être.
+      if (!message && retour.classList.contains("alerte") && !f.querySelector(".champ [aria-invalid]")) dire("");
+      return !message;
+    };
+    Object.keys(REGLES).forEach((nom) => {
+      const c = champ(nom)!;
+      // Pas de reproche pendant la première saisie : on vérifie en quittant le champ, puis à chaque frappe.
+      c.addEventListener("blur", () => c.value.trim() && verifier(nom));
+      c.addEventListener("input", () => c.hasAttribute("aria-invalid") && verifier(nom));
+    });
+
+    // ---------- Fichiers : vignettes, retrait, glisser-déposer ----------
+    let fichiers: File[] = [];
+    const zone = f.querySelector<HTMLElement>("[data-fichiers]");
+    const liste = f.querySelector<HTMLUListElement>("[data-fichiers-liste]");
+    const erreurFichiers = document.getElementById("d-fichiers-erreur");
+    const apercus = new Map<File, string>();
+    const afficherFichiers = () => {
+      if (!liste) return;
+      liste.replaceChildren(
+        ...fichiers.map((fichier, i) => {
+          const li = document.createElement("li");
+          const type = typeFichier(fichier);
+          const vignette = document.createElement("span");
+          vignette.className = "fichier-vignette";
+          if (/^image\/(jpeg|png|webp)$/.test(type)) {
+            if (!apercus.has(fichier)) apercus.set(fichier, URL.createObjectURL(fichier));
+            vignette.append(Object.assign(new Image(), { src: apercus.get(fichier)!, alt: "" }));
+          } else vignette.textContent = type === "application/pdf" ? "PDF" : "HEIC";
+          const texte = document.createElement("span");
+          texte.className = "fichier-texte";
+          texte.append(Object.assign(document.createElement("span"), { className: "fichier-nom", textContent: fichier.name }), Object.assign(document.createElement("span"), { className: "etiquette doux", textContent: tailleLisible(fichier.size) }));
+          const retirer = Object.assign(document.createElement("button"), { type: "button", className: "machine lien-action", textContent: "Retirer" });
+          retirer.setAttribute("aria-label", `Retirer ${fichier.name}`);
+          retirer.addEventListener("click", () => {
+            URL.revokeObjectURL(apercus.get(fichier) ?? "");
+            apercus.delete(fichier);
+            fichiers.splice(i, 1);
+            afficherFichiers();
+            // Le focus passe au fichier suivant, ou au bouton d'ajout s'il n'en reste aucun.
+            (liste.querySelectorAll<HTMLButtonElement>("button")[Math.min(i, fichiers.length - 1)] ?? [...f.querySelectorAll<HTMLInputElement>("[data-fichiers-champ]")].pop())?.focus();
+          });
+          li.append(vignette, texte, retirer);
+          return li;
+        }),
+      );
+      liste.hidden = fichiers.length === 0;
+    };
+    const ajouter = (nouveaux: File[]) => {
+      const refus: string[] = [];
+      for (const fichier of nouveaux) {
+        const probleme = verifierFichier(fichier);
+        if (probleme) refus.push(probleme);
+        else if (fichiers.length >= FICHIERS_MAX) refus.push(`${FICHIERS_MAX} fichiers au plus : « ${fichier.name} » n'a pas été ajouté.`);
+        else if (!fichiers.some((x) => x.name === fichier.name && x.size === fichier.size)) fichiers.push(fichier);
+      }
+      if (erreurFichiers) erreurFichiers.textContent = refus.join(" ");
+      afficherFichiers();
+    };
+    f.querySelectorAll<HTMLInputElement>("[data-fichiers-champ]").forEach((c) =>
+      c.addEventListener("change", () => {
+        ajouter([...(c.files ?? [])]);
+        c.value = ""; // le même fichier pourra être rechoisi après un retrait
+      }),
+    );
+    const depot = f.querySelector<HTMLElement>("[data-depot]");
+    if (depot) {
+      depot.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        depot.classList.add("depot-actif");
+      });
+      depot.addEventListener("dragleave", (e) => !depot.contains(e.relatedTarget as Node) && depot.classList.remove("depot-actif"));
+      depot.addEventListener("drop", (e) => {
+        e.preventDefault();
+        depot.classList.remove("depot-actif");
+        ajouter([...(e.dataTransfer?.files ?? [])]);
+      });
+    }
+
+    // ---------- Envoi ----------
+    const valeur = (n: string) => (champ(n)?.value ?? "").trim();
     const lire = (): Demande => ({
       nom: valeur("nom"),
       email: valeur("email"),
@@ -123,8 +251,9 @@ const PROJETS = ["Gravure texte ou photo", "Sérigraphie ou impression", "Naissa
       quantite: Number(valeur("quantite")) > 0 ? Math.trunc(Number(valeur("quantite"))) : null,
       date: valeur("date"),
       message: valeur("message"),
-      consentement: Boolean((f.elements.namedItem("consentement") as HTMLInputElement | null)?.checked),
+      consentement: Boolean(champ("consentement")?.checked),
       piege: valeur("site_web"),
+      fichiers: zone ? fichiers : [],
     });
     const dire = (texte: string, alerte = false) => {
       retour.textContent = texte;
@@ -133,6 +262,12 @@ const PROJETS = ["Gravure texte ou photo", "Sérigraphie ou impression", "Naissa
 
     f.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const invalides = Object.keys(REGLES).filter((nom) => !verifier(nom));
+      if (invalides.length) {
+        dire(invalides.length > 1 ? "Quelques champs sont à compléter : ils sont signalés sous chaque case." : "Un champ est à compléter : il est signalé sous la case.", true);
+        champ(invalides[0])?.focus();
+        return;
+      }
       const d = lire();
       const bouton = f.querySelector<HTMLButtonElement>("button[type=submit]")!;
 
@@ -149,9 +284,20 @@ const PROJETS = ["Gravure texte ou photo", "Sérigraphie ou impression", "Naissa
       bouton.disabled = true;
       dire("Envoi en cours…");
       try {
-        await envoyerDemande(config, d);
+        const reponse = await envoyerDemande(config, d);
+        const envois = reponse.envois ?? [];
+        const rates = await deposerFichiers(envois, d.fichiers ?? [], (n) => dire(`Envoi des fichiers (${n} sur ${envois.length})…`));
         f.reset();
-        dire("Merci, votre demande est bien partie. Vous allez recevoir un email de confirmation, et nous revenons vers vous avec un devis.");
+        apercus.forEach((url) => URL.revokeObjectURL(url));
+        apercus.clear();
+        fichiers = [];
+        afficherFichiers();
+        dire(
+          rates.length
+            ? `Votre demande est bien partie, mais ${rates.length > 1 ? "ces fichiers n'ont" : "ce fichier n'a"} pas pu être envoyé${rates.length > 1 ? "s" : ""} : ${rates.join(", ")}. Répondez à l'email de confirmation en le${rates.length > 1 ? "s" : ""} joignant.`
+            : "Merci, votre demande est bien partie. Vous allez recevoir un email de confirmation, et nous revenons vers vous avec un devis.",
+          rates.length > 0,
+        );
       } catch (err) {
         dire(`${(err as Error).message} Vous pouvez aussi nous écrire à ${f.dataset.email} ou nous appeler.`, true);
       } finally {
@@ -182,12 +328,49 @@ const PROJETS = ["Gravure texte ou photo", "Sérigraphie ou impression", "Naissa
   .champ-large { grid-column: 1 / -1; }
   .champ label, .libelle { font-family: var(--f-machine); font-size: var(--t-machine); font-weight: 700; }
   .aide { color: var(--texte-doux); font-size: 0.95rem; }
-  textarea { resize: vertical; min-height: 9em; }
+  textarea { resize: vertical; min-height: 8em; }
+
+  .erreur { color: var(--gravure); font-size: 0.95rem; font-weight: 600; }
+  .erreur:empty { display: none; }
+  .champ [aria-invalid] { border: 2px solid var(--gravure); }
+
+  /* Fichiers : deux boutons, le cadre accepte le glisser-déposer sur ordinateur. */
+  .depot { border: 1px dashed var(--brule); background: var(--papier); padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
+  .depot-actif { border-style: solid; border-width: 2px; background: var(--bouleau-fonce); padding: 13px 15px; }
+  .depot-boutons { display: flex; flex-wrap: wrap; gap: 8px; }
+  .depot-bouton { position: relative; display: inline-flex; align-items: center; min-height: var(--cible); padding: 8px 16px; border: var(--filet); background: var(--bouleau); font-family: var(--f-machine); font-weight: 700; cursor: pointer; }
+  .depot-bouton:hover { background: var(--bouleau-fonce); }
+  .depot-bouton input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; min-height: 0; padding: 0; }
+  .depot-bouton:has(input:focus-visible) { outline: 2px solid var(--gravure); outline-offset: 2px; }
+  .depot .aide { flex: 1 1 260px; }
+  /* Appareil photo : sur téléphone seulement ; glisser-déposer : avec une souris seulement. */
+  .depot-photo { display: none; }
+  @media (pointer: coarse) {
+    .depot-photo { display: inline-flex; }
+    .depot-glisser { display: none; }
+  }
+  .fichiers-sans-js { display: none; }
+  @media (scripting: none) {
+    .depot, .fichiers .erreur { display: none; }
+    .fichiers-sans-js { display: block; }
+  }
+
+  .fichiers-liste { list-style: none; margin: 4px 0 0; padding: 0; border-top: var(--filet); }
+  .fichiers-liste :global(li) { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: var(--filet); min-width: 0; }
+  .fichiers-liste :global(.fichier-vignette) { flex: none; width: 56px; height: 56px; border: var(--filet); background: var(--kraft); display: flex; align-items: center; justify-content: center; font-family: var(--f-machine); font-size: var(--t-etiquette); font-weight: 700; }
+  .fichiers-liste :global(.fichier-vignette img) { width: 100%; height: 100%; object-fit: cover; }
+  .fichiers-liste :global(.fichier-texte) { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+  .fichiers-liste :global(.fichier-nom) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Boutons créés par le script : hors de la portée des styles du composant, d'où :global. */
+  .fichiers-liste :global(.lien-action) { flex: none; min-height: var(--cible); display: inline-flex; align-items: center; font-weight: 700; background: none; border: 0; padding: 0 4px; text-decoration: underline; text-underline-offset: 0.18em; cursor: pointer; color: var(--brule); }
+  .fichiers-liste :global(.lien-action:hover) { color: var(--gravure); }
 
   .case { display: flex; gap: 12px; align-items: flex-start; min-height: var(--cible); cursor: pointer; }
   .case input { width: 22px; height: 22px; min-height: 0; flex: none; margin-top: 2px; accent-color: var(--brule); }
 
   .piege { position: absolute; left: -9999px; width: 1px; height: 1px; }
+
+  .devis-envoi { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
 
   .devis-retour:empty { display: none; }
   .devis-retour { border: var(--filet); padding: 14px 16px; background: var(--papier); }

@@ -1,8 +1,8 @@
 ---
-// Contenu commun des pages de la boutique : titre, nombre de pièces, filtres par catégorie
-// et par budget (pages statiques), puis la grille à filets.
+// Contenu commun des pages de la boutique : titre, filtres sur une ligne (catégorie, budget, tri,
+// nombre de pièces ; pages statiques), puis la grille à filets.
 import GrillePieces from "./GrillePieces.astro";
-import NavFiltres from "./NavFiltres.astro";
+import FiltresBoutique from "./FiltresBoutique.astro";
 import { produits, produitsDe, categories, site, type Produit } from "../lib/donnees";
 import { PLAFONDS, piecesSousBudget } from "../lib/catalogue";
 import { euros } from "../lib/format";
@@ -22,24 +22,23 @@ const liensCategories = [
 ];
 const liensBudget = PLAFONDS.map((p) => ({ href: `/boutique/moins-de-${p}-euros/`, libelle: `Moins de ${p} €`, nombre: piecesSousBudget(p).length, actif: p === plafond }));
 
-const compte = `${pieces.length} pièce${pieces.length > 1 ? "s" : ""}${plafond ? ", du prix le plus bas au plus haut" : ""}`;
+const compte = `${pieces.length} pièce${pieces.length > 1 ? "s" : ""}`;
 const livraison = site.livraisonOfferteDes ? `livraison ${euros(site.livraison)}, offerte dès ${euros(site.livraisonOfferteDes)}` : `livraison ${euros(site.livraison)}`;
 ---
 <section class="bande" aria-labelledby="titre-boutique">
-  <div class="conteneur pile" style="--pile: 32px">
-    <div class="pile" style="--pile: 14px">
-      <div class="boutique-tete">
+  <div class="conteneur pile" style="--pile: 24px">
+    <div class="boutique-tete">
+      <div class="boutique-titre">
         <h1 id="titre-boutique">{titre}</h1>
-        <p class="machine">{compte}</p>
+        <p class="machine compte-tete">{compte}</p>
       </div>
-      {chapeau && <p class="chapeau">{chapeau}</p>}
-      <p class="etiquette doux">Retrait gratuit à la boutique d'Auchel · {livraison}</p>
+      <div class="pile" style="--pile: 8px">
+        {chapeau && <p class="chapeau">{chapeau}</p>}
+        <p class="etiquette doux">Retrait gratuit à la boutique d'Auchel · {livraison}</p>
+      </div>
     </div>
 
-    <div class="pile" style="--pile: 12px">
-      <NavFiltres titre="Catégorie" liens={liensCategories} />
-      <NavFiltres titre="Budget" liens={liensBudget} />
-    </div>
+    <FiltresBoutique categories={liensCategories} budgets={liensBudget} compte={compte} triParPrix={Boolean(plafond)} />
 
     {pieces.length ? (
       <GrillePieces produits={pieces} prioritaires={4} />
@@ -50,6 +49,17 @@ const livraison = site.livraisonOfferteDes ? `livraison ${euros(site.livraison)}
 </section>
 
 <style>
-  .boutique-tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 32px; }
+  .bande > .conteneur { padding-top: clamp(24px, 4vw, 44px); }
+  .boutique-tete { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 34em); align-items: end; justify-content: space-between; gap: 10px 48px; }
+  .boutique-tete h1 { font-size: clamp(2.6rem, 5vw, 4.5rem); }
   .boutique-vide { border-top: var(--filet); border-bottom: var(--filet); padding: 24px 0; }
+  .boutique-titre { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  /* Le nombre de pièces est dans la ligne des filtres ; au téléphone, il remonte à côté du titre. */
+  .compte-tete { display: none; white-space: nowrap; color: var(--texte-doux); }
+  @media (max-width: 899px) {
+    .boutique-tete { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 760px) {
+    .compte-tete { display: block; }
+  }
 </style>

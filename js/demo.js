@@ -182,7 +182,7 @@
       ligne.maj_le = t;
       return ligne;
     }
-    if (table === "demandes" && !ancienne) return { id: uuid(), cree_le: t, type: "contact", statut: "nouvelle", nom: "", email: "", tel: "", sujet: "", message: "", quantite: null, notes: "", client_id: null, ...ligne };
+    if (table === "demandes" && !ancienne) return { id: uuid(), cree_le: t, type: "contact", statut: "nouvelle", nom: "", email: "", tel: "", sujet: "", message: "", quantite: null, notes: "", client_id: null, fichiers: [], ...ligne };
     if (table === "codes_promo") {
       if (!ancienne) ligne = { cree_le: t, description: "", type: "pourcentage", minimum: 0, debut: null, fin: null, utilisations_max: null, utilisations: 0, actif: true, ...ligne };
       ligne.code = String(ligne.code || "").toUpperCase();
