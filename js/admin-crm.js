@@ -1,7 +1,7 @@
 // Gestion commerciale dans l'admin (serveur Supabase requis) :
-//   Caisse     : vente en boutique, commande prise par téléphone ou sur un salon (ticket / facture)
-//   Clients    : fichier clients, historique d'achats, notes, étiquettes, consentement, export
-//   Demandes   : devis et messages reçus depuis le site
+//   Caisse     : js/admin-caisse.js, affichée ici avec les données et les outils partagés
+//   Clients    : fichier clients en tableau triable, fiche dans un tiroir latéral (historique, demandes, notes, actions)
+//   Demandes   : boîte de réception (à répondre, répondues, classées), réponse et fichiers joints dans le tiroir
 //   Marketing  : codes promo, emails aux abonnés
 //   + statistiques de ventes sur le tableau de bord
 (function () {
@@ -9,8 +9,9 @@
   const CANAUX = { boutique: "En boutique", telephone: "Par téléphone", salon: "Salon / marché" };
   const CANAUX_STATS = { site: "Site internet", boutique: "Boutique", telephone: "Téléphone", salon: "Salons" };
   const SOURCES = { site: "Site internet", boutique: "Boutique", telephone: "Téléphone", salon: "Salon / marché", newsletter: "Newsletter", autre: "Autre" };
-  const ST_DEM = { nouvelle: "Nouvelle", en_cours: "En cours", repondue: "Répondue", convertie: "Devenue commande", archivee: "Archivée" };
+  const ST_DEM = { nouvelle: "Nouvelle", en_cours: "À répondre", repondue: "Répondue", convertie: "Devenue commande", archivee: "Classée" };
   const TYPES_DEM = { devis: "Devis", contact: "Message", newsletter: "Newsletter" };
+  const STATUTS_CMD = { nouvelle: "À maquetter", maquette_envoyee: "Maquette envoyée", retouche: "Maquette en retouche", confirmee: "Maquette validée", en_fabrication: "En fabrication", prete: "Prête", expediee: "Expédiée", terminee: "Terminée", annulee: "Annulée" };
   const SEGMENTS = {
     tous: ["Tous", () => true],
     abonnes: ["Abonnés newsletter", (c) => c.consentement_marketing],
@@ -18,11 +19,11 @@
     inactifs: ["Sans achat depuis 6 mois", (c, s) => s.n && Date.now() - new Date(s.derniere) > 182 * 864e5],
     prospects: ["Jamais commandé", (c, s) => !s.n],
   };
-  const FILTRES_DEM = {
-    a_traiter: ["À traiter", (d) => ["nouvelle", "en_cours"].includes(d.statut)],
-    repondue: ["Répondues", (d) => d.statut === "repondue"],
-    convertie: ["Devenues commandes", (d) => d.statut === "convertie"],
-    toutes: ["Toutes", (d) => d.type !== "newsletter"],
+  // Boîte de réception des demandes : ce qui attend une réponse d'abord
+  const BOITES = {
+    a_repondre: ["À répondre", (d) => d.type !== "newsletter" && ["nouvelle", "en_cours"].includes(d.statut)],
+    repondues: ["Répondues", (d) => d.type !== "newsletter" && ["repondue", "convertie"].includes(d.statut)],
+    classees: ["Classées", (d) => d.type !== "newsletter" && d.statut === "archivee"],
     newsletter: ["Inscriptions newsletter", (d) => d.type === "newsletter"],
   };
 
@@ -30,9 +31,7 @@
   let zone = null;
   let vue = "";
   const donnees = { clients: [], commandes: [], demandes: [], promos: [], campagnes: [] };
-  const etat = { q: "", segment: "tous", etiquette: "", demandes: "a_traiter" };
-  const caisseVide = () => ({ lignes: [], recherche: "", clientId: "", saisieClient: "", nouveau: { nom: "", email: "", tel: "" }, consentement: false, canal: "boutique", paye: true, moyen: "carte", remise: 0, remiseType: "euros", code: "", promo: null, reception: "retrait", port: 0, adresse: "", date: "", notes: "", demandeId: "", fini: null });
-  let caisse = caisseVide();
+  const etat = { q: "", segment: "tous", etiquette: "", tri: { col: "derniere", sens: -1 }, boite: "a_repondre", qDem: "", ouvert: "" };
 
   const S = () => window.AdminServeur;
   const sb = () => S().client(ctx.D);
@@ -43,16 +42,67 @@
   const fenetre = () => document.getElementById("fenetre");
   const lien = (tel) => String(tel || "").replace(/[^\d+]/g, "");
   const sansEmail = (email) => !email || email.endsWith(".invalid");
-  const avatar = (nom) => `<span class="avatar" aria-hidden="true">${e(String(nom || "?").split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((m) => m[0].toUpperCase()).join(""))}</span>`;
+  const ICO_X = `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>`;
   // Adresse du site pour les liens envoyés aux clients : l'adresse publique réglée dans Infos boutique, sinon le dossier
   // de cette page (Cloudflare Pages sert l'admin à « /admin » sans « .html » : on ne peut pas se fier au nom de la page).
   const adresseSite = () => (ctx.D.site.url ? ctx.D.site.url.replace(/\/*$/, "/") : location.origin + location.pathname.replace(/[^/]*$/, ""));
+
+  // ---------- Recherche : sans accents ni majuscules, téléphone par ses chiffres, résultats surlignés ----------
+  const normaliser = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const chiffresTel = (tel) => lien(tel).replace(/^\+33/, "0").replace(/\D/g, ""); // « 06 12 » et « +33 6 12 » se retrouvent
+  // Entoure de <mark> les caractères de texte qui correspondent aux positions marquées (texte échappé)
+  function marquer(caracteres, marques) {
+    let html = "";
+    let dedans = false;
+    caracteres.forEach((c, i) => {
+      if (marques[i] && !dedans) html += "<mark>";
+      if (!marques[i] && dedans) html += "</mark>";
+      dedans = marques[i];
+      html += e(c);
+    });
+    return html + (dedans ? "</mark>" : "");
+  }
+  function surligner(texte, q) {
+    const caracteres = [...String(texte ?? "")];
+    const cherche = normaliser(String(q ?? "").trim());
+    if (!cherche) return e(texte);
+    let norm = "";
+    const carte = [];
+    caracteres.forEach((c, i) => {
+      for (const x of normaliser(c)) {
+        norm += x;
+        carte.push(i);
+      }
+    });
+    const marques = caracteres.map(() => false);
+    for (let k = norm.indexOf(cherche); k >= 0; k = norm.indexOf(cherche, k + cherche.length)) for (let j = k; j < k + cherche.length; j++) marques[carte[j]] = true;
+    return marquer(caracteres, marques);
+  }
+  function surlignerTel(tel, q) {
+    const chiffres = String(q ?? "").replace(/\D/g, "");
+    if (chiffres.length < 3 || /[a-z@]/i.test(q)) return surligner(tel, q);
+    const caracteres = [...String(tel ?? "")];
+    const positions = caracteres.map((c, i) => (/\d/.test(c) ? i : -1)).filter((i) => i >= 0);
+    const suite = positions.map((i) => caracteres[i]).join("");
+    const marques = caracteres.map(() => false);
+    const k = suite.indexOf(chiffres.startsWith("33") ? "0" + chiffres.slice(2) : chiffres);
+    if (k >= 0) for (let j = k; j < k + chiffres.length && j < positions.length; j++) marques[positions[j]] = true;
+    return marquer(caracteres, marques);
+  }
 
   async function lire(table, select = "*", ordre = "cree_le") {
     const { data, error } = await sb().from(table).select(select).order(ordre, { ascending: false }).limit(5000);
     if (error) throw new Error(error.message);
     return data;
   }
+  const LECTEURS = {
+    clients: () => lire("clients"),
+    commandes: () => lire("commandes", "id,numero,cree_le,total,statut,paiement_statut,client_id,canal"),
+    demandes: () => lire("demandes"),
+    promos: () => lire("codes_promo"),
+    campagnes: () => lire("campagnes"),
+  };
+  const recharger = (besoins) => Promise.all(besoins.map(async (b) => (donnees[b] = await LECTEURS[b]())));
   async function charger() {
     const besoins = {
       caisse: ["clients", "promos"],
@@ -60,25 +110,21 @@
       demandes: ["demandes", "clients"],
       marketing: ["promos", "campagnes", "clients"],
     }[vue];
-    const lecteurs = {
-      clients: () => lire("clients"),
-      commandes: () => lire("commandes", "id,numero,cree_le,total,statut,paiement_statut,client_id,canal"),
-      demandes: () => lire("demandes"),
-      promos: () => lire("codes_promo"),
-      campagnes: () => lire("campagnes"),
-    };
-    await Promise.all(besoins.map(async (b) => (donnees[b] = await lecteurs[b]())));
+    await recharger(besoins);
     majCompteurDemandes();
   }
   function majCompteurDemandes() {
     const n = donnees.demandes.filter((d) => d.statut === "nouvelle" && d.type !== "newsletter").length;
     window.AdminPastille?.("demandes", n);
   }
+  // Données et outils prêtés à la caisse (js/admin-caisse.js)
+  const outilsCaisse = () => ({ ctx, donnees, sb, S, recharger, vue: () => vue, normaliser, chiffresTel, surligner, surlignerTel, libellePromo, promoValide, MOYENS, CANAUX });
 
   async function monter(nomVue, element, contexte) {
     ctx = contexte;
     zone = element;
     vue = nomVue;
+    fermerTiroir(false);
     if (!S().client(ctx.D) || !(await S().connecte(ctx.D))) return S().ecranConnexion(zone, ctx, () => monter(nomVue, element, contexte));
     zone.innerHTML = `<p class="aide" style="padding:2rem 0">Chargement…</p>`;
     try {
@@ -91,15 +137,8 @@
   }
   function afficher() {
     if (!zone || !document.contains(zone)) return;
-    zone.innerHTML = { caisse: vueCaisse, clients: vueClients, demandes: vueDemandes, marketing: vueMarketing }[vue]();
-    if (vue === "caisse") {
-      majTotalCaisse();
-      // Téléphone : la barre verte « Ticket » s'efface quand le ticket (et son total) est à l'écran
-      const barre = zone.querySelector(".caisse-barre");
-      const ticket = zone.querySelector("#cs-ticket");
-      if (barre && ticket && "IntersectionObserver" in window)
-        new IntersectionObserver(([x]) => barre.classList.toggle("cachee", x.isIntersecting), { threshold: 0 }).observe(ticket);
-    }
+    if (vue === "caisse") return window.AdminCaisse.monter(zone, outilsCaisse());
+    zone.innerHTML = { clients: vueClients, demandes: vueDemandes, marketing: vueMarketing }[vue]();
   }
   const exporterCsv = (nom, entetes, lignes) => {
     const champ = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -112,195 +151,50 @@
   };
 
   // =====================================================================
-  //  CAISSE : vente en boutique, par téléphone, sur un salon
+  //  TIROIR LATÉRAL : fiche client ou demande, sans quitter la liste
   // =====================================================================
-  // Assujetti à la TVA : les paiements en espèces doivent passer par un logiciel de caisse certifié (art. 286 du CGI).
-  const especesInterdites = () => ctx.D.site.legal?.regimeTva === "assujetti";
-  const produitsVendables = () => ctx.D.produits.filter((p) => p.visible !== false);
-  function totauxCaisse() {
-    const sous = arrondi(caisse.lignes.reduce((t, l) => t + arrondi(l.prix) * l.quantite, 0));
-    // Un code promo remplace la remise saisie à la main (même calcul que sur le site)
-    const p = caisse.promo;
-    const remise = p
-      ? arrondi(Math.min(sous, p.type === "pourcentage" ? (sous * Number(p.valeur)) / 100 : Number(p.valeur)))
-      : arrondi(Math.min(sous, caisse.remiseType === "pourcent" ? (sous * Number(caisse.remise || 0)) / 100 : Number(caisse.remise || 0)));
-    const port = caisse.reception === "livraison" ? arrondi(caisse.port) : 0;
-    return { sous, remise, port, total: arrondi(Math.max(0, sous - remise + port)) };
-  }
-  function vueCaisse() {
-    if (caisse.fini) {
-      const c = caisse.fini;
-      return `
-        <section class="bloc" style="max-width:640px">
-          <div class="bloc-tete"><h2>Vente enregistrée ✓</h2></div>
-          <p><strong>${e(c.numero)}</strong> · ${e(c.client_nom)} · <strong>${euros(c.total)}</strong> · ${c.paiement_statut === "paye" ? `réglée (${e(MOYENS[c.paiement_moyen] || c.paiement_moyen || "")})` : "à régler"}</p>
-          <div class="raccourcis">
-            ${c.facture_numero ? `<button class="btn" data-crm="imprimer" data-type="facture">Imprimer la facture ${e(c.facture_numero)}</button>` : ""}
-            <button class="btn ${c.facture_numero ? "btn-ligne" : ""}" data-crm="imprimer" data-type="bon">Imprimer le bon de commande</button>
-            <button class="btn btn-ligne" data-crm="nouvelle-vente">Nouvelle vente</button>
-            <button class="btn btn-ligne" data-aller="commandes">Voir dans les commandes</button>
-          </div>
-        </section>`;
+  let ouvreur = null;
+  function tiroir() {
+    let t = document.getElementById("crm-tiroir");
+    if (!t) {
+      t = document.createElement("dialog");
+      t.id = "crm-tiroir";
+      t.className = "tiroir";
+      t.setAttribute("aria-labelledby", "tiroir-titre");
+      document.body.append(t);
     }
-    const q = caisse.recherche.trim().toLowerCase();
-    const produits = produitsVendables().filter((p) => !q || p.nom.toLowerCase().includes(q));
-    const client = donnees.clients.find((c) => c.id === caisse.clientId);
-    return `
-      <div class="caisse">
-        <section class="bloc">
-          <div class="bloc-tete"><h2>Articles</h2></div>
-          <input type="search" data-caisse="recherche" value="${e(caisse.recherche)}" placeholder="Rechercher un produit…" aria-label="Rechercher un produit">
-          <div class="caisse-produits">
-            ${produits.map((p) => `<button class="caisse-produit" data-crm="ajouter" data-id="${e(p.id)}">${p.images?.[0] || p.image ? `<img src="${e(p.images?.[0] || p.image)}" alt="" loading="lazy">` : ""}<span>${e(p.nom)}</span><strong>${euros(p.prix)}</strong></button>`).join("") || `<p class="aide">Aucun produit.</p>`}
-          </div>
-          <form class="caisse-libre" data-crm-form="libre">
-            <strong>Article sur mesure</strong>
-            <input name="nom" placeholder="Ex. : gravure plaque de porte" required aria-label="Désignation">
-            <input name="prix" type="number" step="0.01" min="0" placeholder="Prix €" required aria-label="Prix">
-            <button class="btn btn-ligne">Ajouter</button>
-          </form>
-        </section>
-
-        <section class="bloc ticket" id="cs-ticket">
-          <div class="bloc-tete"><div><h2>Ticket</h2><span class="aide">${new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}</span></div>${caisse.lignes.length ? `<button class="mini" data-crm="vider">Vider le ticket</button>` : ""}</div>
-          <div class="liste">
-            ${caisse.lignes
-              .map((l, i) => {
-                const p = ctx.D.produits.find((x) => x.id === l.id);
-                const choix = p?.variantes?.choix || [];
-                return `<div class="ligne-edit">
-                  <div class="ligne-edit-tete"><strong>${e(l.nom)}</strong><button class="mini danger" data-crm="retirer" data-i="${i}" aria-label="Retirer">✕</button></div>
-                  ${choix.length ? `<select data-ligne="${i}" data-champ="variante" aria-label="${e(p.variantes.nom || "Option")}">${choix.map((c, j) => `<option value="${j}" ${l.variante === j ? "selected" : ""}>${e(p.variantes.nom || "Option")} : ${e(c.nom)}${c.prix ? ` (+${euros(c.prix)})` : ""}</option>`).join("")}</select>` : ""}
-                  ${p?.options?.texte || !p ? `<input data-ligne="${i}" data-champ="texte" value="${e(l.texte)}" placeholder="Texte à graver / personnalisation" aria-label="Personnalisation">` : ""}
-                  <div class="ticket-ligne">
-                    <span class="quantite"><button class="mini" data-crm="moins" data-i="${i}" aria-label="Moins">−</button><strong>${l.quantite}</strong><button class="mini" data-crm="plus" data-i="${i}" aria-label="Plus">+</button></span>
-                    <label>Prix unitaire <input type="number" step="0.01" min="0" data-ligne="${i}" data-champ="prix" value="${l.prix}"> €</label>
-                    <strong data-total-ligne="${i}">${euros(l.prix * l.quantite)}</strong>
-                  </div>
-                </div>`;
-              })
-              .join("") || `<p class="aide" style="padding:1rem 0">Touchez un produit pour l'ajouter.</p>`}
-          </div>
-
-          <fieldset class="pile">
-            <legend>Client</legend>
-            <input list="crm-liste-clients" data-caisse="client" value="${client ? e(`${client.nom}${client.email ? ` · ${client.email}` : client.tel ? ` · ${client.tel}` : ""}`) : ""}" placeholder="Client existant (nom, email…) · ou laissez vide" aria-label="Client existant">
-            <datalist id="crm-liste-clients">${donnees.clients.map((c) => `<option value="${e(`${c.nom}${c.email ? ` · ${c.email}` : c.tel ? ` · ${c.tel}` : ""}`)}"></option>`).join("")}</datalist>
-            ${client ? `<p class="aide">Fiche : ${e(client.nom)}${client.tel ? ` · ${e(client.tel)}` : ""} <button class="mini" data-crm="sans-client" type="button">Changer</button></p>` : `
-            <div class="grille-champs">
-              <div class="champ"><label for="cs-nom">Nouveau client : nom</label><input id="cs-nom" data-nouveau="nom" value="${e(caisse.nouveau.nom)}" autocomplete="off"></div>
-              <div class="champ"><label for="cs-tel">Téléphone</label><input id="cs-tel" type="tel" data-nouveau="tel" value="${e(caisse.nouveau.tel)}" autocomplete="off"></div>
-              <div class="champ large"><label for="cs-email">Email (pour la facture et le suivi)</label><input id="cs-email" type="email" data-nouveau="email" value="${e(caisse.nouveau.email)}" autocomplete="off"></div>
-            </div>`}
-            <label class="case"><input type="checkbox" data-caisse="consentement" ${caisse.consentement ? "checked" : ""}> <span>Le client accepte de recevoir nos nouveautés par email</span></label>
-          </fieldset>
-
-          <fieldset class="pile">
-            <legend>Vente</legend>
-            <div class="filtres">${Object.entries(CANAUX).map(([k, v]) => `<button type="button" class="filtre" data-crm="canal" data-valeur="${k}" aria-pressed="${caisse.canal === k}">${v}</button>`).join("")}</div>
-            <div class="filtres">
-              <button type="button" class="filtre" data-crm="paye" data-valeur="1" aria-pressed="${caisse.paye}">Réglée maintenant</button>
-              <button type="button" class="filtre" data-crm="paye" data-valeur="" aria-pressed="${!caisse.paye}">À régler plus tard</button>
-            </div>
-            ${caisse.paye ? `<div class="filtres">${Object.entries(MOYENS).filter(([k]) => k !== "especes" || !especesInterdites()).map(([k, v]) => `<button type="button" class="filtre" data-crm="moyen" data-valeur="${k}" aria-pressed="${caisse.moyen === k}">${v}</button>`).join("")}</div>${especesInterdites() ? `<p class="aide">Espèces : à enregistrer sur une caisse certifiée (obligation pour les commerces assujettis à la TVA). Ici : carte, chèque, virement.</p>` : ""}` : `<p class="aide">La commande sera « à payer » : vous pourrez envoyer un lien de paiement par carte depuis l'onglet Commandes.</p>`}
-            <div class="grille-champs">
-              ${caisse.promo
-                ? `<div class="champ large"><span class="label">Code promo</span><p class="encart" style="margin:0">Code <strong>${e(caisse.promo.code)}</strong> (${libellePromo(caisse.promo)})${caisse.promo.description ? ` : ${e(caisse.promo.description)}` : ""} <button type="button" class="mini" data-crm="retirer-code-caisse">Retirer</button></p></div>`
-                : `<div class="champ"><label for="cs-remise">Remise</label><span class="avec-unite"><input id="cs-remise" type="number" step="0.01" min="0" data-caisse="remise" value="${caisse.remise || ""}" placeholder="0"><select data-caisse="remiseType" aria-label="Type de remise"><option value="euros" ${caisse.remiseType === "euros" ? "selected" : ""}>€</option><option value="pourcent" ${caisse.remiseType === "pourcent" ? "selected" : ""}>%</option></select></span></div>
-              <div class="champ"><label for="cs-code">Code promo</label><span class="code-promo"><input id="cs-code" data-caisse="code" value="${e(caisse.code)}" placeholder="Ex. BIENVENUE10" autocomplete="off" maxlength="30"><button type="button" class="btn btn-ligne" data-crm="appliquer-code-caisse">Appliquer</button></span></div>`}
-              <div class="champ"><label for="cs-date">Pour le (facultatif)</label><input id="cs-date" type="date" data-caisse="date" value="${e(caisse.date)}"></div>
-              <label class="case large"><input type="checkbox" data-caisse="livraison" ${caisse.reception === "livraison" ? "checked" : ""}> <span>À livrer</span></label>
-              ${caisse.reception === "livraison" ? `
-              <div class="champ"><label for="cs-port">Frais de livraison (€)</label><input id="cs-port" type="number" step="0.01" min="0" data-caisse="port" value="${caisse.port || ""}"></div>
-              <div class="champ large"><label for="cs-adresse">Adresse de livraison</label><textarea id="cs-adresse" rows="2" data-caisse="adresse">${e(caisse.adresse)}</textarea></div>` : ""}
-              <div class="champ large"><label for="cs-notes">Notes internes</label><textarea id="cs-notes" rows="2" data-caisse="notes">${e(caisse.notes)}</textarea></div>
-            </div>
-          </fieldset>
-
-          <div class="ticket-pied">
-            <div class="ticket-total" id="cs-total"></div>
-            <button class="btn btn-plein" data-crm="encaisser" ${caisse.lignes.length ? "" : "disabled"}>Enregistrer la vente</button>
-          </div>
-        </section>
-      </div>
-      ${caisse.lignes.length ? `<a class="caisse-barre" href="#cs-ticket"><span>Ticket · ${caisse.lignes.reduce((t, l) => t + l.quantite, 0)} article${caisse.lignes.reduce((t, l) => t + l.quantite, 0) > 1 ? "s" : ""}</span><strong id="cs-barre-total"></strong></a>` : ""}`;
+    return t;
   }
-  function majTotalCaisse() {
-    const t = totauxCaisse();
-    const el = zone.querySelector("#cs-total");
-    if (!el) return;
-    const barre = zone.querySelector("#cs-barre-total");
-    if (barre) barre.textContent = euros(t.total);
-    const ligne = (libelle, montant, classe = "") => `<div class="ticket-somme ${classe}"><span>${libelle}</span><span>${montant}</span></div>`;
-    el.innerHTML = `${t.remise || t.port ? ligne("Sous-total", euros(t.sous)) : ""}${t.remise ? ligne(caisse.promo ? `Code ${e(caisse.promo.code)}` : "Remise", `−${euros(t.remise)}`, "remise") : ""}${t.port ? ligne("Livraison", euros(t.port)) : ""}${ligne("Total", euros(t.total), "total")}`;
-    // Le bouton dit exactement ce qui va se passer, avec le montant
-    const bouton = zone.querySelector('[data-crm="encaisser"]');
-    if (bouton) bouton.textContent = caisse.lignes.length ? (caisse.paye ? `Encaisser ${euros(t.total)}` : `Enregistrer la vente à régler (${euros(t.total)})`) : "Enregistrer la vente";
-    caisse.lignes.forEach((l, i) => {
-      const x = zone.querySelector(`[data-total-ligne="${i}"]`);
-      if (x) x.textContent = euros(l.prix * l.quantite);
-    });
+  function ouvrirTiroir(html, cle) {
+    const t = tiroir();
+    if (!t.open) ouvreur = document.activeElement;
+    t.innerHTML = html;
+    t.scrollTop = 0;
+    if (!t.open) t.show();
+    document.body.classList.add("tiroir-ouvert");
+    etat.ouvert = cle;
+    marquerOuvert();
+    t.querySelector("#tiroir-titre")?.focus({ preventScroll: true });
   }
-  function ajouterProduit(id) {
-    const p = ctx.D.produits.find((x) => x.id === id);
-    if (!p) return;
-    const existante = caisse.lignes.find((l) => l.id === id && !l.texte && (l.variante ?? 0) === 0);
-    if (existante && !p.variantes?.choix?.length && !p.options?.texte) existante.quantite++;
-    else caisse.lignes.push({ id, nom: p.nom, prix: arrondi(Number(p.prix) + Number(p.variantes?.choix?.[0]?.prix || 0)), quantite: 1, texte: "", variante: p.variantes?.choix?.length ? 0 : null });
+  function fermerTiroir(rendreFocus = true) {
+    const t = document.getElementById("crm-tiroir");
+    etat.ouvert = "";
+    document.body.classList.remove("tiroir-ouvert");
+    marquerOuvert();
+    if (!t?.open) return;
+    t.close();
+    if (rendreFocus && ouvreur && document.contains(ouvreur)) ouvreur.focus();
+    ouvreur = null;
   }
-  async function encaisser() {
-    const t = totauxCaisse();
-    // Nom tapé dans « Client existant » sans choisir dans la liste : on retrouve la fiche si elle est unique,
-    // sinon on demande de choisir (la vente ne doit pas partir sans client par erreur).
-    const saisie = String(caisse.saisieClient || "").trim().toLowerCase();
-    if (!caisse.clientId && saisie) {
-      const trouves = donnees.clients.filter((c) => `${c.nom} ${c.email ?? ""} ${c.tel}`.toLowerCase().includes(saisie.split(" · ")[0]));
-      if (trouves.length !== 1) return ctx.toast(trouves.length ? "Plusieurs clients correspondent : choisissez le bon dans la liste proposée." : "Ce client n'est pas dans le fichier : videz le champ « Client existant » et remplissez « Nouveau client ».", true);
-      caisse.clientId = trouves[0].id;
-    }
-    const client = donnees.clients.find((c) => c.id === caisse.clientId);
-    const n = caisse.nouveau;
-    if (n.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(n.email)) return ctx.toast("Email du client invalide.", true);
-    if (caisse.reception === "livraison" && !client?.adresse && !caisse.adresse.trim()) return ctx.toast("Indiquez l'adresse de livraison.", true);
-    if (caisse.paye && caisse.moyen === "especes" && especesInterdites()) return ctx.toast("Les espèces doivent être enregistrées sur votre caisse certifiée.", true);
-    const vente = {
-      client: client ? { id: client.id } : n.nom || n.email || n.tel ? { ...n, consentement: caisse.consentement } : undefined,
-      lignes: caisse.lignes.map((l) => {
-        const p = ctx.D.produits.find((x) => x.id === l.id);
-        const c = l.variante != null ? p?.variantes?.choix?.[l.variante] : null;
-        return { id: l.id || undefined, nom: l.nom, prix_unitaire: arrondi(l.prix), quantite: l.quantite, texte: l.texte, variante: c ? `${p.variantes.nom || "Option"} : ${c.nom}` : "" };
-      }),
-      canal: caisse.canal,
-      mode_reception: caisse.reception,
-      paiement_statut: caisse.paye ? "paye" : "en_attente",
-      paiement_moyen: caisse.paye ? caisse.moyen : "",
-      remise: t.remise,
-      code_promo: caisse.promo?.code || "",
-      port: t.port,
-      notes: caisse.notes,
-      date_souhaitee: caisse.date,
-    };
-    if (client && caisse.consentement && !client.consentement_marketing)
-      await sb().from("clients").update({ consentement_marketing: true, consentement_le: new Date().toISOString() }).eq("id", client.id);
-    if (caisse.reception === "livraison" && caisse.adresse.trim()) {
-      if (client) await sb().from("clients").update({ adresse: caisse.adresse.trim() }).eq("id", client.id);
-      else vente.client = { ...(vente.client || {}), adresse: caisse.adresse.trim() };
-    }
-    const bouton = zone.querySelector('[data-crm="encaisser"]');
-    bouton.disabled = true;
-    try {
-      const { commande } = await S().appel(ctx.D, "creer_commande", { vente });
-      if (caisse.demandeId) await sb().from("demandes").update({ statut: "convertie", client_id: commande.client_id }).eq("id", caisse.demandeId);
-      caisse = { ...caisseVide(), fini: commande };
-      donnees.clients = await lire("clients").catch(() => donnees.clients);
-      donnees.promos = await lire("codes_promo").catch(() => donnees.promos); // nombre d'utilisations à jour
-      ctx.toast(`Vente ${commande.numero} enregistrée.`);
-      afficher();
-    } catch (x) {
-      bouton.disabled = false;
-      ctx.toast(x.message, true);
-    }
+  // La ligne dont la fiche est ouverte reste repérée dans la liste
+  function marquerOuvert() {
+    zone?.querySelectorAll("[data-ligne-id]").forEach((x) => (x.dataset.ligneId === etat.ouvert ? x.setAttribute("aria-current", "true") : x.removeAttribute("aria-current")));
   }
+  const teteTiroir = (titre, sousTitre, surTitre = "") => `
+    <div class="tiroir-tete">
+      <div>${surTitre ? `<p class="etiquette">${surTitre}</p>` : ""}<h2 id="tiroir-titre" tabindex="-1">${titre}</h2>${sousTitre ? `<p class="aide">${sousTitre}</p>` : ""}</div>
+      <button type="button" class="mini" data-crm="fermer-tiroir" aria-label="Fermer (Échap)">${ICO_X}</button>
+    </div>`;
 
   // =====================================================================
   //  CLIENTS
@@ -316,19 +210,32 @@
     }
     return (id) => s[id] || { n: 0, total: 0, derniere: null };
   }
-  function vueClients() {
-    const st = statsClients();
-    const q = etat.q.trim().toLowerCase();
-    const chiffresQ = q.replace(/\D/g, ""); // « 06 12 » ou « 0612 » retrouvent le même numéro
-    const etiquettes = [...new Set(donnees.clients.flatMap((c) => c.etiquettes || []))].sort();
-    const liste = donnees.clients
+  function clientsFiltres(st) {
+    const q = normaliser(etat.q.trim());
+    const chiffres = etat.q.replace(/\D/g, "");
+    const { col, sens } = etat.tri;
+    const valeur = { nom: (c) => normaliser(c.nom), achats: (c) => st(c.id).n, total: (c) => st(c.id).total, derniere: (c) => st(c.id).derniere || "", depuis: (c) => c.cree_le || "" }[col];
+    return donnees.clients
       .filter((c) => SEGMENTS[etat.segment][1](c, st(c.id)))
       .filter((c) => !etat.etiquette || (c.etiquettes || []).includes(etat.etiquette))
-      .filter((c) => !q || `${c.nom} ${c.email ?? ""} ${c.tel} ${(c.etiquettes || []).join(" ")}`.toLowerCase().includes(q) || (chiffresQ.length >= 4 && lien(c.tel).replace(/^\+33/, "0").includes(chiffresQ)));
+      .filter((c) => !q || normaliser(`${c.nom} ${c.email ?? ""} ${(c.etiquettes || []).join(" ")}`).includes(q) || (chiffres.length >= 3 && chiffresTel(c.tel).includes(chiffres)))
+      .sort((a, b) => {
+        const x = valeur(a);
+        const y = valeur(b);
+        return (x > y ? 1 : x < y ? -1 : 0) * sens || String(b.cree_le).localeCompare(String(a.cree_le));
+      });
+  }
+  function vueClients() {
+    const st = statsClients();
+    const etiquettes = [...new Set(donnees.clients.flatMap((c) => c.etiquettes || []))].sort();
     const abonnes = donnees.clients.filter((c) => c.consentement_marketing).length;
     const recurrents = donnees.clients.filter((c) => st(c.id).n >= 2).length;
     const acheteurs = donnees.clients.filter((c) => st(c.id).n).length;
     const ca = donnees.clients.reduce((t, c) => t + st(c.id).total, 0);
+    const entete = (col, nom, classe = "") => {
+      const trie = etat.tri.col === col;
+      return `<th scope="col" class="${classe}" ${trie ? `aria-sort="${etat.tri.sens > 0 ? "ascending" : "descending"}"` : ""}><button type="button" class="crm-tri" data-crm="trier" data-valeur="${col}">${nom}<span class="crm-tri-sens" aria-hidden="true">${trie ? (etat.tri.sens > 0 ? "↑" : "↓") : ""}</span></button></th>`;
+    };
     return `
       <div class="chiffres-admin">
         <div class="chiffre"><strong>${donnees.clients.length}</strong><span>clients</span></div>
@@ -336,112 +243,111 @@
         <div class="chiffre"><strong>${acheteurs ? Math.round((recurrents / acheteurs) * 100) : 0} %</strong><span>de clients fidèles (2 achats ou +)</span></div>
         <div class="chiffre"><strong>${euros(acheteurs ? ca / acheteurs : 0)}</strong><span>dépensés en moyenne par client</span></div>
       </div>
-      <section class="bloc">
-        <div class="bloc-tete">
-          <h2>Clients <span class="aide">(${liste.length})</span></h2>
+      <section class="bloc crm-bloc">
+        <div class="crm-outils">
+          <input type="search" data-crm-q value="${e(etat.q)}" placeholder="Nom, email, téléphone, étiquette" aria-label="Rechercher un client" aria-controls="crm-clients">
           <div class="raccourcis">
-            <button class="btn" data-crm="nouveau-client">+ Nouveau client</button>
-            <button class="btn btn-ligne" data-crm="export-clients">Exporter (tableur)</button>
+            <button class="btn" data-crm="nouveau-client">Nouveau client</button>
+            <button class="btn btn-ligne" data-crm="export-clients">Exporter</button>
           </div>
         </div>
-        <div class="barre">
-          <div class="filtres">${Object.entries(SEGMENTS).map(([k, [nom, f]]) => `<button class="filtre" data-crm="segment" data-valeur="${k}" aria-pressed="${etat.segment === k}">${nom} <small>${donnees.clients.filter((c) => f(c, st(c.id))).length}</small></button>`).join("")}</div>
-          <input type="search" data-crm-q value="${e(etat.q)}" placeholder="Nom, email, téléphone, étiquette…" aria-label="Rechercher un client">
-        </div>
-        ${etiquettes.length ? `<div class="filtres" style="margin-bottom:.8rem">${etiquettes.map((t) => `<button class="filtre" data-crm="etiquette" data-valeur="${e(t)}" aria-pressed="${etat.etiquette === t}">#${e(t)}</button>`).join("")}</div>` : ""}
-        <div class="liste">
-          ${liste
-            .slice(0, 300)
-            .map((c) => {
-              const s = st(c.id);
-              return `<button class="ligne ligne-commande" data-crm="client" data-id="${c.id}">
-                ${avatar(c.nom || c.email)}
-                <span class="ligne-texte"><strong>${e(c.nom || "(sans nom)")}</strong><span>${[c.email, c.tel].filter(Boolean).map(e).join(" · ") || "aucun contact"}${s.derniere ? ` · dernier achat le ${date(s.derniere)}` : ""}</span></span>
-                <span class="pastilles">${c.consentement_marketing ? `<span class="pastille ok">Abonné</span>` : ""}${(c.etiquettes || []).map((t) => `<span class="pastille">#${e(t)}</span>`).join("")}</span>
-                <span class="prix"><strong>${euros(s.total)}</strong><small class="aide"> ${s.n} achat${s.n > 1 ? "s" : ""}</small></span>
-              </button>`;
-            })
-            .join("") || `<p class="aide" style="padding:1.5rem 0">Aucun client ${donnees.clients.length ? "dans cette liste" : "pour l'instant : ils sont ajoutés automatiquement à chaque commande, devis ou inscription"}.</p>`}
-        </div>
-        ${liste.length > 300 ? `<p class="aide">300 premiers affichés : affinez la recherche.</p>` : ""}
+        <div class="filtres" role="group" aria-label="Listes de clients">${Object.entries(SEGMENTS).map(([k, [nom, f]]) => `<button class="filtre" data-crm="segment" data-valeur="${k}" aria-pressed="${etat.segment === k}">${nom} <small>${donnees.clients.filter((c) => f(c, st(c.id))).length}</small></button>`).join("")}</div>
+        ${etiquettes.length ? `<div class="crm-etiquettes"><span class="aide">Étiquettes :</span>${etiquettes.map((t) => `<button class="lien-bouton" data-crm="etiquette" data-valeur="${e(t)}" aria-pressed="${etat.etiquette === t}">${e(t)}</button>`).join("")}</div>` : ""}
+        <table class="crm-table crm-clients">
+          <caption class="cs-annonce">Clients, triés par ${{ nom: "nom", achats: "nombre d'achats", total: "total dépensé", derniere: "date du dernier achat", depuis: "ancienneté" }[etat.tri.col]}</caption>
+          <thead><tr>${entete("nom", "Client")}<th scope="col" class="crm-col-contact">Contact</th>${entete("achats", "Achats", "n crm-col-achats")}${entete("total", "Dépensé", "n")}${entete("derniere", "Dernier achat", "crm-col-date")}<th scope="col" class="crm-col-suivi">Suivi</th></tr></thead>
+          <tbody id="crm-clients">${lignesClients(st)}</tbody>
+        </table>
       </section>`;
   }
+  function lignesClients(st = statsClients()) {
+    const liste = clientsFiltres(st);
+    const lignes = liste
+      .slice(0, 300)
+      .map((c) => {
+        const s = st(c.id);
+        const suivi = [c.consentement_marketing ? "abonné" : "", ...(c.etiquettes || [])].filter(Boolean);
+        return `<tr data-crm="client" data-id="${c.id}" data-ligne-id="${c.id}" ${etat.ouvert === c.id ? 'aria-current="true"' : ""}>
+          <td class="crm-col-nom"><button type="button" class="crm-lien" data-crm="client" data-id="${c.id}">${surligner(c.nom || "(sans nom)", etat.q)}</button><span class="crm-sous">${c.email ? surligner(c.email, etat.q) : c.tel ? surlignerTel(c.tel, etat.q) : "aucun contact"}</span></td>
+          <td class="crm-col-contact">${c.email ? `<span>${surligner(c.email, etat.q)}</span>` : ""}${c.tel ? `<span>${surlignerTel(c.tel, etat.q)}</span>` : ""}${!c.email && !c.tel ? `<span class="aide">aucun</span>` : ""}</td>
+          <td class="n crm-col-achats">${s.n || `<span class="aide">0</span>`}</td>
+          <td class="n crm-montant">${s.total ? euros(s.total) : `<span class="aide">0</span>`}</td>
+          <td class="crm-col-date">${s.derniere ? date(s.derniere) : `<span class="aide">jamais</span>`}</td>
+          <td class="crm-col-suivi">${suivi.map(e).join(", ")}</td>
+        </tr>`;
+      })
+      .join("");
+    if (!lignes) return `<tr class="crm-vide"><td colspan="6">${donnees.clients.length ? `Aucun client ${etat.q ? `pour « ${e(etat.q)} »` : "dans cette liste"}.` : "Aucun client pour l'instant : ils sont ajoutés automatiquement à chaque commande, vente, devis ou inscription."}</td></tr>`;
+    return lignes + (liste.length > 300 ? `<tr class="crm-vide"><td colspan="6">300 premiers affichés sur ${liste.length} : affinez la recherche.</td></tr>` : "");
+  }
+  const majLignesClients = () => {
+    const corps = zone?.querySelector("#crm-clients");
+    if (corps) corps.innerHTML = lignesClients();
+  };
 
-  function ficheClient(id) {
-    const c = id ? donnees.clients.find((x) => x.id === id) : { nom: "", email: "", tel: "", adresse: "", notes: "", etiquettes: [], source: "boutique", consentement_marketing: false };
+  function formulaireClient(c, nouveau) {
+    return `
+      <form class="pile" data-crm-form="client" data-id="${nouveau ? "" : c.id}">
+        <div class="grille-champs">
+          <div class="champ large"><label for="cl-nom">Nom</label><input id="cl-nom" name="nom" value="${e(c.nom)}" required maxlength="120"></div>
+          <div class="champ"><label for="cl-tel">Téléphone</label><input id="cl-tel" name="tel" type="tel" value="${e(c.tel)}"></div>
+          <div class="champ"><label for="cl-email">Email</label><input id="cl-email" name="email" type="email" value="${e(c.email || "")}"></div>
+          <div class="champ large"><label for="cl-adresse">Adresse</label><textarea id="cl-adresse" name="adresse" rows="2">${e(c.adresse)}</textarea></div>
+          <div class="champ large"><label for="cl-etiquettes">Étiquettes</label><input id="cl-etiquettes" name="etiquettes" value="${e((c.etiquettes || []).join(", "))}" placeholder="pro, mariage 2026, club de foot…"><small>Séparées par des virgules : pour retrouver et cibler un groupe de clients.</small></div>
+          ${nouveau ? `<div class="champ"><label for="cl-source">Connu par</label><select id="cl-source" name="source">${Object.entries(SOURCES).map(([k, v]) => `<option value="${k}" ${c.source === k ? "selected" : ""}>${v}</option>`).join("")}</select></div>
+          <div class="champ large"><label for="cl-notes">Notes</label><textarea id="cl-notes" name="notes" rows="3" placeholder="Préférences, tailles, dates importantes (anniversaire, mariage…)">${e(c.notes)}</textarea></div>` : ""}
+          <label class="case large"><input type="checkbox" name="consentement" ${c.consentement_marketing ? "checked" : ""}> <span>Accepte de recevoir les nouveautés et promotions par email${c.consentement_le ? `<br><small class="aide">Choix enregistré le ${date(c.consentement_le, true)}</small>` : ""}</span></label>
+        </div>
+        <div class="raccourcis"><button class="btn">${nouveau ? "Créer la fiche" : "Enregistrer"}</button>${nouveau ? `<button type="button" class="btn btn-ligne" data-crm="fermer-tiroir">Annuler</button>` : ""}</div>
+      </form>`;
+  }
+  function tiroirClient(id) {
+    if (!id) {
+      const vide = { nom: "", email: "", tel: "", adresse: "", notes: "", etiquettes: [], source: "boutique", consentement_marketing: false };
+      return ouvrirTiroir(`${teteTiroir("Nouveau client", "Les clients des commandes, ventes et demandes sont ajoutés automatiquement.")}<div class="tiroir-corps">${formulaireClient(vide, true)}</div>`, "nouveau");
+    }
+    const c = donnees.clients.find((x) => x.id === id);
     if (!c) return;
     const st = statsClients()(c.id);
     const achats = donnees.commandes.filter((x) => x.client_id === c.id);
     const demandes = donnees.demandes.filter((d) => d.client_id === c.id);
     const tel = lien(c.tel);
-    const f = fenetre();
-    const STATUTS_CMD = { nouvelle: "Nouvelle", confirmee: "Maquette validée", en_fabrication: "En fabrication", prete: "Prête", expediee: "Expédiée", terminee: "Terminée", annulee: "Annulée" };
     const wa = tel ? `https://wa.me/${tel.startsWith("0") ? "33" + tel.slice(1) : tel.replace("+", "")}` : "";
-    // Fiche d'un client connu : qui c'est, comment le joindre, ce qu'il a acheté, puis ses coordonnées (repliées).
-    // Nouveau client : directement le formulaire.
-    const champs = `
-        <div class="grille-champs">
-          <div class="champ"><label for="cl-nom">Nom</label><input id="cl-nom" name="nom" value="${e(c.nom)}" required></div>
-          <div class="champ"><label for="cl-tel">Téléphone</label><input id="cl-tel" name="tel" type="tel" value="${e(c.tel)}"></div>
-          <div class="champ large"><label for="cl-email">Email</label><input id="cl-email" name="email" type="email" value="${e(c.email || "")}"></div>
-          <div class="champ large"><label for="cl-adresse">Adresse</label><textarea id="cl-adresse" name="adresse" rows="2">${e(c.adresse)}</textarea></div>
-          <div class="champ large"><label for="cl-etiquettes">Étiquettes</label><input id="cl-etiquettes" name="etiquettes" value="${e((c.etiquettes || []).join(", "))}" placeholder="pro, mariage 2026, club de foot…"><small>Séparées par des virgules : pour retrouver et cibler un groupe de clients.</small></div>
-          ${id ? "" : `<div class="champ"><label for="cl-source">Connu par</label><select id="cl-source" name="source">${Object.entries(SOURCES).map(([k, v]) => `<option value="${k}" ${c.source === k ? "selected" : ""}>${v}</option>`).join("")}</select></div>`}
-          <label class="case large"><input type="checkbox" name="consentement" ${c.consentement_marketing ? "checked" : ""}> <span>Accepte de recevoir les nouveautés et promotions par email${c.consentement_le ? `<br><small class="aide">Choix enregistré le ${date(c.consentement_le, true)}</small>` : ""}</span></label>
-        </div>`;
-    f.innerHTML = `
-      <form method="dialog" class="pile" data-crm-form="client">
-        ${id ? `
-        <div class="fiche-client-tete">
-          ${avatar(c.nom || c.email)}
-          <div>
-            <h2>${e(c.nom || "Client")}</h2>
-            <p class="aide">Client depuis le ${date(c.cree_le)} · ${e(SOURCES[c.source] || c.source)}</p>
-            <div class="pastilles" style="margin:0.4rem 0 0">${c.consentement_marketing ? `<span class="pastille paiement-paye">Abonné aux nouveautés</span>` : ""}${(c.etiquettes || []).map((t) => `<span class="pastille">#${e(t)}</span>`).join("")}</div>
-          </div>
-        </div>
+    const fait = (nom, valeur) => `<div><dt>${nom}</dt><dd>${valeur}</dd></div>`;
+    ouvrirTiroir(
+      `${teteTiroir(e(c.nom || "Client"), `Client depuis le ${date(c.cree_le)} · ${e(SOURCES[c.source] || c.source)}`)}
+      <div class="tiroir-corps">
         <div class="raccourcis">
           <button class="btn" type="button" data-crm="vendre" data-id="${c.id}">Nouvelle vente</button>
+          ${c.email ? `<button class="btn btn-ligne" type="button" data-crm="ecrire" data-id="${c.id}">Écrire</button>` : ""}
           ${tel ? `<a class="btn btn-ligne" href="tel:${e(tel)}">Appeler</a>` : ""}
           ${wa ? `<a class="btn btn-ligne" target="_blank" rel="noopener" href="${e(wa)}">WhatsApp</a>` : ""}
-          ${c.email ? `<button class="btn btn-ligne" type="button" data-crm="ecrire" data-id="${c.id}">Écrire un email</button>` : ""}
         </div>
-        <p class="fiche-client-chiffres"><span><strong>${st.n}</strong> achat${st.n > 1 ? "s" : ""}</span><span><strong>${euros(st.total)}</strong> dépensés</span>${st.n ? `<span>panier moyen <strong>${euros(st.total / st.n)}</strong></span>` : ""}</p>` : `<h2 style="font-size:1.35rem">Nouveau client</h2>`}
-        <div class="champ"><label for="cl-notes">Notes</label><textarea id="cl-notes" name="notes" rows="3" placeholder="Préférences, tailles, dates importantes (anniversaire, mariage…)">${e(c.notes)}</textarea></div>
-        ${achats.length ? `<h3>Achats</h3><div class="liste">${achats.map((a) => `<div class="ligne ligne-simple"><span class="ligne-texte"><strong>${e(a.numero)}</strong><span>${date(a.cree_le)} · ${e(CANAUX_STATS[a.canal] || "Site internet")}</span></span><span class="pastilles"><span class="pastille statut-${a.statut}">${e(STATUTS_CMD[a.statut] || a.statut)}</span></span><strong class="prix">${euros(a.total)}</strong></div>`).join("")}</div>` : id ? `<p class="aide">Pas encore d'achat.</p>` : ""}
-        ${demandes.length ? `<h3>Demandes</h3><div class="liste">${demandes.map((d) => `<div class="ligne ligne-simple"><span class="ligne-texte"><strong>${e(TYPES_DEM[d.type])}${d.sujet ? ` · ${e(d.sujet)}` : ""}</strong><span>${date(d.cree_le)} · ${e(ST_DEM[d.statut])}</span></span></div>`).join("")}</div>` : ""}
-        ${id ? `<details class="coordonnees"><summary>Coordonnées, étiquettes et accord pour les emails</summary>${champs}</details>` : champs}
-        <div class="raccourcis">
-          <button class="btn" value="ok">Enregistrer</button>
-          <button class="btn btn-ligne" value="annuler" formnovalidate>Fermer</button>
-          ${id ? `<button class="btn btn-ligne danger" type="button" data-crm="supprimer-client" data-id="${c.id}" style="margin-left:auto">Supprimer la fiche</button>` : ""}
+        <dl class="tiroir-faits">
+          ${fait("Achats", st.n)}${fait("Dépensé", euros(st.total))}${fait("Panier moyen", st.n ? euros(st.total / st.n) : "aucun")}${fait("Dernier achat", st.derniere ? new Date(st.derniere).toLocaleDateString("fr-FR") : "jamais")}
+        </dl>
+        <dl class="tiroir-contact">
+          <div><dt>Email</dt><dd>${c.email ? `<a href="mailto:${e(c.email)}">${e(c.email)}</a>` : `<span class="aide">non renseigné</span>`}</dd></div>
+          <div><dt>Téléphone</dt><dd>${c.tel ? `<a href="tel:${e(tel)}">${e(c.tel)}</a>` : `<span class="aide">non renseigné</span>`}</dd></div>
+          ${c.adresse ? `<div><dt>Adresse</dt><dd style="white-space:pre-line">${e(c.adresse)}</dd></div>` : ""}
+          <div><dt>Nouveautés</dt><dd>${c.consentement_marketing ? `accepte les emails${c.consentement_le ? ` depuis le ${date(c.consentement_le)}` : ""}` : `<span class="aide">pas d'accord pour les emails</span>`}</dd></div>
+          ${(c.etiquettes || []).length ? `<div><dt>Étiquettes</dt><dd>${c.etiquettes.map(e).join(", ")}</dd></div>` : ""}
+        </dl>
+        <div class="champ">
+          <label for="cl-notes-${c.id}">Notes</label>
+          <textarea id="cl-notes-${c.id}" data-crm-notes="${c.id}" rows="3" placeholder="Préférences, tailles, dates importantes (anniversaire, mariage…)">${e(c.notes)}</textarea>
+          <small class="tiroir-etat" aria-live="polite">Enregistrées dès que vous quittez le champ.</small>
         </div>
-      </form>`;
-    f.querySelector("form").onsubmit = async (ev) => {
-      if (ev.submitter?.value !== "ok") return;
-      ev.preventDefault();
-      const x = Object.fromEntries(new FormData(ev.target));
-      const email = String(x.email || "").trim().toLowerCase();
-      const fiche = {
-        nom: String(x.nom).trim(),
-        email: email || null,
-        tel: String(x.tel || "").trim(),
-        adresse: String(x.adresse || "").trim(),
-        notes: String(x.notes || "").trim(),
-        etiquettes: [...new Set(String(x.etiquettes || "").split(",").map((t) => t.trim().toLowerCase().replace(/^#/, "")).filter(Boolean))],
-        consentement_marketing: !!x.consentement,
-        ...(id ? {} : { source: x.source }),
-      };
-      if (!!x.consentement !== !!c.consentement_marketing) fiche.consentement_le = new Date().toISOString();
-      const r = id ? await sb().from("clients").update(fiche).eq("id", id).select().single() : await sb().from("clients").insert(fiche).select().single();
-      if (r.error) return ctx.toast(/duplicate|unique/i.test(r.error.message) ? "Un autre client a déjà cet email." : r.error.message, true);
-      if (id) Object.assign(c, r.data);
-      else donnees.clients.unshift(r.data);
-      f.close();
-      ctx.toast("Fiche enregistrée.");
-      afficher();
-    };
-    if (!f.open) f.showModal();
+        <section class="tiroir-section">
+          <h3>Commandes et ventes <span class="aide">(${achats.length})</span></h3>
+          ${achats.length ? `<ul class="tiroir-liste">${achats.map((a) => `<li><span class="tiroir-num">${e(a.numero)}</span><span>${date(a.cree_le)} · ${e(CANAUX_STATS[a.canal] || "Site internet")}</span><span class="${a.paiement_statut === "en_attente" && a.statut !== "annulee" ? "manque" : "aide"}">${e(STATUTS_CMD[a.statut] || a.statut)}${a.paiement_statut === "en_attente" && a.statut !== "annulee" ? " · à régler" : ""}</span><strong>${euros(a.total)}</strong></li>`).join("")}</ul>` : `<p class="aide">Pas encore d'achat.</p>`}
+        </section>
+        ${demandes.length ? `<section class="tiroir-section"><h3>Demandes <span class="aide">(${demandes.length})</span></h3><ul class="tiroir-liste tiroir-liste-demandes">${demandes.map((d) => `<li><button type="button" class="lien-bouton" data-crm="demande" data-id="${d.id}">${e(TYPES_DEM[d.type])}${d.sujet ? ` · ${e(d.sujet)}` : ""}</button><span>${date(d.cree_le)}</span><span class="aide">${e(ST_DEM[d.statut])}</span></li>`).join("")}</ul></section>` : ""}
+        <details class="coordonnees"><summary>Modifier les coordonnées, les étiquettes, l'accord pour les emails</summary>${formulaireClient(c, false)}</details>
+        <p><button type="button" class="lien-bouton danger" data-crm="supprimer-client" data-id="${c.id}">Supprimer la fiche</button></p>
+      </div>`,
+      c.id
+    );
   }
 
   function ecrire({ email, nom, sujet = "", message = "", apres }) {
@@ -469,84 +375,129 @@
       }
     };
     if (!f.open) f.showModal();
+    f.querySelector("#em-message").focus();
   }
 
   // =====================================================================
-  //  DEMANDES (devis, messages)
+  //  DEMANDES (devis, messages) : boîte de réception
   // =====================================================================
+  const fichiersDe = (d) => (Array.isArray(d?.fichiers) ? d.fichiers.filter((f) => f && f.chemin) : []);
+  const taille = (o) => (!o ? "" : o < 1024 * 1024 ? `${Math.max(1, Math.round(o / 1024))} Ko` : `${String(Math.round(o / 104857.6) / 10).replace(".", ",")} Mo`);
+  function quand(d) {
+    const x = new Date(d);
+    const jours = Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / 864e5);
+    if (jours === 0) return x.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    if (jours === 1) return "hier";
+    return x.toLocaleDateString("fr-FR", { day: "numeric", month: "short", ...(jours > 300 ? { year: "numeric" } : {}) });
+  }
+  function demandesFiltrees() {
+    const q = normaliser(etat.qDem.trim());
+    return donnees.demandes.filter(BOITES[etat.boite][1]).filter((d) => !q || normaliser(`${d.nom} ${d.email} ${d.tel} ${d.sujet} ${d.message}`).includes(q));
+  }
   function vueDemandes() {
-    const liste = donnees.demandes.filter(FILTRES_DEM[etat.demandes][1]);
     return `
-      <section class="bloc">
-        <div class="bloc-tete"><h2>Demandes reçues</h2><button class="btn btn-ligne" data-crm="actualiser">Actualiser</button></div>
-        <p class="aide">Devis et messages envoyés depuis le site. Chaque demande crée ou complète la fiche du client.</p>
-        <div class="barre"><div class="filtres">${Object.entries(FILTRES_DEM).map(([k, [nom, f]]) => `<button class="filtre" data-crm="filtre-demandes" data-valeur="${k}" aria-pressed="${etat.demandes === k}">${nom} <small>${donnees.demandes.filter(f).length}</small></button>`).join("")}</div></div>
-        <div class="liste">
-          ${liste
-            .map(
-              (d) => `<button class="ligne ligne-commande" data-crm="demande" data-id="${d.id}">
-                ${avatar(d.nom || d.email)}
-                <span class="ligne-texte"><strong>${e(d.nom || d.email)}${d.sujet ? ` · ${e(d.sujet)}` : ""}</strong><span>${date(d.cree_le, true)}${d.quantite ? ` · quantité ${d.quantite}` : ""} · ${e(d.message.slice(0, 90))}${d.message.length > 90 ? "…" : ""}</span></span>
-                <span class="pastilles"><span class="pastille">${TYPES_DEM[d.type]}</span><span class="pastille demande-${d.statut}">${ST_DEM[d.statut]}</span></span>
-              </button>`
-            )
-            .join("") || `<p class="aide" style="padding:1.5rem 0">Aucune demande dans cette liste.</p>`}
+      <section class="bloc crm-bloc">
+        <div class="crm-outils">
+          <input type="search" data-crm-qdem value="${e(etat.qDem)}" placeholder="Nom, email, sujet, message" aria-label="Rechercher une demande" aria-controls="crm-boite">
+          <button class="btn btn-ligne" data-crm="actualiser">Actualiser</button>
         </div>
+        <div class="filtres" role="group" aria-label="Boîtes">${Object.entries(BOITES).map(([k, [nom, f]]) => `<button class="filtre" data-crm="boite" data-valeur="${k}" aria-pressed="${etat.boite === k}">${nom} <small>${donnees.demandes.filter(f).length}</small></button>`).join("")}</div>
+        <ul class="crm-boite" id="crm-boite">${lignesDemandes()}</ul>
       </section>`;
   }
-  // Statut et notes tapés dans la fiche d'une demande, gardés avant d'ouvrir l'email de réponse ou la caisse
-  async function garderSaisieDemande(id) {
-    const d = donnees.demandes.find((x) => x.id === id);
-    const statut = fenetre().querySelector("#dm-statut")?.value;
-    const notes = fenetre().querySelector("#dm-notes")?.value.trim();
-    if (!d || statut === undefined || (statut === d.statut && notes === d.notes)) return;
-    const { error } = await sb().from("demandes").update({ statut, notes }).eq("id", d.id);
-    if (!error) Object.assign(d, { statut, notes });
+  function lignesDemandes() {
+    const liste = demandesFiltrees();
+    return (
+      liste
+        .map((d) => {
+          const n = fichiersDe(d).length;
+          const details = [TYPES_DEM[d.type], d.sujet ? surligner(d.sujet, etat.qDem) : "", d.quantite ? `${d.quantite} pièce${d.quantite > 1 ? "s" : ""}` : "", n ? `${n} fichier${n > 1 ? "s" : ""}` : ""].filter(Boolean).join(" · ");
+          return `<li><button type="button" class="crm-demande ${d.statut === "nouvelle" ? "non-lue" : ""}" data-crm="demande" data-id="${d.id}" data-ligne-id="${d.id}" ${etat.ouvert === d.id ? 'aria-current="true"' : ""}>
+            <span class="crm-demande-haut"><strong>${surligner(d.nom || d.email, etat.qDem)}</strong>${d.statut === "nouvelle" ? `<span class="crm-nouvelle">Nouvelle</span>` : ""}<time datetime="${e(d.cree_le)}">${quand(d.cree_le)}</time></span>
+            <span class="crm-demande-sujet">${details}</span>
+            ${d.message ? `<span class="crm-demande-extrait">${surligner(d.message.slice(0, 160), etat.qDem)}</span>` : ""}
+          </button></li>`;
+        })
+        .join("") ||
+      `<li class="crm-vide">${etat.qDem ? `Aucune demande pour « ${e(etat.qDem)} ».` : etat.boite === "a_repondre" ? "Rien à répondre pour l'instant. Les devis et messages du site arrivent ici." : "Aucune demande dans cette boîte."}</li>`
+    );
   }
-  function ficheDemande(id) {
+  const majLignesDemandes = () => {
+    const l = zone?.querySelector("#crm-boite");
+    if (l) l.innerHTML = lignesDemandes();
+  };
+  async function changerStatutDemande(d, statut) {
+    const { error } = await sb().from("demandes").update({ statut }).eq("id", d.id);
+    if (error) return ctx.toast(error.message, true), false;
+    d.statut = statut;
+    majCompteurDemandes();
+    if (vue === "demandes") {
+      zone.querySelectorAll('[data-crm="boite"] small').forEach((s) => (s.textContent = donnees.demandes.filter(BOITES[s.parentElement.dataset.valeur][1]).length));
+      majLignesDemandes();
+    }
+    return true;
+  }
+  function tiroirDemande(id) {
     const d = donnees.demandes.find((x) => x.id === id);
     if (!d) return;
-    if (d.statut === "nouvelle" && d.type !== "newsletter") {
-      d.statut = "en_cours";
-      sb().from("demandes").update({ statut: "en_cours" }).eq("id", d.id).then(majCompteurDemandes);
-    }
+    // Ouvrir une demande nouvelle la passe « à répondre » (la pastille du menu baisse)
+    if (d.statut === "nouvelle" && d.type !== "newsletter") changerStatutDemande(d, "en_cours");
     const tel = lien(d.tel);
-    const f = fenetre();
-    f.innerHTML = `
-      <form method="dialog" class="pile" style="max-width:680px">
-        <div class="bloc-tete"><h2 style="font-size:1.35rem">${TYPES_DEM[d.type]}${d.sujet ? ` · ${e(d.sujet)}` : ""}</h2><span class="aide">${date(d.cree_le, true)}</span></div>
-        <p><strong>${e(d.nom)}</strong><br><a href="mailto:${e(d.email)}">${e(d.email)}</a>${d.tel ? ` · <a href="tel:${e(tel)}">${e(d.tel)}</a>` : ""}${d.quantite ? `<br>Quantité : <strong>${d.quantite}</strong>` : ""}</p>
-        ${d.message ? `<div class="encart" style="white-space:pre-line">${e(d.message)}</div>` : ""}
-        <div class="grille-champs">
-          <div class="champ"><label for="dm-statut">Suivi</label><select id="dm-statut">${Object.entries(ST_DEM).map(([k, v]) => `<option value="${k}" ${d.statut === k ? "selected" : ""}>${v}</option>`).join("")}</select></div>
-          <div class="champ large"><label for="dm-notes">Notes internes</label><textarea id="dm-notes" rows="3" placeholder="Prix proposé, délai, maquette envoyée…">${e(d.notes)}</textarea></div>
-        </div>
+    const fichiers = fichiersDe(d);
+    const repondue = ["repondue", "convertie"].includes(d.statut);
+    const prenom = String(d.nom || "").split(" ")[0];
+    ouvrirTiroir(
+      `${teteTiroir(e(d.sujet || (d.type === "devis" ? "Demande de devis" : d.type === "newsletter" ? "Inscription à la newsletter" : "Message")), `Reçue le ${date(d.cree_le, true)} · ${e(ST_DEM[d.statut === "nouvelle" && d.type !== "newsletter" ? "en_cours" : d.statut])}`, e(TYPES_DEM[d.type]))}
+      <div class="tiroir-corps">
+        <p class="tiroir-qui"><strong>${e(d.nom || "Sans nom")}</strong>${d.email ? `<a href="mailto:${e(d.email)}">${e(d.email)}</a>` : ""}${d.tel ? `<a href="tel:${e(tel)}">${e(d.tel)}</a>` : ""}${d.quantite ? `<span>Quantité : <strong>${d.quantite}</strong></span>` : ""}${d.client_id ? `<button type="button" class="lien-bouton" data-crm="client" data-id="${d.client_id}">Fiche client</button>` : ""}</p>
+        ${d.message ? `<div class="tiroir-message">${e(d.message)}</div>` : ""}
+        ${fichiers.length ? `<section class="tiroir-section"><h3>Fichiers joints <span class="aide">(${fichiers.length})</span></h3><ul class="crm-fichiers" data-fichiers="${d.id}">${fichiers.map((f, i) => `<li class="crm-fichier" data-i="${i}"><span class="crm-fichier-apercu">${/^image\//.test(f.type || "") ? "Chargement…" : "PDF"}</span><span class="crm-fichier-nom">${e(f.nom || f.chemin.split("/").pop())}<small>${taille(f.taille)}</small></span></li>`).join("")}</ul></section>` : ""}
+        ${d.type !== "newsletter" && d.email ? `
+        <form class="tiroir-reponse pile" data-crm-form="reponse" data-id="${d.id}">
+          <h3>${repondue ? "Écrire à nouveau" : "Répondre"}</h3>
+          <div class="champ"><label for="rp-sujet">Sujet</label><input id="rp-sujet" name="sujet" value="${e(`Votre demande${d.sujet ? ` : ${d.sujet}` : ""} · ${ctx.D.site.nom || "Mon Truc en Bois"}`)}" required></div>
+          <div class="champ"><label for="rp-message">Message</label><textarea id="rp-message" name="message" rows="6" required>${repondue ? "" : `Merci pour votre ${d.type === "devis" ? "demande de devis" : "message"}.\n\n`}</textarea><small>« Bonjour${prenom ? ` ${e(prenom)}` : ""}, » et la signature sont ajoutés. Envoyé depuis l'adresse de la boutique ; la réponse du client arrive dans votre messagerie.</small></div>
+          <div class="raccourcis"><button class="btn">Envoyer la réponse</button></div>
+        </form>` : ""}
         <div class="raccourcis">
-          <button class="btn" type="button" data-crm="repondre" data-id="${d.id}">Répondre par email</button>
-          <button class="btn btn-ligne" type="button" data-crm="convertir" data-id="${d.id}">Transformer en commande</button>
-          ${d.client_id ? `<button class="btn btn-ligne" type="button" data-crm="client" data-id="${d.client_id}">Fiche client</button>` : ""}
+          ${d.type !== "newsletter" ? `<button type="button" class="btn btn-ligne" data-crm="convertir" data-id="${d.id}">Transformer en vente</button>` : ""}
+          ${d.statut === "archivee" ? `<button type="button" class="btn btn-ligne" data-crm="desarchiver" data-id="${d.id}">Remettre à répondre</button>` : d.type !== "newsletter" ? `<button type="button" class="btn btn-ligne" data-crm="archiver" data-id="${d.id}">Classer</button>` : ""}
         </div>
-        <div class="raccourcis"><button class="btn btn-ligne" value="ok">Enregistrer et fermer</button><button class="btn btn-ligne" value="annuler" formnovalidate>Fermer</button></div>
-      </form>`;
-    f.querySelector("form").onsubmit = async (ev) => {
-      ev.preventDefault();
-      if (ev.submitter?.value === "ok") {
-        const modif = { statut: f.querySelector("#dm-statut").value, notes: f.querySelector("#dm-notes").value.trim() };
-        const { error } = await sb().from("demandes").update(modif).eq("id", d.id);
-        if (error) return ctx.toast(error.message, true);
-        Object.assign(d, modif);
-      }
-      f.close();
-      majCompteurDemandes();
-      afficher();
-    };
-    if (!f.open) f.showModal();
+        <div class="champ">
+          <label for="dm-notes-${d.id}">Notes internes</label>
+          <textarea id="dm-notes-${d.id}" data-crm-notes-demande="${d.id}" rows="3" placeholder="Prix proposé, délai, maquette envoyée…">${e(d.notes)}</textarea>
+          <small class="tiroir-etat" aria-live="polite">Enregistrées dès que vous quittez le champ.</small>
+        </div>
+      </div>`,
+      d.id
+    );
+    if (fichiers.length) chargerFichiers(d);
+  }
+  // Fichiers joints (bucket privé photos-clients) : liens temporaires d'une heure, comme les photos des commandes
+  async function chargerFichiers(d) {
+    const liste = document.querySelector(`#crm-tiroir [data-fichiers="${d.id}"]`);
+    if (!liste) return;
+    await Promise.all(
+      fichiersDe(d).map(async (f, i) => {
+        const li = liste.querySelector(`[data-i="${i}"]`);
+        const nom = e(f.nom || f.chemin.split("/").pop());
+        try {
+          const { data, error } = await sb().storage.from("photos-clients").createSignedUrl(f.chemin, 3600);
+          if (error) throw error;
+          const url = window.MTB_DEMO ? await window.MTB_DEMO.lienPhoto(data.signedUrl) : data.signedUrl; // démo : fichier gardé dans ce navigateur
+          const image = /^image\//.test(f.type || "") || /\.(jpe?g|png|webp|gif)$/i.test(f.chemin);
+          li.innerHTML = `<a href="${e(url)}" target="_blank" rel="noopener" class="crm-fichier-lien">${image ? `<img src="${e(url)}" alt="${nom}" loading="lazy">` : `<span class="crm-fichier-apercu">PDF</span>`}<span class="crm-fichier-nom">${nom}<small>${taille(f.taille)}${image ? "" : " · ouvrir"}</small></span></a>`;
+        } catch {
+          li.innerHTML = `<span class="crm-fichier-apercu">Indisponible</span><span class="crm-fichier-nom">${nom}<small>lien impossible à créer</small></span>`;
+        }
+      })
+    );
   }
 
   // =====================================================================
   //  MARKETING : codes promo et emails aux abonnés
   // =====================================================================
-  const libellePromo = (p) => (p.type === "pourcentage" ? `−${Number(p.valeur)} %` : `−${euros(p.valeur)}`);
+  const libellePromo = (p) => (p.type === "pourcentage" ? `−${String(Number(p.valeur)).replace(".", ",")} %` : `−${euros(p.valeur)}`);
   const promoValide = (p) => {
     const auj = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
     if (!p.actif) return [false, "Désactivé"];
@@ -555,34 +506,47 @@
     if (p.utilisations_max && p.utilisations >= p.utilisations_max) return [false, "Épuisé"];
     return [true, "Actif"];
   };
+  const dateCourte = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
   function vueMarketing() {
     const abonnes = donnees.clients.filter((c) => c.consentement_marketing && c.email).length;
     const site = adresseSite();
+    // Les codes utilisables d'abord, puis les autres (programmés, expirés, désactivés)
+    const promos = [...donnees.promos].sort((a, b) => Number(promoValide(b)[0]) - Number(promoValide(a)[0]));
     return `
       <section class="bloc">
-        <div class="bloc-tete"><h2>Codes promo</h2><button class="btn" data-crm="nouveau-code">+ Nouveau code</button></div>
-        <p class="aide">Le client saisit le code dans son panier ; la remise est calculée par le serveur et appliquée au paiement par carte. Idées : <em>BIENVENUE10</em> pour les abonnés, <em>FETEDESMERES</em> sur une période, un code pour un salon.</p>
-        <div class="bons">
-          ${donnees.promos
-            .map((p) => {
-              const [ok, txt] = promoValide(p);
-              const conditions = [Number(p.minimum) ? `dès ${euros(p.minimum)} d'achat` : "", p.debut ? `à partir du ${date(p.debut)}` : "", p.fin ? `jusqu'au ${date(p.fin)}` : "", p.utilisations_max ? `${p.utilisations_max} utilisations au plus` : ""].filter(Boolean).join(", ");
-              // Une carte par code, comme un bon de réduction : le code, la remise, les conditions, l'usage
-              return `<article class="bon ${ok ? "" : "bon-inactif"}">
-                <div class="bon-tete"><span class="bon-code">${e(p.code)}</span><span class="bon-remise">${libellePromo(p)}</span></div>
-                <p>${e(p.description) || "Sans description"}</p>
-                ${conditions ? `<p class="aide">${conditions[0].toUpperCase() + conditions.slice(1)}</p>` : ""}
-                <div class="pastilles" style="margin:0"><span class="pastille" style="${ok ? "background:#e3f1e9;color:#1f6b45" : ""}">${txt}</span><span class="pastille">${p.utilisations ? `Utilisé ${p.utilisations} fois` : "Pas encore utilisé"}</span></div>
-                <div class="ligne-boutons">
-                  <button class="mini" data-crm="partager-code" data-code="${e(p.code)}">Texte à partager</button>
-                  <button class="mini" data-crm="modifier-code" data-code="${e(p.code)}">Modifier</button>
-                  <button class="mini" data-crm="basculer-code" data-code="${e(p.code)}">${p.actif ? "Désactiver" : "Activer"}</button>
-                  <button class="mini danger" data-crm="supprimer-code" data-code="${e(p.code)}" aria-label="Supprimer le code ${e(p.code)}">Supprimer</button>
-                </div>
-              </article>`;
-            })
-            .join("") || `<p class="aide" style="padding:1rem 0">Aucun code pour l'instant. Un code de bienvenue (par exemple BIENVENUE10) est un bon début.</p>`}
-        </div>
+        <div class="bloc-tete"><h2>Codes promo</h2><button class="btn" data-crm="nouveau-code">Nouveau code</button></div>
+        <p class="aide">Sur le site, le client saisit un code dans son panier : un seul par commande, remise calculée par le serveur. En caisse, vous pouvez cumuler plusieurs codes et vos propres remises sur la même vente.</p>
+        ${promos.length ? `
+        <table class="crm-table crm-codes">
+          <thead><tr><th scope="col">Code</th><th scope="col">Remise</th><th scope="col">Conditions</th><th scope="col">Période</th><th scope="col" class="n">Utilisations</th><th scope="col">État</th><th scope="col"><span class="cs-annonce">Actions</span></th></tr></thead>
+          <tbody>
+            ${promos
+              .map((p) => {
+                const [ok, txt] = promoValide(p);
+                const periode = p.debut && p.fin ? `du ${dateCourte(p.debut)} au ${dateCourte(p.fin)}` : p.debut ? `à partir du ${dateCourte(p.debut)}` : p.fin ? `jusqu'au ${dateCourte(p.fin)}` : "sans limite";
+                return `<tr class="${ok ? "" : "crm-inactif"}">
+                  <td class="crm-col-nom"><span class="crm-code">${e(p.code)}</span><span class="crm-sous">${e(p.description) || "sans description"}</span></td>
+                  <td class="crm-remise">${libellePromo(p)}</td>
+                  <td data-label="Conditions">${Number(p.minimum) ? `dès ${euros(p.minimum)} d'achat` : `<span class="aide">aucune</span>`}</td>
+                  <td data-label="Période">${periode}</td>
+                  <td class="n" data-label="Utilisations">${p.utilisations || 0}${p.utilisations_max ? ` / ${p.utilisations_max}` : ""}</td>
+                  <td><span class="crm-etat ${ok ? "ok" : txt.startsWith("À partir") ? "bientot" : ""}">${txt}</span></td>
+                  <td class="crm-actions">
+                    <button class="mini" data-crm="modifier-code" data-code="${e(p.code)}">Modifier</button>
+                    <button class="mini" data-crm="basculer-code" data-code="${e(p.code)}">${p.actif ? "Désactiver" : "Activer"}</button>
+                    <details class="plus-actions">
+                      <summary class="mini" aria-label="Plus d'actions pour ${e(p.code)}">…</summary>
+                      <div class="plus-menu">
+                        <button data-crm="partager-code" data-code="${e(p.code)}">Copier un texte à partager</button>
+                        <button class="danger" data-crm="supprimer-code" data-code="${e(p.code)}">Supprimer le code</button>
+                      </div>
+                    </details>
+                  </td>
+                </tr>`;
+              })
+              .join("")}
+          </tbody>
+        </table>` : `<p class="aide" style="padding:1rem 0">Aucun code pour l'instant. Un code de bienvenue (par exemple BIENVENUE10) est un bon début.</p>`}
       </section>
 
       <section class="bloc">
@@ -621,20 +585,24 @@
   function ficheCode(code) {
     const p = code ? donnees.promos.find((x) => x.code === code) : { code: "", description: "", type: "pourcentage", valeur: 10, minimum: 0, debut: "", fin: "", utilisations_max: null, actif: true };
     const f = fenetre();
+    // Réglages groupés : le code, la remise, les conditions, la période
     f.innerHTML = `
-      <form method="dialog" class="pile" style="max-width:600px">
-        <h2 style="font-size:1.35rem">${code ? `Code ${e(code)}` : "Nouveau code promo"}</h2>
-        <div class="grille-champs">
-          <div class="champ"><label for="cp-code">Code</label><input id="cp-code" name="code" value="${e(p.code)}" ${code ? "readonly" : ""} required pattern="[A-Za-z0-9_-]{3,30}" placeholder="NOEL10" style="text-transform:uppercase"><small>3 à 30 lettres ou chiffres, sans espace.</small></div>
-          <div class="champ"><label for="cp-desc">Description (vue par le client)</label><input id="cp-desc" name="description" value="${e(p.description)}" placeholder="10 % pour Noël"></div>
-          <div class="champ"><label for="cp-type">Remise</label><select id="cp-type" name="type"><option value="pourcentage" ${p.type === "pourcentage" ? "selected" : ""}>Pourcentage (%)</option><option value="montant" ${p.type === "montant" ? "selected" : ""}>Montant (€)</option></select></div>
-          <div class="champ"><label for="cp-valeur">Valeur</label><input id="cp-valeur" name="valeur" type="number" step="0.01" min="0.01" value="${Number(p.valeur)}" required></div>
-          <div class="champ"><label for="cp-min">Dès un achat de (€)</label><input id="cp-min" name="minimum" type="number" step="0.01" min="0" value="${Number(p.minimum) || ""}" placeholder="0"></div>
-          <div class="champ"><label for="cp-max">Nombre d'utilisations max.</label><input id="cp-max" name="utilisations_max" type="number" min="1" value="${p.utilisations_max ?? ""}" placeholder="Illimité"></div>
+      <form method="dialog" class="pile crm-fiche-code">
+        <h2 style="font-size:1.6rem">${code ? `Code ${e(code)}` : "Nouveau code promo"}</h2>
+        <fieldset><legend>Le code</legend><div class="grille-champs">
+          <div class="champ"><label for="cp-code">Code</label><input id="cp-code" name="code" value="${e(p.code)}" ${code ? "readonly" : ""} required pattern="[A-Za-z0-9_\\-]{3,30}" placeholder="NOEL10" style="text-transform:uppercase" autocomplete="off"><small>3 à 30 lettres ou chiffres, sans espace.${code ? " Ne peut plus changer." : ""}</small></div>
+          <div class="champ"><label for="cp-desc">Description vue par le client</label><input id="cp-desc" name="description" value="${e(p.description)}" placeholder="10 % pour Noël" maxlength="120"></div>
+        </div></fieldset>
+        <fieldset><legend>La remise</legend><div class="grille-champs">
+          <div class="champ"><label for="cp-valeur">Valeur</label><span class="avec-unite"><input id="cp-valeur" name="valeur" type="number" step="0.01" min="0.01" value="${Number(p.valeur)}" required><select name="type" aria-label="Unité"><option value="pourcentage" ${p.type === "pourcentage" ? "selected" : ""}>%</option><option value="montant" ${p.type === "montant" ? "selected" : ""}>€</option></select></span></div>
+          <div class="champ"><label for="cp-min">Dès un achat de (€)</label><input id="cp-min" name="minimum" type="number" step="0.01" min="0" value="${Number(p.minimum) || ""}" placeholder="aucun minimum"></div>
+        </div></fieldset>
+        <fieldset><legend>Utilisation</legend><div class="grille-champs">
           <div class="champ"><label for="cp-debut">Valable du</label><input id="cp-debut" name="debut" type="date" value="${e(p.debut || "")}"></div>
           <div class="champ"><label for="cp-fin">Au (inclus)</label><input id="cp-fin" name="fin" type="date" value="${e(p.fin || "")}"></div>
-          <label class="case large"><input type="checkbox" name="actif" ${p.actif ? "checked" : ""}> <span>Actif</span></label>
-        </div>
+          <div class="champ"><label for="cp-max">Nombre d'utilisations au plus</label><input id="cp-max" name="utilisations_max" type="number" min="1" value="${p.utilisations_max ?? ""}" placeholder="illimité">${code ? `<small>Déjà utilisé ${p.utilisations || 0} fois.</small>` : ""}</div>
+          <label class="case"><input type="checkbox" name="actif" ${p.actif ? "checked" : ""}> <span>Actif</span></label>
+        </div></fieldset>
         <div class="raccourcis"><button class="btn" value="ok">Enregistrer</button><button class="btn btn-ligne" value="annuler" formnovalidate>Annuler</button></div>
       </form>`;
     f.querySelector("form").onsubmit = async (ev) => {
@@ -656,7 +624,7 @@
       const r = code
         ? await sb().from("codes_promo").update(fiche).eq("code", code).select().single()
         : await sb().from("codes_promo").insert({ ...fiche, code: x.code.trim().toUpperCase() }).select().single();
-      if (r.error) return ctx.toast(/duplicate|unique/i.test(r.error.message) ? "Ce code existe déjà." : r.error.message, true);
+      if (r.error) return ctx.toast(/duplicate|unique|existe/i.test(r.error.message) ? "Ce code existe déjà." : r.error.message, true);
       if (code) Object.assign(p, r.data);
       else donnees.promos.unshift(r.data);
       f.close();
@@ -680,12 +648,7 @@
   async function statistiques(el, contexte) {
     ctx = contexte;
     if (!el || !S().client(ctx.D) || !(await S().connecte(ctx.D).catch(() => false))) return;
-    const [stats, nbClients, nbDemandes] = await Promise.all([
-      sb().from("stats_ventes").select("*"),
-      sb().from("clients").select("id", { count: "exact", head: true }),
-      // « À traiter » comme dans l'onglet Demandes : nouvelles et en cours
-      sb().from("demandes").select("id", { count: "exact", head: true }).in("statut", ["nouvelle", "en_cours"]).neq("type", "newsletter"),
-    ]);
+    const [stats, nbClients] = await Promise.all([sb().from("stats_ventes").select("*"), sb().from("clients").select("id", { count: "exact", head: true })]);
     if (stats.error) return;
     const mois = (decalage) => {
       const d = new Date();
@@ -727,65 +690,46 @@
   // =====================================================================
   //  Événements
   // =====================================================================
-  const dansZone = (el) => zone && (zone.contains(el) || fenetre().contains(el));
+  const dansZone = (el) => zone && vue !== "caisse" && (zone.contains(el) || fenetre().contains(el) || tiroir().contains(el));
+  // Le tiroir se referme quand on change d'onglet
+  document.addEventListener("click", (ev) => {
+    if (ev.target.closest(".onglets [data-onglet], .barre-mobile [data-onglet], [data-aller]")) fermerTiroir(false);
+  }, true);
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape" && document.getElementById("crm-tiroir")?.open && !fenetre().open && !ev.target.closest?.(".plus-actions[open]")) {
+      ev.preventDefault();
+      fermerTiroir();
+    }
+  });
+
   document.addEventListener("click", async (ev) => {
     const b = ev.target.closest("[data-crm]");
     if (!b || !dansZone(b)) return;
     const a = b.dataset.crm;
     const v = b.dataset.valeur;
-    if (a === "ajouter") {
-      ajouterProduit(b.dataset.id);
-      return afficher();
-    }
-    if (a === "retirer") caisse.lignes.splice(+b.dataset.i, 1);
-    if (a === "plus") caisse.lignes[+b.dataset.i].quantite++;
-    if (a === "moins") {
-      const l = caisse.lignes[+b.dataset.i];
-      if (--l.quantite < 1) caisse.lignes.splice(+b.dataset.i, 1);
-    }
-    if (a === "vider" && confirm("Vider le ticket ?")) caisse = caisseVide();
-    if (a === "canal") caisse.canal = v;
-    if (a === "paye") caisse.paye = !!v;
-    if (a === "moyen") caisse.moyen = v;
-    if (a === "sans-client") Object.assign(caisse, { clientId: "", saisieClient: "", consentement: false });
-    if (a === "appliquer-code-caisse") {
-      const code = String(caisse.code || "").trim().toUpperCase();
-      const p = donnees.promos.find((x) => x.code === code);
-      const [valable, etatCode] = p ? promoValide(p) : [false, "Inconnu"];
-      if (!code) return ctx.toast("Tapez le code donné par le client.", true);
-      if (!p) return ctx.toast(`Le code ${code} n'existe pas (onglet Marketing).`, true);
-      if (!valable) return ctx.toast(`Le code ${code} n'est pas utilisable : ${etatCode.toLowerCase()}.`, true);
-      if (totauxCaisse().sous < Number(p.minimum || 0)) return ctx.toast(`Le code ${code} s'applique dès ${euros(p.minimum)} d'achat.`, true);
-      caisse.promo = p;
-      return afficher();
-    }
-    if (a === "retirer-code-caisse") {
-      caisse.promo = null;
-      return afficher();
-    }
-    if (a === "nouvelle-vente") caisse = caisseVide();
-    if (a === "encaisser") return encaisser();
-    if (a === "imprimer") return window.AdminCommandes.imprimer(caisse.fini, b.dataset.type === "facture" ? "facture" : "bon", ctx);
-    if (["retirer", "plus", "moins", "vider", "canal", "paye", "moyen", "sans-client", "nouvelle-vente"].includes(a)) return afficher();
-
+    if (a === "fermer-tiroir") return fermerTiroir();
     if (a === "segment") etat.segment = v;
     if (a === "etiquette") etat.etiquette = etat.etiquette === v ? "" : v;
-    if (a === "filtre-demandes") etat.demandes = v;
-    if (["segment", "etiquette", "filtre-demandes"].includes(a)) return afficher();
+    if (a === "trier") etat.tri = { col: v, sens: etat.tri.col === v ? -etat.tri.sens : v === "nom" ? 1 : -1 };
+    if (a === "boite") etat.boite = v;
+    if (["segment", "etiquette", "trier", "boite"].includes(a)) {
+      afficher();
+      return zone.querySelector(`[data-crm="${a}"][data-valeur="${CSS.escape(v)}"]`)?.focus();
+    }
     if (a === "actualiser") return monter(vue, zone, ctx);
     if (a === "client") {
-      if (!donnees.commandes.length && vue !== "clients") donnees.commandes = await lire("commandes", "id,numero,cree_le,total,statut,paiement_statut,client_id,canal").catch(() => []);
-      return ficheClient(b.dataset.id);
+      if (!donnees.commandes.length && vue !== "clients") donnees.commandes = await LECTEURS.commandes().catch(() => []);
+      return tiroirClient(b.dataset.id);
     }
-    if (a === "nouveau-client") return ficheClient(null);
+    if (a === "nouveau-client") return tiroirClient(null);
     if (a === "ecrire") {
       const c = donnees.clients.find((x) => x.id === b.dataset.id);
       return ecrire({ email: c.email, nom: c.nom });
     }
     if (a === "vendre") {
-      fenetre().close();
       const choisi = donnees.clients.find((x) => x.id === b.dataset.id);
-      caisse = { ...caisseVide(), clientId: b.dataset.id, consentement: !!choisi?.consentement_marketing, adresse: choisi?.adresse || "" };
+      fermerTiroir(false);
+      window.AdminCaisse.preparer({ clientId: b.dataset.id, consentement: !!choisi?.consentement_marketing, adresse: choisi?.adresse || "" });
       return ctx.allerA("caisse");
     }
     if (a === "supprimer-client") {
@@ -794,7 +738,7 @@
       const { error } = await sb().from("clients").delete().eq("id", c.id);
       if (error) return ctx.toast(error.message, true);
       donnees.clients = donnees.clients.filter((x) => x.id !== c.id);
-      fenetre().close();
+      fermerTiroir(false);
       ctx.toast("Fiche supprimée.");
       return afficher();
     }
@@ -804,26 +748,28 @@
       return exporterCsv(a === "export-abonnes" ? "abonnes" : "clients", ["Nom", "Email", "Téléphone", "Adresse", "Étiquettes", "Abonné", "Achats", "Total dépensé", "Dernier achat", "Client depuis", "Source", "Notes"],
         liste.map((c) => { const s = st(c.id); return [c.nom, c.email, c.tel, c.adresse, (c.etiquettes || []).join(", "), c.consentement_marketing ? "oui" : "non", s.n, String(arrondi(s.total)).replace(".", ","), date(s.derniere), date(c.cree_le), SOURCES[c.source] || c.source, c.notes]; }));
     }
-    if (a === "demande") return ficheDemande(b.dataset.id);
-    if (a === "repondre" || a === "convertir") await garderSaisieDemande(b.dataset.id);
-    if (a === "repondre") {
+    if (a === "demande") {
+      if (!donnees.demandes.length && vue !== "demandes") donnees.demandes = await LECTEURS.demandes().catch(() => []);
+      return tiroirDemande(b.dataset.id);
+    }
+    if (a === "archiver" || a === "desarchiver") {
       const d = donnees.demandes.find((x) => x.id === b.dataset.id);
-      return ecrire({
-        email: d.email, nom: d.nom, sujet: `Votre demande${d.sujet ? ` : ${d.sujet}` : ""} · Mon Truc en Bois`,
-        message: `Merci pour votre demande${d.type === "devis" ? " de devis" : ""}.\n\n`,
-        apres: async () => {
-          d.statut = "repondue";
-          await sb().from("demandes").update({ statut: "repondue" }).eq("id", d.id);
-          majCompteurDemandes();
-          afficher();
-        },
-      });
+      if (!(await changerStatutDemande(d, a === "archiver" ? "archivee" : "en_cours"))) return;
+      ctx.toast(a === "archiver" ? "Demande classée." : "Demande remise dans « À répondre ».");
+      return a === "archiver" ? fermerTiroir() : tiroirDemande(d.id);
     }
     if (a === "convertir") {
       const d = donnees.demandes.find((x) => x.id === b.dataset.id);
-      fenetre().close();
+      fermerTiroir(false);
       const fiche = donnees.clients.find((x) => x.id === d.client_id);
-      caisse = { ...caisseVide(), clientId: d.client_id || "", consentement: !!fiche?.consentement_marketing, nouveau: { nom: d.nom, email: d.email, tel: d.tel }, canal: "telephone", paye: false, notes: [d.sujet, d.message].filter(Boolean).join(" · ").slice(0, 1500), demandeId: d.id };
+      window.AdminCaisse.preparer({
+        clientId: fiche ? fiche.id : "",
+        nouveau: fiche ? null : { nom: d.nom, email: d.email, tel: d.tel },
+        consentement: !!fiche?.consentement_marketing,
+        canal: "telephone",
+        notes: [d.sujet, d.message].filter(Boolean).join(" · ").slice(0, 1500),
+        demandeId: d.id,
+      });
       ctx.toast("Ajoutez les articles puis enregistrez : la demande passera en « Devenue commande ».");
       return ctx.allerA("caisse");
     }
@@ -833,7 +779,7 @@
     if (a === "basculer-code" || a === "supprimer-code") {
       const p = donnees.promos.find((x) => x.code === b.dataset.code);
       if (a === "supprimer-code") {
-        if (!confirm(`Supprimer le code ${p.code} ?`)) return;
+        if (!confirm(`Supprimer le code ${p.code} ? Les ventes qui l'ont utilisé le gardent.`)) return;
         const { error } = await sb().from("codes_promo").delete().eq("code", p.code);
         if (error) return ctx.toast(error.message, true);
         donnees.promos = donnees.promos.filter((x) => x !== p);
@@ -859,79 +805,76 @@
     }
   });
 
+  // Recherche instantanée : seule la liste est redessinée, le champ garde le focus
   document.addEventListener("input", (ev) => {
     const el = ev.target;
     if (!dansZone(el)) return;
     if (el.dataset.crmQ !== undefined) {
       etat.q = el.value;
-      const pos = el.selectionStart;
-      afficher();
-      const q = zone.querySelector("[data-crm-q]");
-      q.focus();
-      q.setSelectionRange(pos, pos);
-      return;
+      return majLignesClients();
     }
-    if (el.dataset.ligne !== undefined) {
-      const l = caisse.lignes[+el.dataset.ligne];
-      if (el.dataset.champ === "prix") l.prix = Number(el.value || 0);
-      if (el.dataset.champ === "texte") l.texte = el.value;
-      return majTotalCaisse();
+    if (el.dataset.crmQdem !== undefined) {
+      etat.qDem = el.value;
+      return majLignesDemandes();
     }
-    if (el.dataset.nouveau) caisse.nouveau[el.dataset.nouveau] = el.value.trim();
-    const c = el.dataset.caisse;
-    if (c === "recherche") {
-      caisse.recherche = el.value;
-      const pos = el.selectionStart;
-      afficher();
-      const q = zone.querySelector('[data-caisse="recherche"]');
-      q.focus();
-      q.setSelectionRange(pos, pos);
-      return;
-    }
-    if (c === "client") return void (caisse.saisieClient = el.value);
-    if (c === "code") return void (caisse.code = el.value);
-    if (["remise", "port"].includes(c)) caisse[c] = Number(el.value || 0);
-    if (["adresse", "notes", "date"].includes(c)) caisse[c] = el.value;
-    majTotalCaisse();
   });
-  document.addEventListener("change", (ev) => {
+  // Notes d'une fiche client ou d'une demande : enregistrées en quittant le champ
+  document.addEventListener("change", async (ev) => {
     const el = ev.target;
     if (!dansZone(el)) return;
-    const c = el.dataset.caisse;
-    if (el.dataset.ligne !== undefined && el.dataset.champ === "variante") {
-      const l = caisse.lignes[+el.dataset.ligne];
-      const p = ctx.D.produits.find((x) => x.id === l.id);
-      l.variante = Number(el.value);
-      l.prix = arrondi(Number(p.prix) + Number(p.variantes.choix[l.variante]?.prix || 0));
-      return afficher();
-    }
-    if (c === "client") {
-      const choisi = donnees.clients.find((x) => `${x.nom}${x.email ? ` · ${x.email}` : x.tel ? ` · ${x.tel}` : ""}` === el.value);
-      if (choisi) {
-        caisse.clientId = choisi.id;
-        caisse.saisieClient = "";
-        caisse.consentement = !!choisi.consentement_marketing;
-        if (choisi.adresse) caisse.adresse = choisi.adresse;
-        afficher();
-      }
-    }
-    if (c === "consentement") caisse.consentement = el.checked;
-    if (c === "remiseType") caisse.remiseType = el.value;
-    if (c === "livraison") {
-      caisse.reception = el.checked ? "livraison" : "retrait";
-      if (el.checked && !caisse.port) caisse.port = Number(ctx.D.site.livraison || 0);
-      return afficher();
-    }
-    majTotalCaisse();
+    const idClient = el.dataset.crmNotes;
+    const idDemande = el.dataset.crmNotesDemande;
+    if (!idClient && !idDemande) return;
+    const fiche = idClient ? donnees.clients.find((x) => x.id === idClient) : donnees.demandes.find((x) => x.id === idDemande);
+    const notes = el.value.trim();
+    const { error } = await sb().from(idClient ? "clients" : "demandes").update({ notes }).eq("id", fiche.id);
+    const statut = el.parentElement.querySelector(".tiroir-etat");
+    if (error) return ctx.toast(error.message, true);
+    fiche.notes = notes;
+    if (statut) statut.textContent = `Notes enregistrées à ${new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}.`;
   });
   document.addEventListener("submit", async (ev) => {
     const f = ev.target;
     if (!dansZone(f)) return;
-    if (f.dataset.crmForm === "libre") {
+    if (f.dataset.crmForm === "client") {
       ev.preventDefault();
+      const id = f.dataset.id;
+      const c = id ? donnees.clients.find((x) => x.id === id) : {};
       const x = Object.fromEntries(new FormData(f));
-      caisse.lignes.push({ id: "", nom: x.nom.trim(), prix: arrondi(x.prix), quantite: 1, texte: "", variante: null });
-      return afficher();
+      const email = String(x.email || "").trim().toLowerCase();
+      const fiche = {
+        nom: String(x.nom).trim(),
+        email: email || null,
+        tel: String(x.tel || "").trim(),
+        adresse: String(x.adresse || "").trim(),
+        etiquettes: [...new Set(String(x.etiquettes || "").split(",").map((t) => t.trim().toLowerCase().replace(/^#/, "")).filter(Boolean))],
+        consentement_marketing: !!x.consentement,
+        ...(id ? {} : { source: x.source, notes: String(x.notes || "").trim() }),
+      };
+      if (!!x.consentement !== !!c.consentement_marketing) fiche.consentement_le = new Date().toISOString();
+      const r = id ? await sb().from("clients").update(fiche).eq("id", id).select().single() : await sb().from("clients").insert(fiche).select().single();
+      if (r.error) return ctx.toast(/duplicate|unique/i.test(r.error.message) ? "Un autre client a déjà cet email." : r.error.message, true);
+      if (id) Object.assign(c, r.data);
+      else donnees.clients.unshift(r.data);
+      ctx.toast(id ? "Fiche enregistrée." : "Fiche créée.");
+      if (vue === "clients") afficher();
+      return tiroirClient(r.data.id);
+    }
+    if (f.dataset.crmForm === "reponse") {
+      ev.preventDefault();
+      const d = donnees.demandes.find((x) => x.id === f.dataset.id);
+      const bouton = f.querySelector("button");
+      bouton.disabled = true;
+      try {
+        await S().appel(ctx.D, "email_client", { email: d.email, nom: d.nom, sujet: f.querySelector("#rp-sujet").value, message: f.querySelector("#rp-message").value });
+        if (d.statut !== "convertie") await changerStatutDemande(d, "repondue");
+        ctx.toast(`Réponse envoyée à ${d.email}.`);
+        tiroirDemande(d.id);
+      } catch (x) {
+        bouton.disabled = false;
+        ctx.toast(x.message, true);
+      }
+      return;
     }
     if (f.dataset.crmForm === "campagne") {
       ev.preventDefault();
