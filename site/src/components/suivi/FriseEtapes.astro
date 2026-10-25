@@ -1,6 +1,8 @@
 ---
 // Frise des étapes d'une commande (src/lib/etapes.ts). Sans commande, elle explique le parcours ;
-// avec une commande, le script de la page suivi marque chaque étape faite, en cours ou à venir.
+// avec une commande (attribut data-suivi posé par la page suivi), elle devient un fil d'avancement
+// sur une seule ligne : six segments, un nom court et une date sous chacun ; au téléphone, les segments seuls
+// (la page nomme l'étape en cours au-dessus et l'explique en dessous).
 import { ETAPES } from "../../lib/etapes";
 
 interface Props { id?: string; libelle: string }
@@ -12,6 +14,7 @@ const { id, libelle } = Astro.props;
       <span class="frise-repere" aria-hidden="true"></span>
       <span class="frise-num etiquette">{String(i + 1).padStart(2, "0")}</span>
       <span class="frise-titre" data-titre-etape>{e.titre}</span>
+      <span class="frise-court" data-court-etape>{e.court}</span>
       <span class="visuellement-cache" data-etat-lu></span>
       <span class="frise-texte">{e.texte}</span>
       <span class="frise-date etiquette" data-date-etape></span>
@@ -25,6 +28,7 @@ const { id, libelle } = Astro.props;
   .frise-repere { position: absolute; top: -8px; left: 0; width: 15px; height: 15px; border: var(--filet); background: var(--bouleau); }
   .frise-num { color: var(--texte-doux); }
   .frise-titre { font-weight: 600; line-height: 1.3; }
+  .frise-court { display: none; }
   .frise-texte { font-size: 0.9375rem; color: var(--texte-doux); }
   .frise-date:empty { display: none; }
 
@@ -32,13 +36,29 @@ const { id, libelle } = Astro.props;
   .frise-etape[data-etat="en-cours"] .frise-repere { width: 17px; height: 17px; top: -9px; border: 5px solid var(--brule); }
   .frise-etape[data-etat="en-cours"] .frise-titre { font-family: var(--f-titre); font-weight: 800; font-size: 1.5rem; line-height: 1; text-transform: uppercase; }
   .frise-etape[data-etat="en-cours"] .frise-texte { color: var(--brule); }
-  .frise[data-suivi] .frise-etape[data-etat="a-venir"] .frise-titre { color: var(--texte-doux); font-weight: 400; }
 
+  /* Parcours expliqué (sans commande) : une colonne au téléphone */
   @media (max-width: 860px) {
-    .frise { grid-template-columns: minmax(0, 1fr); border-top: 0; border-left: var(--filet); margin-left: 8px; }
-    .frise-etape { padding: 0 0 22px 26px; }
-    .frise-etape:last-child { padding-bottom: 0; }
-    .frise-repere { top: 3px; left: -8px; }
-    .frise-etape[data-etat="en-cours"] .frise-repere { top: 2px; left: -9px; }
+    .frise:not([data-suivi]) { grid-template-columns: minmax(0, 1fr); border-top: 0; border-left: var(--filet); margin-left: 8px; }
+    .frise:not([data-suivi]) .frise-etape { padding: 0 0 22px 26px; }
+    .frise:not([data-suivi]) .frise-etape:last-child { padding-bottom: 0; }
+    .frise:not([data-suivi]) .frise-repere { top: 3px; left: -8px; }
+    .frise:not([data-suivi]) .frise-etape[data-etat="en-cours"] .frise-repere { top: 2px; left: -9px; }
+  }
+
+  /* Fil d'avancement d'une commande : une seule ligne à toutes les largeurs */
+  .frise[data-suivi] { gap: 4px; border-top: 0; }
+  .frise[data-suivi] .frise-etape { padding: 10px 0 0; gap: 2px; border-top: 6px solid var(--kraft); }
+  .frise[data-suivi] .frise-repere, .frise[data-suivi] .frise-num, .frise[data-suivi] .frise-titre, .frise[data-suivi] .frise-texte { display: none; }
+  .frise[data-suivi] .frise-court { display: block; font-size: 0.9375rem; color: var(--texte-doux); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .frise[data-suivi] .frise-etape[data-etat="faite"] { border-top-color: var(--brule); }
+  .frise[data-suivi] .frise-etape[data-etat="faite"] .frise-court { color: var(--brule); }
+  .frise[data-suivi] .frise-etape[data-etat="en-cours"] { border-top-color: var(--brule); }
+  .frise[data-suivi] .frise-etape[data-etat="en-cours"] .frise-court { color: var(--brule); font-weight: 600; }
+  @media (max-width: 640px) {
+    .frise[data-suivi] { gap: 3px; }
+    .frise[data-suivi] .frise-etape { padding-top: 0; }
+    /* Noms et dates restent lus par les lecteurs d'écran */
+    .frise[data-suivi] .frise-court, .frise[data-suivi] .frise-date { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   }
 </style>
