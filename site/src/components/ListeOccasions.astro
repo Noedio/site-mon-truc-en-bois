@@ -3,7 +3,7 @@
 // nombre de pièces, lien vers la page de l'occasion. Réutilisable sur l'accueil.
 import ACompleter from "./ACompleter.astro";
 import { occasions as toutes, type Occasion } from "../lib/donnees";
-import { dateDe, dateLimiteDe, occasionsTriees, piecesDe } from "../lib/occasions";
+import { dateDe, dateLimiteDe, delaiDe, occasionsTriees, piecesDe } from "../lib/occasions";
 
 interface Props { occasions?: Occasion[]; niveau?: 2 | 3 }
 const { occasions = toutes, niveau = 2 } = Astro.props;
@@ -13,19 +13,21 @@ const lignes = occasionsTriees(occasions).map((o) => ({
   o,
   quand: dateDe(o),
   limite: dateLimiteDe(o),
+  delai: delaiDe(o),
   nombre: piecesDe(o).length,
 }));
 ---
 <ul class="occasions">
-  {lignes.map(({ o, quand, limite, nombre }) => (
+  {lignes.map(({ o, quand, limite, delai, nombre }) => (
     <li class="occasion">
       <Titre class="occasion-nom"><a href={`/occasions/${o.id}/`}>{o.nom}</a></Titre>
       <span class="machine">{quand.date ? <time datetime={quand.date.toISOString().slice(0, 10)}>{quand.texte}</time> : quand.texte}</span>
       <span class="machine occasion-limite">
         {quand.date || o.date?.trim() || limite ? (
-          limite ? <>Commander avant le {limite.texte}</> : <>Commander avant le <ACompleter quoi="date limite de commande" /></>
+          limite ? (limite.passee ? <>Date limite passée ({limite.texte}) : nous consulter</> : <>Commander avant le {limite.texte}</>)
+          : <>Commander avant le <ACompleter quoi="délai en jours ouvrés ou date limite de commande" /></>
         ) : (
-          <>Fabrication sous <ACompleter quoi="délai de fabrication" /></>
+          delai ? <>Prévoir {delai}</> : <>Prévoir <ACompleter quoi="délai en jours ouvrés" /></>
         )}
       </span>
       <span class="machine occasion-nombre">{nombre} pièce{nombre > 1 ? "s" : ""} <span aria-hidden="true">→</span></span>

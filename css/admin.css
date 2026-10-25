@@ -208,7 +208,7 @@ body.admin { background: var(--bouleau); color: var(--brule); min-height: 100vh;
 .grille-avis { display: grid; grid-template-columns: 1.2fr 0.6fr 1fr 1fr; gap: 0.6rem; }
 @media (max-width: 760px) { .grille-avis { grid-template-columns: 1fr 1fr; } }
 .mini.oeil[aria-pressed="true"] { background: var(--brule); border-color: var(--brule); color: var(--bouleau); }
-.ligne-occasion { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto auto; gap: 0.6rem; align-items: end; }
+.ligne-occasion { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.6fr) minmax(0, 1fr) auto auto; gap: 0.6rem; align-items: end; }
 .ligne-occasion .champ { gap: 0.2rem; }
 .ligne-occasion .champ > label { font: 400 0.78rem var(--f-mono); letter-spacing: 0.03em; color: var(--texte-doux); }
 .ligne-occasion > .aide { padding-bottom: 0.7rem; white-space: nowrap; }
@@ -542,8 +542,28 @@ body.admin { background: var(--bouleau); color: var(--brule); min-height: 100vh;
 .q-produit > .grille-champs { padding: 0.9rem 0 1.1rem; }
 .q-choix { display: grid; gap: 0.5rem; }
 .q-choix.en-ligne { grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); }
-.q-photo { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 1rem; align-items: start; padding-block: 0.8rem; border-top: var(--filet-doux); }
-.q-photo img { width: 120px; height: 120px; object-fit: cover; border: var(--filet); }
+.q-occasion { display: grid; grid-template-columns: minmax(0, 1.2fr) 7rem minmax(0, 1.4fr) auto; gap: 0.4rem 0.9rem; align-items: center; padding: 0.55rem 0; border-bottom: var(--filet-doux); }
+.q-occasion-nom { display: grid; gap: 0.1rem; }
+.q-occasion-nom .aide { font: 400 0.8rem var(--f-mono); }
+.q-occasion .champ { gap: 0.15rem; }
+.q-occasion .champ > label { font: 400 0.75rem var(--f-mono); color: var(--texte-doux); }
+.q-occasion-resultat { font: 400 0.88rem/1.35 var(--f-mono); color: var(--brule); }
+.q-occasion-resultat strong { color: var(--gravure); }
+.q-occasion-plus { grid-column: 1 / -1; }
+.q-occasion-plus:not([open]) { grid-column: auto; justify-self: end; }
+.q-occasion-plus > summary { font: 400 0.82rem var(--f-mono); min-height: var(--cible); display: flex; align-items: center; cursor: pointer; }
+.q-occasion-plus > .grille-champs { padding: 0.3rem 0 0.6rem; }
+.q-polices { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); gap: 0.5rem; }
+.q-police { display: grid; gap: 0.35rem; align-content: start; }
+.q-police .choix-carte > span { display: grid; gap: 0.15rem; }
+.q-police-essai { font-size: 1.2rem; line-height: 1.15; color: var(--brule); overflow-wrap: anywhere; }
+.q-police-nom { font: 400 0.82rem var(--f-mono); }
+.q-police select { min-height: 36px; font: 400 0.82rem var(--f-mono); }
+@media (max-width: 720px) {
+  .q-occasion { grid-template-columns: minmax(0, 1fr) 6.5rem; }
+  .q-occasion-resultat { grid-column: 1 / -1; }
+  .q-occasion-plus, .q-occasion-plus:not([open]) { grid-column: 1 / -1; justify-self: start; }
+}
 .q-citation { margin: 0; padding: 0.8rem 1rem; background: var(--papier); border: var(--filet-doux); font-style: italic; }
 @media (max-width: 999px) {
   .questionnaire { grid-template-columns: minmax(0, 1fr); }

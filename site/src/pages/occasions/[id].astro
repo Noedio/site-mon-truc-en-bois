@@ -6,7 +6,7 @@ import NavFiltres from "../../components/NavFiltres.astro";
 import ACompleter from "../../components/ACompleter.astro";
 import { occasions, type Occasion } from "../../lib/donnees";
 import { aVerifier } from "../../lib/images";
-import { dateDe, dateLimiteDe, occasionsTriees, piecesDe } from "../../lib/occasions";
+import { dateDe, dateLimiteDe, delaiDe, occasionsTriees, piecesDe } from "../../lib/occasions";
 
 export function getStaticPaths() {
   return occasions.map((o) => ({ params: { id: o.id }, props: { occasion: o } }));
@@ -16,6 +16,7 @@ const { occasion: o } = Astro.props as { occasion: Occasion };
 const pieces = piecesDe(o);
 const quand = dateDe(o);
 const limite = dateLimiteDe(o);
+const delai = delaiDe(o);
 const datee = Boolean(quand.date || o.date?.trim() || limite);
 const autres = occasionsTriees().map((x) => ({ href: `/occasions/${x.id}/`, libelle: x.nom, nombre: piecesDe(x).length, actif: x.id === o.id }));
 const compte = `${pieces.length} pièce${pieces.length > 1 ? "s" : ""}, du prix le plus bas au plus haut`;
@@ -38,9 +39,11 @@ const compte = `${pieces.length} pièce${pieces.length > 1 ? "s" : ""}, du prix 
           <dd class="machine">{quand.date ? <time datetime={quand.date.toISOString().slice(0, 10)}>{quand.texte}</time> : quand.texte}</dd>
         </div>
         <div>
-          <dt class="etiquette">{datee ? "Date limite de commande" : "Délai de fabrication"}</dt>
+          <dt class="etiquette">{datee ? "Date limite de commande" : "Délai à prévoir"}</dt>
           <dd class="machine occasion-limite">
-            {datee ? (limite ? limite.texte : <ACompleter quoi="date limite de commande" />) : <ACompleter quoi="délai de fabrication" />}
+            {datee
+              ? limite ? (limite.passee ? `Passée (${limite.texte}) : nous consulter` : limite.texte) : <ACompleter quoi="délai en jours ouvrés ou date limite de commande" />
+              : delai ?? <ACompleter quoi="délai en jours ouvrés" />}
           </dd>
         </div>
       </dl>

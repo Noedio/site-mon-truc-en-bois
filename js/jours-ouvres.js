@@ -58,5 +58,5 @@
     return n;
   }
 
-  window.JoursOuvres = { feries, estFerie, estOuvre, ajouter, retirer: (d, n) => ajouter(d, -n), entre, iso, lire };
+  window.JoursOuvres = { paques, feries, estFerie, estOuvre, ajouter, retirer: (d, n) => ajouter(d, -n), entre, iso, lire };
 })();

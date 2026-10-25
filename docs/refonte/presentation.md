@@ -18,7 +18,7 @@ La démo garde tout dans le navigateur de l'appareil utilisé. « Repartir des e
 
 - [ ] Ouvrir la démo sur l'ordinateur et sur un téléphone, cliquer « Repartir des exemples » sur les deux.
 - [ ] Vérifier que la planche apéro, le panier, le paiement de démonstration et la boîte mail fonctionnent (parcours ci-dessous, 3 minutes).
-- [ ] Imprimer ou garder ouverte la liste des 18 questions (onglet « Questions à l'atelier » du suivi), au cas où le questionnaire ne serait pas rempli en direct.
+- [ ] Imprimer ou garder ouverte la liste des 16 questions (onglet « Questions à l'atelier » du suivi), au cas où le questionnaire ne serait pas rempli en direct.
 - [ ] Préparer de quoi noter : leurs concurrents, leurs remarques sur les textes.
 
 ## Déroulé
@@ -57,10 +57,10 @@ Leur faire faire, sur leur téléphone si possible :
 
 Dans l'admin, « Questionnaire ». Le remplir avec eux, dans l'ordre :
 
-- **Pour vendre** (questions 1 à 6) : délais, dates limites, maquette, délai de réponse, paiement, livraison. C'est le plus important : sans délais, les clients ne commandent pas.
-- **Sur les produits** (7 à 10) : fiches techniques (peut se finir plus tard, produit par produit), produits sous licence (Winnie l'Ourson, écussons de clubs), logo de la tirelire, essai des polices.
-- **Sur eux** (11 à 14) : photos de l'équipe et de l'atelier, textes signés, clientèle, concurrents.
-- **Mentions obligatoires** (15 à 18) : forme juridique, SIRET, TVA, médiateur, directeur de publication, domaine, fiche Google, Instagram, WhatsApp.
+- **Pour vendre** (questions 1 à 6) : délais de fabrication en jours ouvrés, délais des occasions (date limite pour Noël et les fêtes datées), maquette, délai de réponse, paiement, livraison. C'est le plus important : sans délais, les clients ne commandent pas.
+- **Sur les produits** (7 et 8) : fiches techniques (peut se finir plus tard, produit par produit), polices et motifs proposés aux clients avec l'essai de gravure. Produits sous licence et logos de clients : réglé (couverts par leurs accords, photos remises en ligne).
+- **Sur eux** (9 à 12) : photos de l'équipe et de l'atelier, textes signés, clientèle, concurrents.
+- **Mentions obligatoires** (13 à 16) : forme juridique, SIRET, TVA, médiateur, directeur de publication, domaine, fiche Google, Instagram, WhatsApp.
 
 Ce qui ne se remplit pas en séance : noter qui s'en charge et pour quand.
 

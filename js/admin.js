@@ -632,7 +632,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
           <h2>Questionnaire de démarrage</h2>
           <button class="btn" data-aller="questionnaire">${a.repondues ? "Continuer le questionnaire" : "Commencer le questionnaire"}</button>
         </div>
-        <p>Dix-huit questions pour compléter le nouveau site : délais, dates limites des fêtes, fiches techniques des produits, paiement, livraison et mentions légales. Chaque réponse remplit directement le bon champ.</p>
+        <p>${a.total} questions pour compléter le nouveau site : délais, occasions, fiches techniques des produits, polices, paiement, livraison et mentions légales. Chaque réponse remplit directement le bon champ.</p>
         ${Q.barre(D)}
       </section>`;
   }
@@ -978,7 +978,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
           <h2>Occasions</h2>
           <button class="btn btn-ligne" data-action="nouvelle-occasion">+ Ajouter une occasion</button>
         </div>
-        <p class="aide">Elles alimentent la page « Idées cadeaux » et les filtres de la boutique. Cochez les occasions de chaque produit dans sa fiche. Dates : laissez vide pour une occasion sans date fixe (naissance, mariage…).</p>
+        <p class="aide">Elles alimentent la page des occasions et les filtres de la boutique. Cochez les occasions de chaque produit dans sa fiche. Jours ouvrés : temps à prévoir entre la commande et la remise (maquette, fabrication, envoi), du lundi au vendredi hors jours fériés. Date et date limite seulement pour une fête à date fixe (Noël…) : sans date limite, elle est calculée avec les jours ouvrés. Noël, la fête des mères et la fête des pères sont datées automatiquement.</p>
         <div class="liste">
           ${D.occasions
             .map((o, i) => {
@@ -987,6 +987,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
             <div class="ligne ligne-occasion">
               <div class="champ"><label for="occ-nom-${i}">Occasion</label><input type="text" id="occ-nom-${i}" value="${echapper(o.nom)}" data-liste="occasions" data-i="${i}" data-champ="nom"></div>
               <div class="champ"><label for="occ-date-${i}">Date de l'occasion</label><input type="date" id="occ-date-${i}" value="${echapper(o.date || "")}" data-liste="occasions" data-i="${i}" data-champ="date"></div>
+              <div class="champ"><label for="occ-jours-${i}">Jours ouvrés</label><input type="number" min="0" step="1" inputmode="numeric" id="occ-jours-${i}" value="${o.delaiJours > 0 ? o.delaiJours : ""}" placeholder="jours" data-liste="occasions" data-i="${i}" data-champ="delaiJours" data-type="nombre"></div>
               <div class="champ"><label for="occ-limite-${i}">Commander avant le</label><input type="date" id="occ-limite-${i}" value="${echapper(o.dateLimite || "")}" data-liste="occasions" data-i="${i}" data-champ="dateLimite"></div>
               <span class="aide">${n} produit${n > 1 ? "s" : ""}</span>
               <div class="ligne-boutons">

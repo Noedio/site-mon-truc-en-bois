@@ -1,18 +1,34 @@
-// Questionnaire de démarrage : les 18 questions de l'audit (audit/RAPPORT.md §5) posées au commerçant.
-// Une réponse qui correspond à une donnée du site remplit directement ce champ (délais, dates limites, fiches techniques,
-// paiement, livraison, mentions légales, liens) ; le reste va dans D.questionnaire.reponses, avec la date de réponse.
+// Questionnaire de démarrage : les questions de l'audit (audit/RAPPORT.md §5) posées au commerçant.
+// Les questions sur les produits sous licence et le logo de la tirelire ont été retirées après la relecture de la démo
+// (25/10/2026) : ces photos sont couvertes par les accords de l'atelier.
+// Une réponse qui correspond à une donnée du site remplit directement ce champ (délais, occasions, fiches techniques,
+// polices, paiement, livraison, mentions légales, liens) ; le reste va dans D.questionnaire.reponses, avec la date de réponse.
 // Rien n'est publié ici : les réponses partent avec le bouton « Publier les modifications », comme le reste du site.
 (function () {
-  const PHOTOS = {
-    winnie: { produit: "plaque-naissance-bois", photo: "img/plaque-naissance-bois.jpg", sujet: "Winnie l'Ourson, personnage sous licence" },
-    ecussons: { produit: "verre-imprime", photo: "img/verre-imprime.jpg", sujet: "écussons du RC Lens, du PSG et d'Arsenal (marques déposées)" },
-    tirelire: { produit: "tirelire", photo: "img/tirelire.jpg", sujet: "logo « Le Comptoir de la Friterie »" },
-  };
+  // Même liste et mêmes identifiants que le configurateur du site (site/src/lib/configurateur.ts) :
+  // [id, police, nom dans le configurateur, famille CSS, graisse]. Les quatre premières sont proposées par défaut.
   const POLICES = [
-    ["big-shoulders", "Big Shoulders", "Atelier", "'Big Shoulders', sans-serif", "800"],
-    ["literata", "Literata", "Classique", "Literata, serif", "400"],
-    ["courier-prime", "Courier Prime", "Machine à écrire", "'Courier Prime', monospace", "400"],
-    ["sacramento", "Sacramento", "Manuscrite", "Sacramento, cursive", "400"],
+    ["atelier", "Big Shoulders", "Atelier", "'Big Shoulders', sans-serif", "800"],
+    ["classique", "Literata", "Classique", "Literata, serif", "600"],
+    ["machine", "Courier Prime", "Machine à écrire", "'Courier Prime', monospace", "700"],
+    ["manuscrite", "Sacramento", "Manuscrite", "Sacramento, cursive", "400"],
+    ["calligraphie", "Great Vibes", "Calligraphie", "'Great Vibes', cursive", "400"],
+    ["ronde", "Dancing Script", "Ronde", "'Dancing Script', cursive", "600"],
+    ["retro", "Pacifico", "Rétro", "Pacifico, cursive", "400"],
+    ["craie", "Amatic SC", "Craie", "'Amatic SC', sans-serif", "700"],
+    ["elegante", "Playfair Display", "Élégante", "'Playfair Display', serif", "600"],
+    ["affiche", "Bebas Neue", "Affiche", "'Bebas Neue', sans-serif", "400"],
+    ["romaine", "Cinzel", "Romaine", "Cinzel, serif", "600"],
+    ["ecriture", "Caveat", "Écriture", "Caveat, cursive", "600"],
+    ["moderne", "Josefin Sans", "Moderne", "'Josefin Sans', sans-serif", "600"],
+  ];
+  const POLICES_DEFAUT = ["atelier", "classique", "machine", "manuscrite"];
+  const MOTIFS = [
+    ["coeurs", "Cœurs"],
+    ["etoiles", "Étoiles"],
+    ["alliances", "Alliances"],
+    ["feuillage", "Feuillage"],
+    ["pattes", "Pattes d'animal"],
   ];
   const CHAMPS_FICHE = [
     ["matiere", "Matière", "Essence de bois, verre, métal…"],
@@ -43,8 +59,6 @@
     cles.reduce((o, k) => (o[k] ??= {}), D())[dernier] = valeur;
   }
   const rempli = (v) => v !== undefined && v !== null && v !== "" && v !== 0 && v !== false;
-  const produit = (id) => D().produits.find((p) => p.id === id);
-  const indexProduit = (p) => D().produits.indexOf(p);
   const ficheComplete = (p) => CHAMPS_FICHE.every(([k]) => rempli(p[k]));
 
   // ---------- Champs du questionnaire ----------
@@ -79,92 +93,58 @@
   const partie = (titre, contenu, aide = "") => `<div class="q-partie">${titre ? `<h3>${titre}</h3>` : ""}${aide ? `<p class="aide">${aide}</p>` : ""}${contenu}</div>`;
   const grille = (contenu) => `<div class="grille-champs">${contenu}</div>`;
 
-  // ---------- Photos sous licence : garder, retirer la photo, ou masquer le produit ----------
-  // Le choix s'applique tout de suite aux données (réversible) ; le fichier reste dans img/.
-  function appliquerChoixPhoto(cle, nom) {
-    const { produit: id, photo } = PHOTOS[nom];
-    const r = rep(cle);
-    const choix = r[`choix-${nom}`] || "";
-    r.retraits ||= {};
-    const p = produit(id);
-    const d = D();
-    // 1. Revenir à l'état d'avant le choix précédent
-    const avant = r.retraits[nom];
-    if (avant) {
-      (avant.produits || []).forEach(([pid, i]) => {
-        const q = produit(pid);
-        if (q && !q.images.includes(photo)) q.images.splice(Math.min(i, q.images.length), 0, photo);
-        if (q) q.image = q.images[0] || "";
-      });
-      (avant.categories || []).forEach((cid) => {
-        const c = d.categories.find((x) => x.id === cid);
-        if (c && !c.image) c.image = photo;
-      });
-      (avant.galerie || []).forEach((i) => !d.galerie.includes(photo) && d.galerie.splice(Math.min(i, d.galerie.length), 0, photo));
-      if (avant.visible !== undefined && p) p.visible = avant.visible;
-      delete r.retraits[nom];
-    }
-    // 2. Appliquer le nouveau choix
-    if (choix === "retirer-photo") {
-      const trace = { produits: [], categories: [], galerie: [] };
-      d.produits.forEach((q) => {
-        const i = (q.images || []).indexOf(photo);
-        if (i >= 0) {
-          q.images.splice(i, 1);
-          q.image = q.images[0] || "";
-          trace.produits.push([q.id, i]);
-        }
-      });
-      d.categories.forEach((c) => {
-        if (c.image === photo) {
-          c.image = "";
-          trace.categories.push(c.id);
-        }
-      });
-      const g = d.galerie.indexOf(photo);
-      if (g >= 0) {
-        d.galerie.splice(g, 1);
-        trace.galerie.push(g);
-      }
-      r.retraits[nom] = trace;
-    } else if (choix === "masquer-produit" && p) {
-      r.retraits[nom] = { visible: p.visible !== false };
-      p.visible = false;
-    }
-    if (!Object.keys(r.retraits).length) delete r.retraits;
-  }
-  function blocPhoto(cle, nom) {
-    const { produit: id, photo, sujet } = PHOTOS[nom];
-    const p = produit(id);
-    if (!p) return "";
-    const choix = reponses()[cle]?.[`choix-${nom}`] || "";
-    const etat =
-      choix === "retirer-photo" ? "Photo retirée du site (produit, catégorie, galerie). Le fichier reste dans img/ : choisissez « Garder » pour la remettre."
-      : choix === "masquer-produit" ? "Produit masqué sur le site. Choisissez « Garder » pour le remettre en ligne."
-      : "";
-    return `
-      <div class="q-photo">
-        <img src="${e(ctx.srcImage(photo))}" alt="Photo actuelle : ${e(p.nom)}" loading="lazy">
-        <div class="pile" style="gap:.6rem">
-          <p><strong>${e(p.nom)}</strong> <span class="numero-piece">${numero(p)}</span><br><span class="aide">Sur la photo : ${e(sujet)}.</span></p>
-          ${radios(R(cle, `choix-${nom}`), [
-            ["garder", "Garder", "Photo et produit restent en ligne"],
-            ["retirer-photo", "Retirer la photo", "Le produit reste en vente, sans cette photo"],
-            ["masquer-produit", "Masquer le produit", "Le produit n'apparaît plus sur le site"],
-          ], { rendre: true, enLigne: false })}
-          ${etat ? `<p class="aide">${etat}</p>` : ""}
-        </div>
-      </div>`;
-  }
+  // Cases liées à une liste (polices, motifs) : la liste garde l'ordre du catalogue.
+  // Liste absente : le site garde son comportement par défaut (second élément).
+  const LISTES = {
+    "site.configurateur.polices": [POLICES.map(([id]) => id), POLICES_DEFAUT],
+    "site.configurateur.motifs": [MOTIFS.map(([id]) => id), []],
+  };
+  const listeDe = (chemin) => lire(chemin) || LISTES[chemin][1];
+  const caseListe = (chemin, valeur, contenu, aide = "") =>
+    `<label class="choix-carte"><input type="checkbox" data-q-liste="${chemin}" value="${e(valeur)}" ${listeDe(chemin).includes(valeur) ? "checked" : ""}><span>${contenu}${aide ? `<small>${aide}</small>` : ""}</span></label>`;
 
-  // ---------- Les 18 questions ----------
+  // ---------- Dates des occasions ----------
+  // Noël, fête des mères et fête des pères sont datées par le site (site/src/lib/occasions.ts, mêmes règles) ;
+  // les autres seulement si l'atelier saisit une date. La date limite vient des jours ouvrés, sauf date saisie.
+  const J = () => window.JoursOuvres;
+  const decaler = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12);
+  const dimancheAvant = (d) => decaler(d, -d.getDay());
+  const dimancheApres = (d) => decaler(d, (7 - d.getDay()) % 7);
+  const REGLES = {
+    noel: (a) => new Date(a, 11, 25, 12),
+    // Dernier dimanche de mai ; si c'est la Pentecôte, premier dimanche de juin.
+    "fete-meres": (a) => {
+      const fin = dimancheAvant(new Date(a, 4, 31, 12));
+      return J().iso(fin) === J().iso(decaler(J().paques(a), 49)) ? dimancheApres(new Date(a, 5, 1, 12)) : fin;
+    },
+    // Troisième dimanche de juin.
+    "fete-peres": (a) => decaler(dimancheApres(new Date(a, 5, 1, 12)), 14),
+  };
+  function dateOccasion(o) {
+    if (o.date) return { date: J().lire(o.date), auto: false };
+    const regle = REGLES[o.id];
+    if (!regle) return null;
+    const jour = J().iso(new Date());
+    let d = regle(new Date().getFullYear());
+    if (J().iso(d) < jour) d = regle(new Date().getFullYear() + 1);
+    return { date: d, auto: true };
+  }
+  function limiteOccasion(o) {
+    if (o.dateLimite) return { date: J().lire(o.dateLimite), saisie: true };
+    const quand = dateOccasion(o);
+    return quand && o.delaiJours > 0 ? { date: J().retirer(quand.date, o.delaiJours), saisie: false } : null;
+  }
+  const dateCourte = (d) => d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
+  const jours = (n) => `${n} jour${n > 1 ? "s" : ""} ouvré${n > 1 ? "s" : ""}`;
+
+  // ---------- Les questions ----------
   const THEMES = ["Pour vendre", "Sur les produits", "Sur vous", "Pour les mentions obligatoires"];
   const Q = [
     {
       cle: "delais", theme: 0,
       titre: "Délais de fabrication",
       question: "Quel délai de fabrication pour chaque produit (ou par famille) ? Et en période de fête ?",
-      ouVa: "Fiche de chaque produit : délai (jours après validation de la maquette)",
+      ouVa: "Fiche de chaque produit : délai en jours ouvrés après validation de la maquette",
       commencee: (d) => d.produits.some((p) => p.delai > 0) || rempli(d.questionnaire?.reponses?.delais?.fetes),
       corps: (d) => {
         const familles = d.categories
@@ -172,7 +152,7 @@
             const n = d.produits.filter((p) => p.categorie === c.id).length;
             return n ? `<div class="q-ligne q-ligne-famille">
               <label for="q-fam-delai-${e(c.id)}">${e(c.nom)} <span class="aide">(${n} produit${n > 1 ? "s" : ""})</span></label>
-              <input type="number" min="0" step="1" inputmode="numeric" id="q-fam-delai-${e(c.id)}" placeholder="jours" aria-label="Délai en jours pour ${e(c.nom)}">
+              <input type="number" min="0" step="1" inputmode="numeric" id="q-fam-delai-${e(c.id)}" placeholder="jours ouvrés" aria-label="Délai en jours ouvrés pour ${e(c.nom)}">
               <button type="button" class="mini" data-q-action="delai-famille" data-cat="${e(c.id)}">Appliquer à la famille</button>
             </div>` : "";
           })
@@ -181,11 +161,11 @@
           .map((p, i) => `<div class="q-ligne">
               <span class="numero-piece">${numero(p)}</span>
               <label for="q-delai-${i}">${e(p.nom)}</label>
-              <input type="number" min="0" step="1" inputmode="numeric" id="q-delai-${i}" data-q-chemin="produits.${i}.delai" data-q-type="entier" value="${p.delai > 0 ? p.delai : ""}" placeholder="jours">
+              <input type="number" min="0" step="1" inputmode="numeric" id="q-delai-${i}" data-q-chemin="produits.${i}.delai" data-q-type="entier" value="${p.delai > 0 ? p.delai : ""}" placeholder="jours ouvrés">
             </div>`)
           .join("");
         return (
-          partie("Par famille, en une fois", `<div class="q-tableau">${familles}</div>`, "Le délai est donné en jours après validation de la maquette. Il remplace celui de chaque produit de la famille ; vous pouvez ensuite ajuster produit par produit.") +
+          partie("Par famille, en une fois", `<div class="q-tableau">${familles}</div>`, "Le délai est compté en jours ouvrés (du lundi au vendredi, hors jours fériés) après validation de la maquette. Il remplace celui de chaque produit de la famille ; vous pouvez ensuite ajuster produit par produit.") +
           partie("Produit par produit", `<div class="q-tableau">${lignes}</div>`) +
           partie("En période de fête", grille(texte(R("delais", "fetes"), "Délai pendant les fêtes (Noël, fête des mères…)", { zone: true, placeholder: "Par exemple : délai en décembre, date à partir de laquelle vous ne garantissez plus la livraison" })))
         );
@@ -193,21 +173,36 @@
     },
     {
       cle: "dates-limites", theme: 0,
-      titre: "Dates limites des fêtes",
-      question: "Quelle date limite pour commander avant la fête des mères, la fête des pères, Noël ?",
-      ouVa: "Occasions : date de l'occasion et date limite de commande",
-      commencee: (d) => d.occasions.some((o) => o.dateLimite || o.date),
+      titre: "Délais des occasions",
+      question: "Combien de jours ouvrés faut-il prévoir pour chaque occasion, entre la commande et la remise de la pièce ? Pour une fête à date fixe comme Noël, vous pouvez aussi donner directement la date limite.",
+      ouVa: "Occasions : délai en jours ouvrés, date limite de commande des fêtes datées",
+      commencee: (d) => d.occasions.some((o) => o.delaiJours > 0 || o.dateLimite || o.date),
       corps: (d) =>
         partie(
           "",
           `<div class="q-tableau">${d.occasions
-            .map((o, i) => `<div class="ligne-occasion" style="padding:.6rem 0;border-bottom:var(--filet-doux)">
-                <div class="champ"><span class="label">${e(o.nom)}</span></div>
-                ${date(`occasions.${i}.date`, "Date de l'occasion")}
-                ${date(`occasions.${i}.dateLimite`, "Commander avant le")}
-              </div>`)
+            .map((o, i) => {
+              const quand = dateOccasion(o);
+              const limite = limiteOccasion(o);
+              const resultat = quand
+                ? limite
+                  ? `Commander avant le <strong>${dateCourte(limite.date)}</strong>${limite.saisie ? " (date imposée)" : ""}`
+                  : "Indiquez les jours ouvrés ou une date limite"
+                : o.delaiJours > 0
+                  ? `Sur le site : « prévoir ${jours(o.delaiJours)} »`
+                  : "Pas de date fixe : seul le délai compte";
+              const dates = quand
+                ? `${REGLES[o.id] ? "" : date(`occasions.${i}.date`, "Date de l'occasion")}${date(`occasions.${i}.dateLimite`, "Date limite imposée")}`
+                : date(`occasions.${i}.date`, "Date de l'occasion");
+              return `<div class="q-occasion">
+                <p class="q-occasion-nom"><strong>${e(o.nom)}</strong><span class="aide">${quand ? `${dateCourte(quand.date)}${quand.auto ? " (calculée)" : ""}` : "Toute l'année"}</span></p>
+                <div class="champ"><label for="q-occ-jours-${i}">Jours ouvrés</label><input type="number" min="0" step="1" inputmode="numeric" id="q-occ-jours-${i}" data-q-chemin="occasions.${i}.delaiJours" data-q-type="entier" data-q-rendre value="${o.delaiJours > 0 ? o.delaiJours : ""}" placeholder="jours"></div>
+                <p class="q-occasion-resultat">${resultat}</p>
+                <details class="q-occasion-plus" ${o.dateLimite || (o.date && !REGLES[o.id]) ? "open" : ""}><summary>${quand ? "Dates" : "Date fixe ?"}</summary><div class="grille-champs">${dates}</div></details>
+              </div>`;
+            })
             .join("")}</div>`,
-          "Laissez vide les occasions sans date fixe (naissance, mariage, anniversaire…). Le nouveau site affiche la date limite sur la page des occasions et sur les fiches."
+          "Jours ouvrés : du lundi au vendredi hors jours fériés, maquette, fabrication et envoi compris. Naissance, baptême, mariage, anniversaire : seul le délai s'affiche. Noël, fête des mères, fête des pères : la date limite est calculée depuis la date de la fête, sauf si vous en imposez une."
         ) + partie("", grille(texte(R("dates-limites", "note"), "Remarque (facultatif)", { zone: true }))),
     },
     {
@@ -298,46 +293,26 @@
       },
     },
     {
-      cle: "licences", theme: 1,
-      titre: "Produits sous licence",
-      question: "Les produits avec Winnie l'Ourson ou des écussons de clubs : les vendez-vous ? avec quelle autorisation ? Peut-on retirer ces photos du site ?",
-      ouVa: "Réponses du questionnaire ; votre choix pour chaque photo s'applique au site",
-      commencee: (d) => Object.keys(d.questionnaire?.reponses?.licences || {}).some((k) => k !== "date"),
-      corps: () =>
-        partie("", grille(texte(R("licences", "vente"), "Vendez-vous ces produits ? Avec quelle autorisation ?", { zone: true, aide: "Un personnage ou un logo de club appartient à son propriétaire : sans licence, mieux vaut ne pas le montrer." }))) +
-        partie("Que faire de ces photos ?", blocPhoto("licences", "winnie") + blocPhoto("licences", "ecussons")),
-    },
-    {
-      cle: "tirelire", theme: 1,
-      titre: "Logo sur la tirelire",
-      question: "Le logo « Le Comptoir de la Friterie » sur la tirelire : le client est-il d'accord pour qu'on le montre ?",
-      ouVa: "Réponses du questionnaire ; votre choix pour la photo s'applique au site",
-      commencee: (d) => Object.keys(d.questionnaire?.reponses?.tirelire || {}).some((k) => k !== "date"),
-      corps: () =>
-        partie("", radios(R("tirelire", "accord"), [
-          ["oui", "Oui, il est d'accord", ""],
-          ["non", "Non", ""],
-          ["a-demander", "Pas encore demandé", ""],
-        ])) + partie("Que faire de cette photo ?", blocPhoto("tirelire", "tirelire")),
-    },
-    {
       cle: "polices", theme: 1,
-      titre: "Essai de gravure des polices",
-      question: "Pouvez-vous faire un essai de gravure avec les polices prévues (Big Shoulders, Literata, Courier Prime, Sacramento) ?",
-      ouVa: "Réponses du questionnaire",
-      commencee: (d) => Object.keys(d.questionnaire?.reponses?.polices || {}).some((k) => k !== "date"),
+      titre: "Polices et motifs proposés",
+      question: "Quelles polices proposer aux clients dans le configurateur ? Pouvez-vous faire un essai de gravure de chacune ? Proposez-vous des motifs à ajouter (cœurs, étoiles…) ?",
+      ouVa: "Configurateur du site : polices et motifs proposés aux clients",
+      commencee: (d) => !!d.site.configurateur || Object.keys(d.questionnaire?.reponses?.polices || {}).some((k) => k !== "date"),
       corps: () =>
-        POLICES.map(([cle, nom, surnom, famille, graisse]) =>
-          partie(
-            `${nom} <span class="aide" style="font:400 .85rem var(--f-mono);text-transform:none">(« ${surnom} » dans le configurateur)</span>`,
-            `<p class="q-citation" style="font-family:${famille};font-weight:${graisse};font-style:normal;font-size:1.6rem;line-height:1.2">Léa &amp; Hugo, 12 juin 2027</p>` +
-              radios(R("polices", cle), [
-                ["a-faire", "Pas encore essayée", ""],
-                ["ok", "Essai réussi", ""],
-                ["non", "Ne convient pas", ""],
-              ])
-          )
-        ).join("") + partie("", grille(texte(R("polices", "remarque"), "Remarques sur l'essai (taille minimale, matière…)", { zone: true }))),
+        partie(
+          "Polices",
+          `<div class="q-polices">${POLICES.map(([id, nom, surnom, famille, graisse]) => `
+            <div class="q-police">
+              ${caseListe("site.configurateur.polices", id, `<span class="q-police-essai" style="font-family:${famille};font-weight:${graisse}">Léa &amp; Hugo, 12 juin 2027</span><span class="q-police-nom">${surnom} <span class="aide">${nom}</span></span>`)}
+              <select data-q-chemin="${R("polices", id)}" aria-label="Essai de gravure, police ${surnom}">
+                ${[["", "Essai à faire"], ["ok", "Essai réussi"], ["non", "Ne convient pas"]].map(([v, l]) => `<option value="${v}" ${(lire(R("polices", id)) || "") === v ? "selected" : ""}>${l}</option>`).join("")}
+              </select>
+            </div>`).join("")}</div>`,
+          "Cochez les polices proposées aux clients ; elles apparaissent dans cet ordre. Toutes sont libres de droits et déjà prêtes sur le site."
+        ) +
+        partie("", `<div class="q-choix">${caseQ("site.configurateur.autrePolice", "Proposer « Autre police »", "Le client décrit la police souhaitée ; vous confirmez avec la maquette")}</div>`) +
+        partie("Motifs", `<div class="q-choix en-ligne">${MOTIFS.map(([id, nom]) => caseListe("site.configurateur.motifs", id, nom)).join("")}</div>`, "Le client peut ajouter un motif coché à sa gravure, comme les petits cœurs de la plaque à message. Aucun coché : pas de choix de motif.") +
+        partie("", grille(texte(R("polices", "remarque"), "Remarques sur les essais (taille minimale, matière, autres polices que vous utilisez…)", { zone: true }))),
     },
     {
       cle: "photos", theme: 2,
@@ -412,13 +387,25 @@
       question: "Qui est le directeur de la publication ? Quel médiateur de la consommation avez-vous choisi ?",
       ouVa: "Informations légales (Infos boutique) : mentions légales et CGV",
       commencee: (d) => rempli(d.site.legal?.directeurPublication) || rempli(d.site.legal?.mediateur?.nom),
-      corps: () =>
-        partie("", grille(texte("site.legal.directeurPublication", "Directeur ou directrice de la publication", { large: false, aide: "La personne responsable du contenu du site, souvent l'exploitant." }))) +
-        partie("Médiateur de la consommation", grille(
-          texte("site.legal.mediateur.nom", "Nom du médiateur", { large: false, aide: "Obligatoire pour vendre aux particuliers. Liste officielle : economie.gouv.fr/mediation-conso." }) +
-          texte("site.legal.mediateur.url", "Site du médiateur", { large: false, type: "url", placeholder: "https://…" }) +
-          texte("site.legal.mediateur.adresse", "Adresse postale du médiateur")
-        )),
+      corps: (d) =>
+        partie(
+          "Directeur de la publication",
+          grille(texte("site.legal.directeurPublication", "Directeur ou directrice de la publication", {
+            large: false,
+            placeholder: d.site.legal?.exploitant || "Prénom Nom",
+            aide: d.site.legal?.exploitant ? `Laissez vide : c'est l'exploitant, ${e(d.site.legal.exploitant)}.` : "Laissez vide si c'est l'exploitant (question « Votre entreprise »).",
+          })),
+          "Pourquoi : le site d'une entreprise doit nommer la personne responsable de ce qui y est publié (loi pour la confiance dans l'économie numérique, art. 6). Pour une entreprise individuelle, c'est l'exploitant : rien de plus à faire."
+        ) +
+        partie(
+          "Médiateur de la consommation",
+          grille(
+            texte("site.legal.mediateur.nom", "Nom du médiateur", { large: false, aide: "Liste officielle des médiateurs : economie.gouv.fr/mediation-conso." }) +
+            texte("site.legal.mediateur.url", "Site du médiateur", { large: false, type: "url", placeholder: "https://…" }) +
+            texte("site.legal.mediateur.adresse", "Adresse postale du médiateur")
+          ),
+          "Pourquoi : un commerçant qui vend à des particuliers doit adhérer à un médiateur et donner ses coordonnées sur le site et dans les CGV (Code de la consommation, art. L612-1 et L616-1). Un client mécontent peut ainsi le saisir gratuitement avant d'aller au tribunal. L'adhésion est payante ; sans médiateur, l'entreprise s'expose à une amende administrative (art. L641-1). Si la boutique a déjà un médiateur, ce sont ses coordonnées."
+        ),
     },
     {
       cle: "domaine", theme: 3,
@@ -488,7 +475,7 @@
     zone.innerHTML = `
       <div class="questionnaire">
         <details class="q-sommaire" ${!telephone || sommaireOuvert ? "open" : ""}>
-          <summary style="padding-inline:14px;display:block;min-height:var(--cible)">${barre(d)}<span class="aide" ${telephone ? "" : "hidden"}>${sommaireOuvert ? "Masquer" : "Voir"} les 18 questions</span></summary>
+          <summary style="padding-inline:14px;display:block;min-height:var(--cible)">${barre(d)}<span class="aide" ${telephone ? "" : "hidden"}>${sommaireOuvert ? "Masquer" : "Voir"} les ${Q.length} questions</span></summary>
           ${sommaire}
         </details>
         <article class="q-carte" aria-labelledby="q-titre">
@@ -542,6 +529,16 @@
     };
     zone.addEventListener("input", (ev) => {
       const el = ev.target;
+      if (el.dataset.qListe) {
+        const [tous] = LISTES[el.dataset.qListe];
+        const coches = new Set(listeDe(el.dataset.qListe));
+        if (el.checked) coches.add(el.value);
+        else coches.delete(el.value);
+        ecrire(el.dataset.qListe, tous.filter((id) => coches.has(id)));
+        rep(courante);
+        ctx.marquerModifie();
+        return majEtats(zone, el);
+      }
       const chemin = el.dataset.qChemin;
       if (!chemin) return;
       const t = el.dataset.qType;
@@ -552,8 +549,6 @@
       else v = el.value;
       ecrire(chemin, v);
       rep(courante); // la question est commencée
-      const photo = chemin.match(/^questionnaire\.reponses\.([^.]+)\.choix-(.+)$/);
-      if (photo) appliquerChoixPhoto(photo[1], photo[2]);
       ctx.marquerModifie();
       if (el.dataset.qRendre !== undefined) rafraichir(true);
       else majEtats(zone, el);
@@ -562,7 +557,7 @@
       if (ev.target.classList?.contains("q-sommaire") && matchMedia("(max-width: 999px)").matches) {
         sommaireOuvert = ev.target.open;
         const lien = ev.target.querySelector("summary .aide");
-        if (lien) lien.textContent = `${sommaireOuvert ? "Masquer" : "Voir"} les 18 questions`;
+        if (lien) lien.textContent = `${sommaireOuvert ? "Masquer" : "Voir"} les ${Q.length} questions`;
       }
     }, true);
     zone.addEventListener("click", (ev) => {
@@ -602,14 +597,14 @@
       }
       if (a === "delai-famille") {
         const champ = zone.querySelector(`#q-fam-delai-${CSS.escape(b.dataset.cat)}`);
-        const jours = parseInt(champ?.value, 10);
-        if (!(jours > 0)) return ctx.toast("Indiquez d'abord un nombre de jours.", true);
+        const n = parseInt(champ?.value, 10);
+        if (!(n > 0)) return ctx.toast("Indiquez d'abord un nombre de jours.", true);
         const cibles = d.produits.filter((p) => p.categorie === b.dataset.cat);
-        cibles.forEach((p) => (p.delai = jours));
+        cibles.forEach((p) => (p.delai = n));
         rep(courante);
         ctx.marquerModifie();
         rendre(zone);
-        ctx.toast(`${jours} jour${jours > 1 ? "s" : ""} pour les ${cibles.length} produits de la famille.`);
+        ctx.toast(`${n} jour${n > 1 ? "s" : ""} ouvré${n > 1 ? "s" : ""} pour les ${cibles.length} produits de la famille.`);
         return;
       }
       if (a === "matiere-famille") {

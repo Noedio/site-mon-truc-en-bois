@@ -44,6 +44,8 @@ export interface Occasion {
   // Date de l'occasion et date limite de commande, au format AAAA-MM-JJ (vides pour une occasion sans date fixe).
   date?: string;
   dateLimite?: string;
+  // Jours ouvrés à prévoir entre la commande et la remise ; donne la date limite d'une occasion datée sans dateLimite.
+  delaiJours?: number;
 }
 
 export interface Avis { nom: string; date: string; texte: string; source: string; note?: number; produit?: string }

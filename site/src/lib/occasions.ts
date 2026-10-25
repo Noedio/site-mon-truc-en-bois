@@ -1,7 +1,8 @@
 // Dates des occasions (chantier C2), calculées au build.
 // Une date n'est calculée que si c'est un fait de calendrier (Noël, fête des mères, fête des pères).
-// La date limite de commande dépend du délai de fabrication : elle vient de occasion.dateLimite,
-// que le questionnaire de l'admin remplit, et reste à compléter sinon.
+// Délai : occasion.delaiJours, en jours ouvrés (lundi au vendredi hors jours fériés), saisi dans l'admin.
+// Date limite de commande d'une occasion datée : occasion.dateLimite si l'atelier l'impose, sinon la date
+// de l'occasion moins le délai ; à compléter si aucun des deux n'est saisi. Mêmes calculs que js/jours-ouvres.js.
 import { occasions, produitsDe, type Occasion } from "./donnees";
 import { parPrix } from "./catalogue";
 
@@ -26,6 +27,25 @@ function paques(a: number) {
   const m = Math.floor((n + 11 * h + 22 * l) / 451);
   const x = h + l - 7 * m + 114;
   return utc(a, Math.floor(x / 31), (x % 31) + 1);
+}
+
+/** Les 11 jours fériés de l'année (métropole), en millisecondes. */
+function feries(a: number) {
+  const p = paques(a).getTime();
+  const fixes = [[1, 1], [5, 1], [5, 8], [7, 14], [8, 15], [11, 1], [11, 11], [12, 25]].map(([m, j]) => utc(a, m, j).getTime());
+  // Lundi de Pâques, Ascension, lundi de Pentecôte
+  return new Set([...fixes, ...[1, 39, 50].map((n) => p + n * JOUR)]);
+}
+const estOuvre = (d: Date) => d.getUTCDay() !== 0 && d.getUTCDay() !== 6 && !feries(d.getUTCFullYear()).has(d.getTime());
+
+/** La date n jours ouvrés avant d. */
+function retirerJoursOuvres(d: Date, n: number) {
+  let x = d;
+  for (let reste = n; reste > 0; ) {
+    x = new Date(x.getTime() - JOUR);
+    if (estOuvre(x)) reste--;
+  }
+  return x;
 }
 
 const dimancheAvant = (d: Date) => new Date(d.getTime() - d.getUTCDay() * JOUR);
@@ -53,7 +73,7 @@ function lireSaisie(valeur: string) {
   return iso ? { texte: formater(utc(+iso[1], +iso[2], +iso[3])), date: utc(+iso[1], +iso[2], +iso[3]) } : { texte: valeur.trim() };
 }
 
-export interface DateOccasion { texte: string; date?: Date }
+export interface DateOccasion { texte: string; date?: Date; passee?: boolean }
 
 /** Prochaine date de l'occasion à partir du jour du build, ou « Toute l'année ». */
 export function dateDe(o: Occasion): DateOccasion {
@@ -66,8 +86,24 @@ export function dateDe(o: Occasion): DateOccasion {
   return { texte: formater(d), date: d };
 }
 
-/** Date limite de commande saisie dans l'admin, ou undefined (à compléter). */
-export const dateLimiteDe = (o: Occasion): DateOccasion | undefined => (o.dateLimite?.trim() ? lireSaisie(o.dateLimite) : undefined);
+/** Date limite de commande : imposée dans l'admin, ou calculée avec le délai ; undefined si rien n'est saisi. */
+export function dateLimiteDe(o: Occasion): DateOccasion | undefined {
+  let limite: DateOccasion | undefined;
+  if (o.dateLimite?.trim()) limite = lireSaisie(o.dateLimite);
+  else {
+    const quand = dateDe(o).date;
+    if (quand && o.delaiJours && o.delaiJours > 0) {
+      const d = retirerJoursOuvres(quand, o.delaiJours);
+      limite = { texte: formater(d), date: d };
+    }
+  }
+  if (limite?.date) limite.passee = limite.date < aujourdhui();
+  return limite;
+}
+
+/** « 10 jours ouvrés », ou undefined si le délai n'est pas saisi. */
+export const delaiDe = (o: Occasion) =>
+  o.delaiJours && o.delaiJours > 0 ? `${o.delaiJours} jour${o.delaiJours > 1 ? "s" : ""} ouvré${o.delaiJours > 1 ? "s" : ""}` : undefined;
 
 /** Pièces d'une occasion, du prix le plus bas au plus haut. */
 export const piecesDe = (o: Occasion) => parPrix(produitsDe({ occasion: o.id }));

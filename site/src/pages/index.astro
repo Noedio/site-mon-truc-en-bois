@@ -25,9 +25,9 @@ const parCategorie = categories.map((c) => ({ ...c, nombre: produitsDe({ categor
 // Occasions : les entreprises et associations ont leur propre bandeau plus bas.
 const listeOccasions = occasions
   .filter((o) => o.id !== "pro")
-  .map((o) => ({ ...o, nombre: produitsDe({ occasion: o.id }).length }))
+  .map((o) => ({ ...o, nombre: produitsDe({ occasion: o.id }).length, datee: Boolean(dateDe(o).date), limite: dateLimiteDe(o), delai: delaiDe(o) }))
   .filter((o) => o.nombre);
-const sansDateLimite = listeOccasions.every((o) => !o.dateLimite);
+const sansDateLimite = listeOccasions.every((o) => !o.limite && !o.delai);
 
 // Avis : trois avis courts, nommés et datés, sans étoiles.
 const avisCourts = avis.filter((a) => a.texte && a.texte.length <= 260).slice(0, 3);
@@ -37,6 +37,7 @@ const photoAtelier = image("img/salon-stand.jpg") ?? image("img/boutique-interie
 const [aProposDebut, , aProposSalons] = donnees.textes.aPropos;
 const texteDepart = "Marie & Paul\n14.06.2026";
 import { maquetteCourte, questionMaquette } from "../lib/promesses";
+import { dateDe, dateLimiteDe, delaiDe } from "../lib/occasions";
 ---
 <Base titre={site.nom} description="Gravure laser, impression et bijoux gravés à Auchel : planches, plaques, verres, mugs. Aperçu de votre texte en direct, retrait gratuit en boutique.">
   <section class="bande accueil-tete" aria-labelledby="titre-accueil">
@@ -82,14 +83,15 @@ import { maquetteCourte, questionMaquette } from "../lib/promesses";
     <div class="conteneur">
       <TeteSection id="titre-occasions" titre="Par occasion" lien={{ href: "/occasions/", libelle: "Toutes les occasions" }} />
       {sansDateLimite && (
-        <p class="machine occasions-limite">Dates limites de commande : <ACompleter quoi="date limite de commande pour chaque occasion (Noël, fêtes des mères et des pères…)" /></p>
+        <p class="machine occasions-limite">Délais et dates limites de commande : <ACompleter quoi="jours ouvrés à prévoir pour chaque occasion (date limite pour Noël, fêtes des mères et des pères)" /></p>
       )}
       <ul class="occasions" role="list">
         {listeOccasions.map((o) => (
           <li>
             <a href={`/occasions/${o.id}/`}>
               <span class="occasion-nom">{o.nom}</span>
-              {o.dateLimite && <span class="machine occasion-limite">Commander avant le {o.dateLimite}</span>}
+              {o.limite && !o.limite.passee && <span class="machine occasion-limite">Commander avant le {o.limite.texte}</span>}
+              {!o.datee && o.delai && <span class="machine occasion-limite">Prévoir {o.delai}</span>}
               <span class="machine occasion-nombre">{o.nombre} pièces</span>
             </a>
           </li>
