@@ -728,6 +728,52 @@ function emailLienPaiement(c, message = "") {
       ${recapitulatif(c)}`)
   };
 }
+function sujetRelance(c) {
+  if (c.statut === "maquette_envoyee") return "maquette";
+  const apresValidation = [
+    "confirmee",
+    "en_fabrication",
+    "prete",
+    "expediee",
+    "terminee"
+  ].includes(c.statut);
+  if (c.paiement_statut === "en_attente" && apresValidation && (c.paiement_mode === "en_ligne" || c.stripe_url)) return "paiement";
+  return null;
+}
+function emailRelance(c, message = "") {
+  const sujet = sujetRelance(c);
+  const bonjour = `<p>Bonjour ${echapper(c.client_nom.split(" ")[0])},</p>`;
+  const mot = message ? `<p style="background:#efe6d8;border:1px solid #d7bf9c;padding:12px 14px">${echapper(message).replace(/\n/g, "<br>")}</p>` : "";
+  if (sujet === "maquette") {
+    const envoi = [
+      ...c.historique ?? []
+    ].reverse().find((h) => h.statut === "maquette_envoyee")?.date;
+    const le = envoi ? ` le ${new Date(envoi).toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      timeZone: "Europe/Paris"
+    })}` : "";
+    return {
+      sujet: `Commande ${c.numero} : votre maquette attend votre r\xE9ponse`,
+      html: gabarit("Votre maquette attend votre r\xE9ponse", `${bonjour}
+      <p>Nous vous avons envoy\xE9${le} la maquette de votre commande <strong>${c.numero}</strong>. Nous lan\xE7ons la gravure d\xE8s que vous l'avez valid\xE9e.</p>
+      <p>R\xE9pondez simplement \xE0 cet email : \xAB c'est bon pour moi \xBB, ou ce qu'il faut changer.</p>
+      ${mot}
+      ${bouton(lienSuivi(c), "Voir ma commande")}`)
+    };
+  }
+  if (sujet === "paiement") {
+    return {
+      sujet: `Commande ${c.numero} : rappel de paiement`,
+      html: gabarit("Votre commande attend son r\xE8glement", `${bonjour}
+      <p>Votre commande <strong>${c.numero}</strong> (${euros(c.total)}) n'est pas encore r\xE9gl\xE9e. Vous pouvez la payer par carte bancaire en suivant ce lien.</p>
+      ${mot}
+      ${bouton(lienPayer(c), `Payer ${euros(c.total)}`)}
+      <p style="color:#6b5a4a;font-size:14px">D\xE9j\xE0 r\xE9gl\xE9 ? Ne tenez pas compte de ce message, et merci !</p>`)
+    };
+  }
+  return null;
+}
 var TYPES = {
   devis: "Demande de devis",
   contact: "Message",
@@ -1062,6 +1108,7 @@ function verifierContenu(base64) {
   if (!d?.site || !Array.isArray(d.produits)) throw new ErreurClient("Contenu invalide.");
 }
 var arrondi2 = (n) => Math.round(n * 100) / 100;
+var dateValide = (v) => /^\d{4}-\d{2}-\d{2}$/.test(String(v ?? "")) && !isNaN(Date.parse(String(v)));
 var texte3 = (v, max) => String(v ?? "").trim().slice(0, max);
 async function creerVente(v) {
   if (!Array.isArray(v.lignes) || !v.lignes.length) throw new ErreurClient("Ajoutez au moins un article.");
@@ -1150,6 +1197,9 @@ async function creerVente(v) {
       notes: texte3(v.notes, 2e3),
       cadeau: /^\d{4}-\d{2}-\d{2}$/.test(v.date_souhaitee ?? "") ? {
         date: v.date_souhaitee
+      } : {},
+      ...dateValide(v.echeance) ? {
+        echeance: v.echeance
       } : {}
     })
   });
@@ -1307,6 +1357,12 @@ var traiter4 = servir(async (req) => {
       a: commande.client_email,
       ...emailLienPaiement(commande, d.message)
     }) : null;
+    if (email?.envoye) await db(`commandes?id=eq.${commande.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        relance_le: (/* @__PURE__ */ new Date()).toISOString()
+      })
+    });
     return json(req, {
       url,
       lien: `${site2}/suivi.html?jeton=${commande.jeton_suivi}&payer=1`,
@@ -1315,13 +1371,26 @@ var traiter4 = servir(async (req) => {
   }
   if (d.action === "notifier") {
     if (commande.client_email.endsWith(".invalid")) throw new ErreurClient("Ce client n'a pas d'adresse email.");
+    const contenu = d.relance ? emailRelance(commande, d.message) : emailStatut(commande, d.message);
+    if (!contenu) throw new ErreurClient("Rien \xE0 rappeler au client pour cette commande.");
     const email = await envoyerEmail({
       a: commande.client_email,
-      ...emailStatut(commande, d.message)
+      ...contenu
     });
     if (!email.envoye) throw new ErreurClient(`Email non envoy\xE9 (${email.raison}).`);
-    return json(req, {
+    if (!d.relance) return json(req, {
       email_envoye: true
+    });
+    const relance_le = (/* @__PURE__ */ new Date()).toISOString();
+    await db(`commandes?id=eq.${commande.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        relance_le
+      })
+    });
+    return json(req, {
+      email_envoye: true,
+      relance_le
     });
   }
   if (d.action === "photos") {

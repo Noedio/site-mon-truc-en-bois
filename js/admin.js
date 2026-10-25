@@ -498,44 +498,12 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
       window.AdminCRM?.statistiques($("#stats-ventes"), contexte()).catch(() => {});
     }
   }
-  // Accueil : ce qu'il y a à faire aujourd'hui (commandes, paiements, retraits, demandes), en un coup d'œil
+  // Accueil : ce qu'il y a à faire et quand (liste « À faire » et plan de charge de js/admin-commandes.js)
   async function actionsDuJour() {
     const el = $("#jour-actions");
-    const S = window.AdminServeur;
     if (!el) return;
-    if (!S?.client(dServeur()) || !(await S.connecte(dServeur()).catch(() => false))) {
+    if (!(await window.AdminCommandes?.accueil(el, contexte())))
       el.innerHTML = `<p class="aide">Les commandes, la caisse et les clients apparaîtront ici une fois le serveur de la boutique installé.</p>`;
-      return;
-    }
-    const c = S.client(dServeur());
-    const compter = (requete) => requete.then((r) => r.count ?? 0);
-    const tete = (table) => c.from(table).select("id", { count: "exact", head: true });
-    const [nouvelles, aPayer, pretes, demandes] = await Promise.all([
-      compter(tete("commandes").eq("statut", "nouvelle")),
-      compter(tete("commandes").eq("paiement_statut", "en_attente").neq("statut", "annulee")),
-      compter(tete("commandes").eq("statut", "prete")),
-      compter(tete("demandes").in("statut", ["nouvelle", "en_cours"]).neq("type", "newsletter")),
-    ]);
-    const tuile = (n, un, plusieurs, vers) =>
-      `<button class="tuile ${n ? "a-faire" : ""}" data-aller="${vers}"><strong>${n}</strong><span>${n > 1 ? plusieurs : un}</span></button>`;
-    el.innerHTML = `
-      ${tuile(nouvelles, "nouvelle commande à regarder", "nouvelles commandes à regarder", "commandes")}
-      ${tuile(demandes, "demande de devis à traiter", "demandes de devis à traiter", "demandes")}
-      ${tuile(aPayer, "commande à encaisser", "commandes à encaisser", "commandes")}
-      ${tuile(pretes, "commande prête, client à prévenir", "commandes prêtes, clients à prévenir", "commandes")}
-      <button class="tuile tuile-vente" data-aller="caisse"><strong>Nouvelle vente</strong><span>En boutique, au téléphone ou sur un salon</span></button>
-      ${nouvelles + demandes + aPayer + pretes ? "" : `<p class="jour-calme">Rien d'urgent. C'est le bon moment pour ajouter une photo de réalisation dans la Galerie.</p>`}`;
-  }
-  // (ancien encadré « commandes à traiter », remplacé par actionsDuJour)
-  async function resumeCommandes() {
-    const el = $("#resume-commandes");
-    const r = await window.AdminCommandes?.resume(contexte());
-    if (!el || !r) return;
-    el.innerHTML = r.connecte
-      ? `<div class="bloc-tete"><h2>Commandes</h2><button class="btn" data-aller="commandes">Voir les commandes</button></div>
-         <p>${r.nouvelles ? `<strong>${r.nouvelles} nouvelle${r.nouvelles > 1 ? "s" : ""} commande${r.nouvelles > 1 ? "s" : ""}</strong> · ` : "Aucune nouvelle commande · "}${r.aTraiter} à traiter en tout.</p>`
-      : `<div class="bloc-tete"><h2>Commandes</h2><button class="btn btn-ligne" data-aller="commandes">Se connecter aux commandes</button></div>`;
-    el.hidden = false;
   }
 
   // Champs simples liés aux données : data-chemin="site.telephone", data-type="nombre|lignes|case"
@@ -659,7 +627,7 @@ Annuler : les abandonner et partir du site tel qu'il est en ligne.`;
     return `
       <section class="jour">
         <div class="jour-tete"><h2>${salut} !</h2><p>On est ${jour}. Voici ce qui vous attend.</p></div>
-        <div class="jour-actions" id="jour-actions"><p class="aide">Chargement…</p></div>
+        <div class="jour-afaire" id="jour-actions"><p class="aide">Chargement…</p></div>
       </section>
 
       ${blocQuestionnaire()}
