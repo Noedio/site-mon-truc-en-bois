@@ -1,12 +1,15 @@
 ---
-// Commandes du configurateur de gravure : pièce (si plusieurs), texte, police, et le bandeau d'aperçu
+// Commandes du configurateur de gravure : pièce (si plusieurs), texte, police, motif, et le bandeau d'aperçu
 // collé en haut de l'écran sur téléphone pendant la saisie. Le grand aperçu est dans ApercuGravure.astro.
 // Rendu complet au build (sans JavaScript, l'aperçu montre le texte de départ) ; le script prend le relais.
+// Polices, « Autre police » et motifs proposés : site.configurateur (reglages-configurateur.ts).
 //
 // Emplacements : « tete » (titre), « avant » (variantes, avant le bandeau), « apres-bandeau »,
 // puis l'emplacement par défaut après les polices (quantité, achat…).
 import "@fontsource/sacramento/400.css";
-import { POLICES, policeDe, gabaritDe, dessiner, limiterTexte, titreApercu } from "../lib/configurateur";
+import { gabaritDe, dessiner, echantillonDe, estExemple, limiterTexte, titreApercu } from "../lib/configurateur";
+import { AUTRE_POLICE, pileCss, type Police } from "../lib/polices";
+import { apercuPhotoDe, reglagesConfigurateur } from "../lib/reglages-configurateur";
 import { prixDe, type Produit } from "../lib/donnees";
 import { euros, numeroPiece } from "../lib/format";
 import type { PieceClient } from "../lib/configurateur-client";
@@ -14,30 +17,39 @@ import type { PieceClient } from "../lib/configurateur-client";
 interface Props {
   pieces: (Produit & { numero: number })[];
   texte?: string;
-  police?: string; // id de la police de départ
+  police?: string; // id de la police de départ (la première proposée à défaut)
   numeroter?: boolean; // « 1. La pièce, 2. Votre texte… » sur l'accueil
   aide?: string; // exemple affiché dans le champ vide
   personnalisable?: boolean; // false : pièce sans texte, seuls les emplacements sont rendus (même mise en page)
 }
-const { pieces, texte: texteDepart = "", police: policeDepart = "atelier", numeroter = false, aide = "Ex. : Marie & Paul, 14.06.2026", personnalisable = true } = Astro.props;
+const { pieces, texte: texteDepart = "", police: policeDepart, numeroter = false, aide = "Ex. : Marie & Paul, 14.06.2026", personnalisable = true } = Astro.props;
+const { polices, autrePolice, motifs } = reglagesConfigurateur();
 
 /** « Planche apéro gravée » → « Planche apéro » pour les boutons de choix. */
 const nomCourt = (nom: string) => nom.replace(/\s+grav(é|ée|és|ées)$/i, "");
-const config: PieceClient[] = pieces.map((p) => {
+const photos = await Promise.all(pieces.map(apercuPhotoDe));
+const config: PieceClient[] = pieces.map((p, i) => {
   const { prix, plusieurs } = prixDe(p);
   return {
-    id: p.id, categorie: p.categorie, variantes: p.variantes ?? null,
+    id: p.id, categorie: p.categorie, variantes: p.variantes ?? null, gabarit: p.gabarit, apercuPhoto: photos[i],
     nom: p.nom, numero: numeroPiece(p.numero), prix: `${plusieurs ? "dès " : ""}${euros(prix)}`, lien: `/produit/${p.id}/`,
   };
 });
 
-const premiere = pieces[0];
-const police = policeDe(policeDepart);
+const premiere = config[0];
+const police = polices.find((p) => p.id === policeDepart) ?? polices[0];
 const gabarit = gabaritDe(premiere, premiere.variantes?.choix?.length ? 0 : null);
 const texte = limiterTexte(texteDepart, gabarit);
-const svg = dessiner({ gabarit, texte, police, prefixe: "bandeau", titre: titreApercu(premiere.nom.toLowerCase(), texte, police) });
+const svg = dessiner({ gabarit, texte, police, prefixe: "bandeau", titre: titreApercu(premiere.nom.toLowerCase(), texte, police), leger: true });
+const exemple = estExemple(texte, police);
 const n = (i: number, libelle: string) => (numeroter ? `${i}. ${libelle}` : libelle);
 const decalage = pieces.length > 1 ? 1 : 0;
+
+// Échantillons : le texte du client dans chaque police (remplacé en direct par le script).
+const debut = echantillonDe(texte);
+const echantillon = (p: Police) => (p.capitales ? debut.toLocaleUpperCase("fr-FR") : debut);
+const nombrePolices = polices.length + (autrePolice ? 1 : 0);
+const defile = nombrePolices > 6;
 ---
 {!personnalisable ? (
   <div class="configurateur">
@@ -47,11 +59,11 @@ const decalage = pieces.length > 1 ? 1 : 0;
   </div>
 ) : (
 <div class="configurateur" data-configurateur>
-  <script type="application/json" data-config set:html={JSON.stringify(config).replace(/</g, "\u003c")} />
+  <script type="application/json" data-config set:html={JSON.stringify(config).replace(/</g, "<")} />
   <slot name="tete" />
   <slot name="avant" />
   <div class="cfg-bandeau">
-    <div class="cfg-bandeau-scene" data-scene set:html={svg} />
+    <div class="cfg-bandeau-scene" data-scene data-exemple={exemple ? "" : undefined} set:html={svg} />
     <span class="cfg-bandeau-mention etiquette">Aperçu indicatif</span>
   </div>
   <slot name="apres-bandeau" />
@@ -89,18 +101,53 @@ const decalage = pieces.length > 1 ? 1 : 0;
 
   <fieldset class="cfg-groupe">
     <legend class="cfg-legende">{n(2 + decalage, "La police")}</legend>
-    <div class="cfg-polices">
-      {POLICES.map((p) => (
+    <div class="cfg-polices" data-defile={defile ? "" : undefined}>
+      {polices.map((p) => (
         <label class="cfg-choix cfg-police">
           <input type="radio" name="police" value={p.id} data-nom={p.nom} checked={p.id === police.id} />
-          <span class="cfg-echantillon" data-echantillon={p.id} style={`font-family: "${p.famille}"; font-weight: ${p.graisse}`} aria-hidden="true">
-            {p.capitales ? "MARIE" : "Marie"}
+          <span class="cfg-echantillon" data-echantillon={p.id} style={`font-family: ${pileCss(p)}; font-weight: ${p.graisse}`} aria-hidden="true">
+            {echantillon(p)}
           </span>
           <span class="etiquette">{p.nom}</span>
         </label>
       ))}
+      {autrePolice && (
+        <label class="cfg-choix cfg-police">
+          <input type="radio" name="police" value="autre" data-nom={AUTRE_POLICE} />
+          <span class="cfg-echantillon cfg-echantillon-autre" aria-hidden="true">Autre…</span>
+          <span class="etiquette">Police à préciser</span>
+        </label>
+      )}
     </div>
+    {defile && <span class="etiquette doux">{nombrePolices} choix : faites défiler la liste.</span>}
+    {autrePolice && (
+      <div class="cfg-autre" data-cfg-autre hidden>
+        <label class="etiquette" for="police-autre">Nom ou exemple de la police souhaitée</label>
+        <input id="police-autre" type="text" maxlength="120" autocomplete="off" data-cfg-police-autre aria-describedby="police-autre-aide" />
+        <span id="police-autre-aide" class="etiquette doux">En attendant, l'aperçu utilise la police {polices[0].nom}.</span>
+      </div>
+    )}
   </fieldset>
+
+  {motifs.length > 0 && (
+    <fieldset class="cfg-groupe">
+      <legend class="cfg-legende">{n(3 + decalage, "Motif")}</legend>
+      <div class="cfg-choix-ligne">
+        <label class="cfg-choix">
+          <input type="radio" name="motif" value="" checked />
+          <span>Aucun</span>
+        </label>
+        {motifs.map((m) => (
+          <label class="cfg-choix">
+            <input type="radio" name="motif" value={m.id} />
+            <span>{m.nom}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  )}
+  <!-- Choix sans champ dédié dans la ligne du panier (motif, police souhaitée) : ajoutés aux précisions. -->
+  <input type="hidden" data-cfg-precisions value="" />
 
   <slot />
 </div>
@@ -122,6 +169,16 @@ const decalage = pieces.length > 1 ? 1 : 0;
   /* Choix en pastilles carrées : de vrais boutons radio, flèches du clavier comprises. */
   .cfg-choix-ligne { display: flex; flex-wrap: wrap; gap: 8px; }
   .cfg-polices { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(132px, 100%), 1fr)); gap: 8px; }
+  /* Plus de six polices : la grille garde la hauteur de deux rangées et demie et défile.
+     Les polices ajoutées ne sont téléchargées que lorsque la grille s'affiche (polices.ts). */
+  .cfg-polices[data-defile] {
+    grid-template-columns: repeat(auto-fill, minmax(min(132px, 100%), 1fr));
+    max-height: 212px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 2px;
+    margin: -2px;
+  }
   .cfg-choix {
     position: relative;
     display: flex;
@@ -138,10 +195,31 @@ const decalage = pieces.length > 1 ? 1 : 0;
   .cfg-choix:hover { background: var(--bouleau-fonce); }
   .cfg-choix:has(input:checked) { background: var(--brule); color: var(--bouleau); }
   .cfg-choix:has(input:focus-visible) { outline: 2px solid var(--gravure); outline-offset: 2px; }
-  .cfg-police { flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
-  .cfg-echantillon { font-size: 1.5rem; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-  .cfg-echantillon[data-echantillon="machine"] { font-size: 1.3rem; }
-  .cfg-echantillon[data-echantillon="manuscrite"] { font-size: 1.9rem; line-height: 1; }
+  .cfg-police { flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; min-height: 82px; }
+  .cfg-echantillon { font-size: 1.5rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .cfg-echantillon[data-echantillon="machine"], .cfg-echantillon[data-echantillon="romaine"] { font-size: 1.3rem; }
+  .cfg-echantillon[data-echantillon="manuscrite"], .cfg-echantillon[data-echantillon="calligraphie"] { font-size: 1.9rem; line-height: 1.05; }
+  .cfg-echantillon[data-echantillon="craie"], .cfg-echantillon[data-echantillon="ecriture"] { font-size: 1.75rem; line-height: 1.1; }
+  .cfg-echantillon-autre { font-family: var(--f-machine); font-size: 1.3rem; }
+
+  .cfg-autre { display: flex; flex-direction: column; gap: 6px; }
+  .cfg-autre[hidden] { display: none; }
+
+  /* Tant que le champ est vide, l'aperçu montre un texte d'exemple : il est signalé comme tel. */
+  [data-scene][data-exemple] { position: relative; }
+  [data-scene][data-exemple]::before {
+    content: "Texte d’exemple";
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 1;
+    padding: 2px 8px;
+    background: var(--bouleau);
+    border: var(--filet);
+    font-family: var(--f-machine);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
 
   /* Bandeau d'aperçu : sur téléphone seulement, collé en haut tant que les commandes défilent. */
   .cfg-bandeau { display: none; }
@@ -164,6 +242,7 @@ const decalage = pieces.length > 1 ? 1 : 0;
     }
     .cfg-bandeau-scene { width: 100%; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
     .cfg-bandeau-scene svg { width: 100%; height: 100%; }
+    .cfg-bandeau-scene[data-exemple]::before { top: 0; left: 0; font-size: 0.75rem; }
     .cfg-bandeau-mention { font-size: 0.75rem; line-height: 1.2; }
   }
 </style>

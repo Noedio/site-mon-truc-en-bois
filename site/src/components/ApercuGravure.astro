@@ -4,7 +4,8 @@
 // ou, pour une pièce sans gabarit (mug, textile…), la photo et le texte en dessous.
 // Sur téléphone, c'est le bandeau des commandes qui montre l'aperçu : ici ne reste que la photo de la fiche.
 import PhotoPiece from "./PhotoPiece.astro";
-import { policeDe, gabaritDe, dessiner, limiterTexte, titreApercu } from "../lib/configurateur";
+import { gabaritDe, dessiner, estExemple, limiterTexte, titreApercu } from "../lib/configurateur";
+import { apercuPhotoDe, reglagesConfigurateur } from "../lib/reglages-configurateur";
 import type { Produit } from "../lib/donnees";
 
 interface Props {
@@ -13,13 +14,15 @@ interface Props {
   texte?: string;
   police?: string;
 }
-const { pieces, disposition, texte: texteDepart = "", police: policeDepart = "atelier" } = Astro.props;
+const { pieces, disposition, texte: texteDepart = "", police: policeDepart } = Astro.props;
 const premiere = pieces[0];
-const police = policeDe(policeDepart);
-const gabarit = gabaritDe(premiere, premiere.variantes?.choix?.length ? 0 : null);
+const { polices } = reglagesConfigurateur();
+const police = polices.find((p) => p.id === policeDepart) ?? polices[0];
+const piece = { id: premiere.id, categorie: premiere.categorie, variantes: premiere.variantes, gabarit: premiere.gabarit, apercuPhoto: await apercuPhotoDe(premiere) };
+const gabarit = gabaritDe(piece, premiere.variantes?.choix?.length ? 0 : null);
 const texte = limiterTexte(texteDepart, gabarit);
 const svg = dessiner({ gabarit, texte, police, prefixe: "grand", titre: titreApercu(premiere.nom.toLowerCase(), texte, police) });
-const bande = gabarit.forme === "bande";
+const bande = gabarit.forme === "bande" && !gabarit.fond;
 const fiche = disposition === "fiche";
 ---
 <div class="apercu-gravure" data-apercu-gravure data-vue="apercu" data-disposition={disposition} data-bande={bande ? "" : undefined}>
@@ -34,7 +37,7 @@ const fiche = disposition === "fiche";
       <PhotoPiece chemin={premiere.image} alt={`${premiere.nom}, photo réelle`} tailles="(max-width: 899px) 100vw, 620px" prioritaire />
     </div>
   )}
-  <div class="ag-scene" data-scene data-forme={gabarit.forme} set:html={svg} />
+  <div class="ag-scene" data-scene data-forme={gabarit.fond ? "photo" : gabarit.forme} data-exemple={estExemple(texte, police) ? "" : undefined} set:html={svg} />
   <div class="ag-pied">
     <p class="etiquette">Aperçu indicatif : proportions et rendu approximatifs.</p>
     {!fiche && (
@@ -78,9 +81,13 @@ const fiche = disposition === "fiche";
   }
   [data-disposition="accueil"] .ag-scene { aspect-ratio: auto; min-height: 600px; }
   .ag-scene :global(svg) { width: 88%; height: auto; max-height: 100%; }
-  .ag-scene[data-forme="ronde"] :global(svg) { width: 78%; }
+  .ag-scene[data-forme="tranche"] :global(svg), .ag-scene[data-forme="ronde"] :global(svg) { width: 80%; }
+  .ag-scene[data-forme="coeur"] :global(svg) { width: 84%; }
   .ag-scene[data-forme="porte-cles"] :global(svg) { width: auto; height: 400px; }
   [data-disposition="fiche"] .ag-scene[data-forme="porte-cles"] :global(svg) { height: 72%; }
+  /* Photo de la pièce vierge : elle remplit le cadre. */
+  .ag-scene[data-forme="photo"] { padding: 0; }
+  .ag-scene[data-forme="photo"] :global(svg) { width: 100%; height: 100%; }
 
   /* Pièce sans gabarit : photo, puis une bande de texte. */
   [data-bande] .ag-scene { aspect-ratio: auto; padding: 8px 12px; border-top: 0; background: var(--papier); }

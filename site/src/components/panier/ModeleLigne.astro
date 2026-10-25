@@ -2,7 +2,8 @@
 // Modèles d'une ligne du panier, remplis par le script de la page à partir de lirePanier().
 // Rendus ici pour que les styles du composant s'appliquent aux copies faites dans le navigateur ;
 // les photos (vignette du produit, photo du client) sont ajoutées par le script.
-import { POLICES } from "../../lib/polices";
+import { reglagesConfigurateur } from "../../lib/reglages-configurateur";
+const POLICES = reglagesConfigurateur().polices; // les mêmes polices que sur la fiche
 ---
 <template id="modele-ligne">
   <li class="ligne">
