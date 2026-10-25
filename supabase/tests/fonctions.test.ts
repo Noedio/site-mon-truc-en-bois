@@ -696,3 +696,31 @@ Deno.test("caisse : code promo vérifié, compté et enregistré ; code invalide
   assertEquals((await vente("VIEUX")).status, 400); // expiré
   assertEquals(commandes.length, 1);
 });
+
+Deno.test("caisse : remises de ligne, de ticket et codes cumulés dans l'ordre, détail enregistré, paiement carte + espèces", async () => {
+  reinitialiser();
+  const auth = { Authorization: "Bearer jeton-admin" };
+  const vente = (modif: Record<string, unknown>) =>
+    post(admin, { action: "creer_commande", vente: { lignes: [{ id: "mug-personnalise", quantite: 2 }, { nom: "Plaque sur mesure", prix_unitaire: 20, quantite: 1 }], canal: "boutique", paiement_statut: "paye", ...modif } }, auth);
+  // 49,80 € : −10 % sur les mugs (2,98) → 46,82 ; −5 € sur le ticket → 41,82 ; code −10 % (4,18) → 37,64
+  const remises = [{ portee: "ticket", mode: "euros", valeur: 5, libelle: "Geste commercial" }, { portee: "ligne", ligne: 0, mode: "pourcent", valeur: 10 }];
+  const r = await vente({ remises, codes: ["noel10", "NOEL10"], paiements: [{ moyen: "carte", montant: 20 }, { moyen: "especes", montant: 17.64, recu: 20 }], remise: 99 });
+  assertEquals(r.status, 201);
+  const c = commandes[0];
+  assertEquals([c.sous_total, c.remise, c.total], [49.8, 12.16, 37.64]);
+  assertEquals(c.remises.map((x: any) => [x.type, x.montant]), [["ligne", 2.98], ["ticket", 5], ["code", 4.18]]);
+  assertEquals(c.remises[1].libelle, "Geste commercial");
+  assertEquals(c.code_promo, "NOEL10");
+  assertEquals(tables.codes_promo[0].utilisations, 1);
+  assertEquals(c.paiements, [{ moyen: "carte", montant: 20 }, { moyen: "especes", montant: 17.64, recu: 20 }]);
+  assertMatch(c.paiement_moyen, /^carte 20,00\s€ \+ espèces 17,64\s€$/);
+  // Paiements qui ne font pas le total, pourcentage impossible, code inconnu : refusés sans rien créer ni compter
+  assertEquals((await vente({ remises, paiements: [{ moyen: "carte", montant: 10 }] })).status, 400);
+  assertEquals((await vente({ remises: [{ portee: "ticket", mode: "pourcent", valeur: 150 }] })).status, 400);
+  assertEquals((await vente({ codes: ["INCONNU"] })).status, 400);
+  assertEquals(commandes.length, 1);
+  assertEquals(tables.codes_promo[0].utilisations, 1);
+  // Remises plus fortes que le ticket : total à 0, jamais négatif ; un seul moyen devient le moyen de la vente
+  assertEquals((await vente({ remises: [{ portee: "ticket", mode: "euros", valeur: 80 }, { portee: "ticket", mode: "pourcent", valeur: 50 }], paiements: [{ moyen: "cheque", montant: 0 }] })).status, 201);
+  assertEquals([commandes[1].remise, commandes[1].total, commandes[1].paiement_moyen], [49.8, 0, "cheque"]);
+});

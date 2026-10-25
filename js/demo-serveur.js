@@ -1097,10 +1097,107 @@ function verifierContenu(base64) {
 }
 var arrondi2 = (n) => Math.round(n * 100) / 100;
 var texte3 = (v, max) => String(v ?? "").trim().slice(0, max);
+var MOYENS_CAISSE = [
+  "carte",
+  "especes",
+  "cheque",
+  "virement",
+  "paypal",
+  "autre"
+];
+var NOMS_MOYENS = {
+  carte: "carte",
+  especes: "esp\xE8ces",
+  cheque: "ch\xE8que",
+  virement: "virement",
+  paypal: "PayPal",
+  autre: "autre"
+};
+function calculerRemises(lignes, saisies, promos) {
+  if (!Array.isArray(saisies) || saisies.length > 20) throw new ErreurClient("20 remises au plus sur une vente.");
+  const restes = lignes.map((l) => l.total);
+  const remises = [];
+  const valeur = (r) => {
+    const v = arrondi2(Number(r.valeur));
+    if (!(v > 0) || r.mode === "pourcent" && v > 100) throw new ErreurClient("Remise invalide : un montant positif, ou un pourcentage de 1 \xE0 100.");
+    return v;
+  };
+  const montant = (mode, v, base) => arrondi2(Math.min(base, mode === "pourcent" ? base * v / 100 : v));
+  for (const r of saisies.filter((x) => x.portee === "ligne")) {
+    const i = Math.trunc(Number(r.ligne));
+    if (!(i >= 0 && i < lignes.length)) throw new ErreurClient("Remise sur une ligne qui n'existe pas.");
+    const v = valeur(r);
+    const m = montant(r.mode, v, restes[i]);
+    restes[i] = arrondi2(restes[i] - m);
+    remises.push({
+      type: "ligne",
+      ligne: i,
+      libelle: texte3(r.libelle, 60) || `Remise sur ${lignes[i].nom}`,
+      mode: r.mode === "pourcent" ? "pourcent" : "euros",
+      valeur: v,
+      montant: m
+    });
+  }
+  let reste = arrondi2(restes.reduce((t, x) => t + x, 0));
+  for (const r of saisies.filter((x) => x.portee !== "ligne")) {
+    const v = valeur(r);
+    const m = montant(r.mode, v, reste);
+    reste = arrondi2(reste - m);
+    remises.push({
+      type: "ticket",
+      libelle: texte3(r.libelle, 60) || "Remise",
+      mode: r.mode === "pourcent" ? "pourcent" : "euros",
+      valeur: v,
+      montant: m
+    });
+  }
+  for (const p of promos) {
+    const m = montantRemise(p, reste);
+    reste = arrondi2(reste - m);
+    remises.push({
+      type: "code",
+      code: p.code,
+      libelle: `Code ${p.code}`,
+      mode: p.type === "pourcentage" ? "pourcent" : "euros",
+      valeur: Number(p.valeur),
+      montant: m
+    });
+  }
+  return {
+    remise: arrondi2(remises.reduce((t, r) => t + r.montant, 0)),
+    remises
+  };
+}
+function verifierPaiements(v, total, D) {
+  const saisis = Array.isArray(v.paiements) && v.paiements.length ? v.paiements : [
+    {
+      moyen: v.paiement_moyen,
+      montant: total
+    }
+  ];
+  if (saisis.length > 4) throw new ErreurClient("4 moyens de paiement au plus.");
+  const paiements = saisis.map((p) => {
+    const moyen = texte3(p.moyen, 30);
+    const montant = arrondi2(Number(p.montant));
+    if (saisis.length > 1 && !MOYENS_CAISSE.includes(moyen)) throw new ErreurClient("Moyen de paiement inconnu.");
+    if (!(montant >= 0)) throw new ErreurClient("Montant de paiement invalide.");
+    const recu = moyen === "especes" && Number(p.recu) > montant ? {
+      recu: arrondi2(Number(p.recu))
+    } : {};
+    return {
+      moyen,
+      montant,
+      ...recu
+    };
+  });
+  if (D.site?.legal?.regimeTva === "assujetti" && paiements.some((p) => p.moyen === "especes")) throw new ErreurClient("Les paiements en esp\xE8ces doivent \xEAtre enregistr\xE9s sur votre caisse certifi\xE9e.");
+  const somme = arrondi2(paiements.reduce((t, p) => t + p.montant, 0));
+  if (Math.abs(somme - total) > 0.01) throw new ErreurClient(`Les paiements (${euros(somme)}) ne font pas le total de la vente (${euros(total)}).`);
+  return paiements;
+}
 async function creerVente(v) {
   if (!Array.isArray(v.lignes) || !v.lignes.length) throw new ErreurClient("Ajoutez au moins un article.");
   const D = await catalogue();
-  if (D.site?.legal?.regimeTva === "assujetti" && v.paiement_statut === "paye" && v.paiement_moyen === "especes") throw new ErreurClient("Les paiements en esp\xE8ces doivent \xEAtre enregistr\xE9s sur votre caisse certifi\xE9e.");
   const lignes = v.lignes.map((l) => {
     const p = l.id ? (D.produits ?? []).find((x) => x.id === l.id) : null;
     const nom = texte3(l.nom || p?.nom, 160);
@@ -1126,8 +1223,26 @@ async function creerVente(v) {
   });
   const sous_total = arrondi2(lignes.reduce((t, l) => t + l.total, 0));
   const port = arrondi2(Math.max(0, Number(v.port ?? 0)));
-  const promo = texte3(v.code_promo, 30) ? await chercherCodePromo(v.code_promo, sous_total) : null;
-  const remise = promo ? montantRemise(promo, sous_total) : arrondi2(Math.min(sous_total, Math.max(0, Number(v.remise ?? 0))));
+  let remise;
+  let remises = [];
+  let promos = [];
+  if (Array.isArray(v.remises) || Array.isArray(v.codes)) {
+    const codes = [
+      ...new Set((v.codes ?? []).map((x) => texte3(x, 30).toUpperCase()).filter(Boolean))
+    ];
+    if (codes.length > 5) throw new ErreurClient("5 codes promo au plus sur une vente.");
+    for (const code of codes) promos.push(await chercherCodePromo(code, sous_total));
+    ({ remise, remises } = calculerRemises(lignes, v.remises ?? [], promos));
+  } else {
+    const promo = texte3(v.code_promo, 30) ? await chercherCodePromo(v.code_promo, sous_total) : null;
+    if (promo) promos = [
+      promo
+    ];
+    remise = promo ? montantRemise(promo, sous_total) : arrondi2(Math.min(sous_total, Math.max(0, Number(v.remise ?? 0))));
+  }
+  const total = arrondi2(Math.max(0, sous_total + port - remise));
+  const paye = v.paiement_statut === "paye";
+  const paiements = paye ? verifierPaiements(v, total, D) : [];
   const c = v.client ?? {};
   const nomSaisi = texte3(c.nom, 120);
   const emailSaisi = texte3(c.email, 160).toLowerCase();
@@ -1143,13 +1258,12 @@ async function creerVente(v) {
     source: v.canal ?? "boutique",
     consentement: !!c.consentement
   });
-  await compterUtilisation(promo);
+  for (const promo of promos) await compterUtilisation(promo);
   const canal = [
     "boutique",
     "telephone",
     "salon"
   ].includes(v.canal ?? "") ? v.canal : "boutique";
-  const paye = v.paiement_statut === "paye";
   const [commande] = await db("commandes", {
     method: "POST",
     body: JSON.stringify({
@@ -1165,11 +1279,14 @@ async function creerVente(v) {
       port,
       emballage: 0,
       remise,
-      code_promo: promo?.code ?? "",
-      total: arrondi2(Math.max(0, sous_total + port - remise)),
+      code_promo: promos.map((p) => p.code).join(", "),
+      remises,
+      paiements,
+      total,
       paiement_mode: paye || canal === "boutique" ? "boutique" : "apres_validation",
       paiement_statut: paye ? "paye" : "en_attente",
-      paiement_moyen: texte3(v.paiement_moyen, 30),
+      // Un seul moyen : son code (carte, especes…) ; plusieurs : « carte 20,00 € + espèces 10,00 € », repris tel quel sur la facture
+      paiement_moyen: paiements.length > 1 ? paiements.map((p) => `${NOMS_MOYENS[p.moyen]} ${euros(p.montant)}`).join(" + ") : paiements[0]?.moyen ?? texte3(v.paiement_moyen, 30),
       // Réglée et remise sur place (boutique, salon) : terminée. Commande par téléphone ou à livrer : à traiter.
       statut: [
         "nouvelle",

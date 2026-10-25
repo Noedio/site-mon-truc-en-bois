@@ -160,7 +160,7 @@
           id: uuid(), numero: `MTB-${annee()}-${pad(base.seq.commandes)}`, jeton_suivi: uuid(), cree_le: t, statut: "nouvelle",
           client_tel: "", adresse: "", message: "", cadeau: {}, port: 0, emballage: 0, remise: 0, code_promo: "", paiement_mode: "apres_validation",
           paiement_statut: "en_attente", paye_le: null, stripe_session_id: null, stripe_url: null, facture_numero: null, suivi_colis: "", notes: "",
-          client_id: null, canal: "site", paiement_moyen: "", ...ligne,
+          client_id: null, canal: "site", paiement_moyen: "", remises: [], paiements: [], ...ligne,
         };
         ligne.historique = [{ date: ligne.cree_le, statut: ligne.statut }];
       } else if (ligne.statut !== ancienne.statut) ligne.historique = [...(ancienne.historique || []), { date: t, statut: ligne.statut }];
@@ -462,6 +462,10 @@
     demande({ type: "devis", nom: club.nom, email: club.email, tel: club.tel, sujet: "Médailles gravées", message: "Bonjour, nous aurions besoin de 40 médailles gravées pour le tournoi de juin, avec le logo du club au dos. Quel délai et quel prix ?", quantite: 40, client_id: club.id, cree_le: ilYa(1) });
     demande({ type: "contact", nom: "Paul Renard", email: "paul.renard@exemple.fr", sujet: "Délais pour Noël", message: "Jusqu'à quelle date peut-on commander une planche gravée pour l'avoir avant Noël ?", cree_le: ilYa(0, 3) });
     demande({ type: "newsletter", nom: sophie.nom, email: sophie.email, statut: "archivee", client_id: sophie.id, cree_le: ilYa(20) });
+    // Demandes de devis avec fichiers joints (photos du site rangées sous exemples/, voir lienPhoto)
+    const fichier = (nom, image, taille) => ({ chemin: `exemples/${image}`, nom, type: "image/jpeg", taille });
+    demande({ type: "devis", nom: "Nathalie Caron", email: "nathalie.caron@exemple.fr", tel: "06 45 67 89 10", sujet: "Plaque pour l'entrée du cabinet", message: "Bonjour, je voudrais une plaque dans ce style, environ 30 × 20 cm, avec le nom du cabinet et les horaires. Je vous joins le modèle qui me plaît et une photo de l'entrée.", quantite: 1, fichiers: [fichier("modele-plaque.jpg", "plaque-message.jpg", 95833), fichier("entree-cabinet.jpg", "panneau-bienvenue.jpg", 78592)], cree_le: ilYa(0, 1) });
+    demande({ type: "devis", nom: marie.nom, email: marie.email, tel: marie.tel, sujet: "Photo gravée pour les 80 ans de ma grand-mère", message: "Est-il possible de graver cette photo sur une planche, avec « Joyeux anniversaire Mamie » en dessous ? Il me la faudrait pour le 15 novembre.", fichiers: [fichier("photo-famille.jpg", "photo-gravee-bois.jpg", 144811)], client_id: marie.id, statut: "repondue", cree_le: ilYa(3) });
     base.tables.codes_promo.push(avantEcriture("codes_promo", { code: "BIENVENUE10", description: "10 % pour votre première commande", type: "pourcentage", valeur: 10, cree_le: ilYa(30) }, null));
   }
 
@@ -525,7 +529,9 @@
     async lienPhoto(url) {
       const chemin = decodeURIComponent(new URL(url).pathname.replace(/^\/storage\/v1\/object\/sign\/photos-clients\//, ""));
       const blob = await photoClient(chemin).catch(() => null);
-      return blob ? URL.createObjectURL(blob) : url;
+      if (blob) return URL.createObjectURL(blob);
+      // Fichiers des demandes d'exemple : des photos du site (img/)
+      return chemin.startsWith("exemples/") ? `${BASE}img/${chemin.slice("exemples/".length)}` : url;
     },
     reinitialiser() {
       try {
