@@ -32,6 +32,11 @@ export interface Produit {
   dimensions?: string;
   zoneGravable?: string;
   entretien?: string;
+  // Configurateur (choisis dans l'éditeur de produit de l'admin). gabarit : planche, tranche, ronde, porte-cles,
+  // ardoise, rectangle, coeur ou bande ; à défaut, la table de src/lib/configurateur.ts.
+  gabarit?: string;
+  /** Photo de la pièce vierge sur laquelle l'aperçu grave le texte ; zone en % de la photo. */
+  apercuPhoto?: { image: string; zone: { x: number; y: number; l: number; h: number } };
 }
 
 export interface Categorie { id: string; nom: string; description: string; image: string }
@@ -102,6 +107,11 @@ export interface Site {
   siret: string;
   mentionTva: string;
   legal?: Legal;
+  /**
+   * Configurateur : polices proposées (identifiants de src/lib/polices.ts, dans l'ordre ; absent ou vide :
+   * les quatre du site), choix « Autre police », motifs (coeurs, etoiles, alliances, feuillage, pattes).
+   */
+  configurateur?: { polices?: string[]; autrePolice?: boolean; motifs?: string[] };
 }
 
 export interface Donnees {

@@ -344,6 +344,8 @@ const pourScript = {
     }
     const i = varianteIndex();
     const police = $<HTMLInputElement>('[name="police"]:checked')?.dataset.nom ?? "";
+    // Motif et police souhaitée choisis dans le configurateur : ils partent avec les précisions de la ligne.
+    const precisions = $<HTMLInputElement>("[data-cfg-precisions]")?.value ?? "";
     ajouterAuPanier({
       id: d.id,
       nom: d.nom,
@@ -356,7 +358,7 @@ const pourScript = {
       photo,
       photoNom,
       photoCle,
-      remarque,
+      remarque: [precisions, remarque].filter(Boolean).join("\n"),
     });
     averti = false;
     const n = nombreArticles();
