@@ -9,11 +9,12 @@
 //   contenu_lire, contenu_publier, photo_publier : le commerçant modifie le site sans compte GitHub
 //                    (le serveur publie avec une clé GitHub limitée au contenu, gardée dans ses secrets)
 import {
-  catalogue, chercherCodePromo, compterUtilisation, creerPaiementStripe, db, enregistrerClient, env, ErreurClient, json, lireJson, montantRemise, servir, urlLecturePhoto,
+  catalogue, chercherCodePromo, compterUtilisation, creerPaiementStripe, db, enregistrerClient, env, ErreurClient, euros, json, lireJson, montantRemise, servir, urlLecturePhoto,
 } from "../_shared/outils.ts";
 import { emailCampagne, emailLibre, emailLienPaiement, emailStatut, envoyerEmail, envoyerLot, expediteur, fournisseurEmail } from "../_shared/emails.ts";
 
 type LigneSaisie = { id?: string; nom?: string; prix_unitaire?: number; quantite?: number; texte?: string; remarque?: string; variante?: string };
+type RemiseSaisie = { portee?: "ligne" | "ticket"; ligne?: number; mode?: "pourcent" | "euros"; valeur?: number; libelle?: string };
 type Demande = {
   action: "etat" | "lien_paiement" | "notifier" | "photos" | "creer_commande" | "email_client" | "campagne" | "contenu_lire" | "contenu_publier" | "photo_publier";
   contenu?: string; // base64
@@ -38,6 +39,11 @@ type Demande = {
     paiement_moyen?: string;
     remise?: number;
     code_promo?: string;
+    // Caisse : remises cumulables (ligne puis ticket) et plusieurs codes promo ; remplacent « remise » et « code_promo »
+    remises?: RemiseSaisie[];
+    codes?: string[];
+    // Paiement en un ou plusieurs moyens (carte + espèces…) ; recu = espèces données par le client
+    paiements?: { moyen?: string; montant?: number; recu?: number }[];
     port?: number;
     notes?: string;
     date_souhaitee?: string;
@@ -93,12 +99,69 @@ function verifierContenu(base64: string) {
 const arrondi = (n: number) => Math.round(n * 100) / 100;
 const texte = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 
+// ---------- Caisse : remises cumulées et paiement en plusieurs moyens ----------
+const MOYENS_CAISSE = ["carte", "especes", "cheque", "virement", "paypal", "autre"];
+const NOMS_MOYENS: Record<string, string> = { carte: "carte", especes: "espèces", cheque: "chèque", virement: "virement", paypal: "PayPal", autre: "autre" };
+
+/** Ordre du calcul : remises de ligne, puis remises du ticket, puis codes promo. Chaque remise porte sur ce qui reste
+ *  à payer à son tour (un pourcentage ne s'applique jamais deux fois sur la même somme) et ne peut pas dépasser ce reste :
+ *  le total ne devient jamais négatif. Le minimum d'achat d'un code se compare au sous-total des articles, comme sur le site. */
+export function calculerRemises(lignes: { nom: string; total: number }[], saisies: RemiseSaisie[], promos: any[]) {
+  if (!Array.isArray(saisies) || saisies.length > 20) throw new ErreurClient("20 remises au plus sur une vente.");
+  const restes = lignes.map((l) => l.total);
+  const remises: any[] = [];
+  const valeur = (r: RemiseSaisie) => {
+    const v = arrondi(Number(r.valeur));
+    if (!(v > 0) || (r.mode === "pourcent" && v > 100)) throw new ErreurClient("Remise invalide : un montant positif, ou un pourcentage de 1 à 100.");
+    return v;
+  };
+  const montant = (mode: string | undefined, v: number, base: number) => arrondi(Math.min(base, mode === "pourcent" ? (base * v) / 100 : v));
+  for (const r of saisies.filter((x) => x.portee === "ligne")) {
+    const i = Math.trunc(Number(r.ligne));
+    if (!(i >= 0 && i < lignes.length)) throw new ErreurClient("Remise sur une ligne qui n'existe pas.");
+    const v = valeur(r);
+    const m = montant(r.mode, v, restes[i]);
+    restes[i] = arrondi(restes[i] - m);
+    remises.push({ type: "ligne", ligne: i, libelle: texte(r.libelle, 60) || `Remise sur ${lignes[i].nom}`, mode: r.mode === "pourcent" ? "pourcent" : "euros", valeur: v, montant: m });
+  }
+  let reste = arrondi(restes.reduce((t, x) => t + x, 0));
+  for (const r of saisies.filter((x) => x.portee !== "ligne")) {
+    const v = valeur(r);
+    const m = montant(r.mode, v, reste);
+    reste = arrondi(reste - m);
+    remises.push({ type: "ticket", libelle: texte(r.libelle, 60) || "Remise", mode: r.mode === "pourcent" ? "pourcent" : "euros", valeur: v, montant: m });
+  }
+  for (const p of promos) {
+    const m = montantRemise(p, reste);
+    reste = arrondi(reste - m);
+    remises.push({ type: "code", code: p.code, libelle: `Code ${p.code}`, mode: p.type === "pourcentage" ? "pourcent" : "euros", valeur: Number(p.valeur), montant: m });
+  }
+  return { remise: arrondi(remises.reduce((t, r) => t + r.montant, 0)), remises };
+}
+
+/** Paiements d'une vente réglée : un moyen connu chacun, et leur somme égale au total (à un centime près). */
+function verifierPaiements(v: NonNullable<Demande["vente"]>, total: number, D: any) {
+  const saisis = Array.isArray(v.paiements) && v.paiements.length ? v.paiements : [{ moyen: v.paiement_moyen, montant: total }];
+  if (saisis.length > 4) throw new ErreurClient("4 moyens de paiement au plus.");
+  const paiements = saisis.map((p) => {
+    const moyen = texte(p.moyen, 30);
+    const montant = arrondi(Number(p.montant));
+    if (saisis.length > 1 && !MOYENS_CAISSE.includes(moyen)) throw new ErreurClient("Moyen de paiement inconnu.");
+    if (!(montant >= 0)) throw new ErreurClient("Montant de paiement invalide.");
+    const recu = moyen === "especes" && Number(p.recu) > montant ? { recu: arrondi(Number(p.recu)) } : {};
+    return { moyen, montant, ...recu };
+  });
+  // Assujetti à la TVA : les espèces doivent être enregistrées sur une caisse certifiée (art. 286 du CGI)
+  if (D.site?.legal?.regimeTva === "assujetti" && paiements.some((p) => p.moyen === "especes"))
+    throw new ErreurClient("Les paiements en espèces doivent être enregistrés sur votre caisse certifiée.");
+  const somme = arrondi(paiements.reduce((t, p) => t + p.montant, 0));
+  if (Math.abs(somme - total) > 0.01) throw new ErreurClient(`Les paiements (${euros(somme)}) ne font pas le total de la vente (${euros(total)}).`);
+  return paiements;
+}
+
 async function creerVente(v: NonNullable<Demande["vente"]>) {
   if (!Array.isArray(v.lignes) || !v.lignes.length) throw new ErreurClient("Ajoutez au moins un article.");
   const D = await catalogue();
-  // Assujetti à la TVA : les espèces doivent être enregistrées sur une caisse certifiée (art. 286 du CGI)
-  if (D.site?.legal?.regimeTva === "assujetti" && v.paiement_statut === "paye" && v.paiement_moyen === "especes")
-    throw new ErreurClient("Les paiements en espèces doivent être enregistrés sur votre caisse certifiée.");
   const lignes = v.lignes.map((l) => {
     const p = l.id ? (D.produits ?? []).find((x: any) => x.id === l.id) : null;
     const nom = texte(l.nom || p?.nom, 160);
@@ -111,9 +174,24 @@ async function creerVente(v: NonNullable<Demande["vente"]>) {
   });
   const sous_total = arrondi(lignes.reduce((t, l) => t + l.total, 0));
   const port = arrondi(Math.max(0, Number(v.port ?? 0)));
-  // Code promo donné en caisse : vérifié et compté comme sur le site ; il remplace la remise saisie à la main
-  const promo = texte(v.code_promo, 30) ? await chercherCodePromo(v.code_promo, sous_total) : null;
-  const remise = promo ? montantRemise(promo, sous_total) : arrondi(Math.min(sous_total, Math.max(0, Number(v.remise ?? 0))));
+  let remise: number;
+  let remises: any[] = [];
+  let promos: any[] = [];
+  if (Array.isArray(v.remises) || Array.isArray(v.codes)) {
+    // Caisse : plusieurs remises et codes cumulés, recalculés ici (jamais le montant envoyé par le navigateur)
+    const codes = [...new Set((v.codes ?? []).map((x) => texte(x, 30).toUpperCase()).filter(Boolean))];
+    if (codes.length > 5) throw new ErreurClient("5 codes promo au plus sur une vente.");
+    for (const code of codes) promos.push(await chercherCodePromo(code, sous_total));
+    ({ remise, remises } = calculerRemises(lignes, v.remises ?? [], promos));
+  } else {
+    // Ancien format (un seul code ou une remise saisie à la main) : le code remplace la remise, comme sur le site
+    const promo = texte(v.code_promo, 30) ? await chercherCodePromo(v.code_promo, sous_total) : null;
+    if (promo) promos = [promo];
+    remise = promo ? montantRemise(promo, sous_total) : arrondi(Math.min(sous_total, Math.max(0, Number(v.remise ?? 0))));
+  }
+  const total = arrondi(Math.max(0, sous_total + port - remise));
+  const paye = v.paiement_statut === "paye";
+  const paiements = paye ? verifierPaiements(v, total, D) : [];
 
   const c = v.client ?? {};
   const nomSaisi = texte(c.nom, 120);
@@ -125,9 +203,8 @@ async function creerVente(v: NonNullable<Demande["vente"]>) {
   // Une fiche n'est créée que si l'on sait qui est le client (nom, email ou téléphone), jamais pour une simple adresse.
   else if (nomSaisi || emailSaisi || texte(c.tel, 30)) fiche = await enregistrerClient({ nom: nomSaisi, email: emailSaisi, tel: texte(c.tel, 30), adresse: texte(c.adresse, 400), source: v.canal ?? "boutique", consentement: !!c.consentement });
 
-  await compterUtilisation(promo);
+  for (const promo of promos) await compterUtilisation(promo);
   const canal = ["boutique", "telephone", "salon"].includes(v.canal ?? "") ? v.canal : "boutique";
-  const paye = v.paiement_statut === "paye";
   const [commande] = await db<any[]>("commandes", {
     method: "POST",
     body: JSON.stringify({
@@ -143,11 +220,14 @@ async function creerVente(v: NonNullable<Demande["vente"]>) {
       port,
       emballage: 0,
       remise,
-      code_promo: promo?.code ?? "",
-      total: arrondi(Math.max(0, sous_total + port - remise)),
+      code_promo: promos.map((p) => p.code).join(", "),
+      remises,
+      paiements,
+      total,
       paiement_mode: paye || canal === "boutique" ? "boutique" : "apres_validation", // réglée sur place, ou à régler plus tard
       paiement_statut: paye ? "paye" : "en_attente",
-      paiement_moyen: texte(v.paiement_moyen, 30),
+      // Un seul moyen : son code (carte, especes…) ; plusieurs : « carte 20,00 € + espèces 10,00 € », repris tel quel sur la facture
+      paiement_moyen: paiements.length > 1 ? paiements.map((p) => `${NOMS_MOYENS[p.moyen]} ${euros(p.montant)}`).join(" + ") : paiements[0]?.moyen ?? texte(v.paiement_moyen, 30),
       // Réglée et remise sur place (boutique, salon) : terminée. Commande par téléphone ou à livrer : à traiter.
       statut: ["nouvelle", "maquette_envoyee", "retouche", "confirmee", "en_fabrication", "prete", "expediee", "terminee"].includes(v.statut ?? "") ? v.statut : paye && canal !== "telephone" && v.mode_reception !== "livraison" ? "terminee" : "nouvelle",
       notes: texte(v.notes, 2000),
